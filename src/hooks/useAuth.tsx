@@ -4,6 +4,7 @@ import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
+import { fetchUserProfile, signInWithIdentifier } from "@/lib/auth-utils";
 
 type AuthContextType = {
   session: Session | null;
@@ -28,28 +29,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isGuest, setIsGuest] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch user profile data
-  const fetchUserProfile = async (userId: string) => {
-    if (!userId) return;
-    
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('id', userId)
-        .single();
-        
-      if (error) {
-        console.error('Error fetching profile:', error);
-        return;
-      }
-      
-      setProfile(data);
-    } catch (error) {
-      console.error('Error in fetchUserProfile:', error);
-    }
-  };
-
   useEffect(() => {
     // Check for guest mode in localStorage
     const guestMode = localStorage.getItem('guestMode') === 'true';
@@ -63,7 +42,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserProfile(session.user.id);
+          const profileData = await fetchUserProfile(session.user.id);
+          setProfile(profileData);
         }
         
         if (event === 'SIGNED_IN') {
@@ -89,7 +69,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserProfile(session.user.id);
+        const profileData = await fetchUserProfile(session.user.id);
+        setProfile(profileData);
       }
       
       setIsLoading(false);
@@ -118,9 +99,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       navigate("/auth");
     } catch (error: any) {
-      toast("Sign up failed", {
+      toast.error("Sign up failed", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -130,49 +110,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (identifier: string, password: string) => {
     try {
       setIsLoading(true);
-      
-      // Try to sign in with email
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: identifier,
-        password,
-      });
-      
-      // If error and the identifier doesn't look like an email, try username
-      if (error && !identifier.includes('@')) {
-        // First, find the user with this username
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('username', identifier)
-          .single();
-          
-        if (profiles) {
-          // Then get the email for this user
-          const { data: users } = await supabase.auth.admin.getUserById(profiles.id);
-          
-          if (users && users.user) {
-            // Try to sign in with the retrieved email
-            const { error: signInError } = await supabase.auth.signInWithPassword({
-              email: users.user.email,
-              password,
-            });
-            
-            if (signInError) throw signInError;
-          } else {
-            throw new Error("User not found");
-          }
-        } else {
-          throw new Error("Username not found");
-        }
-      } else if (error) {
-        throw error;
-      }
-      
+      await signInWithIdentifier(identifier, password);
       navigate("/app");
     } catch (error: any) {
-      toast("Sign in failed", {
+      toast.error("Sign in failed", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
@@ -189,9 +131,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       navigate("/app");
     } catch (error: any) {
-      toast("Error entering guest mode", {
+      toast.error("Error entering guest mode", {
         description: error.message,
-        variant: "destructive",
       });
       setIsGuest(false);
       localStorage.removeItem('guestMode');
@@ -216,9 +157,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       navigate("/auth");
     } catch (error: any) {
-      toast("Sign out failed", {
+      toast.error("Sign out failed", {
         description: error.message,
-        variant: "destructive",
       });
     } finally {
       setIsLoading(false);
