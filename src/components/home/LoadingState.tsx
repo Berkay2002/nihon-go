@@ -8,14 +8,12 @@ import seedDataService from "@/services/seedDataService";
 
 interface LoadingStateProps {
   username: string;
-  isGuest: boolean;
   longLoading: boolean;
   handleRefresh: () => void;
 }
 
 export const LoadingState: React.FC<LoadingStateProps> = ({
   username,
-  isGuest,
   longLoading,
   handleRefresh,
 }) => {
@@ -45,7 +43,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
 
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-      <HomeHeader username={username} isGuest={isGuest} />
+      <HomeHeader username={username} />
       
       <div className="py-8">
         <LoadingSpinner />
