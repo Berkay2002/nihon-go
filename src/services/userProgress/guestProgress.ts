@@ -1,9 +1,10 @@
+
 import { UserProgress, UserStreak } from './types';
 
-// Reliable fake data for guest mode that always returns consistent data
+// Enhanced fake data for guest mode that always returns consistent data with minimal delay
 export const guestProgressService = {
   getUserProgress: async (): Promise<UserProgress[]> => {
-    // Always return a non-null array
+    // Return immediately for guest users - no artificial delay
     return [
       {
         id: 'guest-progress-1',
@@ -18,7 +19,7 @@ export const guestProgressService = {
   },
   
   getUserStreak: async (): Promise<UserStreak> => {
-    // Always return a valid streak object
+    // Return immediately for guest users - no artificial delay
     return {
       id: 'guest-streak',
       user_id: 'guest',
@@ -33,7 +34,7 @@ export const guestProgressService = {
   },
   
   // These functions don't actually save anything in guest mode
-  // But they should still resolve properly
+  // But they should still resolve properly and immediately
   updateLessonProgress: async (
     userId: string,
     lessonId: string,
@@ -41,7 +42,6 @@ export const guestProgressService = {
     accuracy: number,
     xpEarned: number
   ): Promise<void> => {
-    // Simulate a successful update
     console.log(
       `[GUEST MODE] Updated lesson progress: ${userId}, ${lessonId}, completed: ${isCompleted}, accuracy: ${accuracy}, xp: ${xpEarned}`
     );
@@ -52,7 +52,6 @@ export const guestProgressService = {
     userId: string,
     result: any
   ): Promise<void> => {
-    // Simulate a successful submission
     console.log(`[GUEST MODE] Submitted exercise result for: ${userId}`, result);
     return Promise.resolve();
   },
@@ -62,7 +61,6 @@ export const guestProgressService = {
     dailyXpToAdd: number,
     extendStreak: boolean = true
   ): Promise<UserStreak> => {
-    // Simulate updating streak and return the updated data
     console.log(`[GUEST MODE] Updated streak for: ${userId}, added XP: ${dailyXpToAdd}, extend: ${extendStreak}`);
     return {
       id: 'guest-streak',

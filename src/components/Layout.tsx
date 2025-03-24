@@ -1,20 +1,43 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import Navigation from "./Navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import seedDataService from "@/services/seedDataService";
+import { TimeoutError } from "./shared/TimeoutError";
+import { toast } from "@/components/ui/use-toast";
 
 const Layout = () => {
   const { isAuthenticated, isLoading, isGuest } = useAuth();
   const navigate = useNavigate();
+  const [authTimeout, setAuthTimeout] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isGuest) {
       navigate("/auth");
     }
   }, [isAuthenticated, isLoading, isGuest, navigate]);
+
+  // Set a timeout for auth loading
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout | null = null;
+    
+    if (isLoading) {
+      timeoutId = setTimeout(() => {
+        setAuthTimeout(true);
+        toast.info("Authentication timeout", {
+          description: "Having trouble connecting to authentication service. You can refresh or try again later.",
+        });
+      }, 8000); // 8 seconds timeout
+    } else {
+      setAuthTimeout(false);
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [isLoading]);
 
   // Run seed data when the app loads
   useEffect(() => {
@@ -29,6 +52,23 @@ const Layout = () => {
     
     initializeApp();
   }, []);
+
+  const handleRefresh = () => {
+    window.location.reload();
+  };
+
+  // If auth checking is taking too long, show timeout error
+  if (authTimeout) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4">
+        <TimeoutError 
+          title="Authentication Timeout"
+          description="We're having trouble connecting to the authentication service. Please refresh the page or try again later."
+          onRefresh={handleRefresh}
+        />
+      </div>
+    );
+  }
 
   // If still checking auth status, show loading
   if (isLoading) {

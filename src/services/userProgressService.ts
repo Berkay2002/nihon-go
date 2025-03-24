@@ -1,3 +1,4 @@
+
 import { useAuth } from "@/hooks/useAuth";
 import { 
   UserProgress, 
@@ -16,8 +17,7 @@ export const useUserProgress = () => {
     
     if (isGuest) {
       try {
-        // Return mock data for guest users with artificial delay to simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Return mock data for guest users with no artificial delay
         return await guestProgressService.getUserProgress();
       } catch (error) {
         console.error('Error in guest getUserProgressData:', error);
@@ -28,8 +28,15 @@ export const useUserProgress = () => {
     if (!user) return null;
     
     try {
-      const result = await userProgressApi.getUserProgress(user.id);
-      return result;
+      // Add a timeout to the API call
+      const progressPromise = userProgressApi.getUserProgress(user.id);
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Progress data fetch timeout')), 5000)
+      );
+      
+      // Race the real API call against the timeout
+      const result = await Promise.race([progressPromise, timeoutPromise]) as UserProgress[] | null;
+      return result || [];
     } catch (error) {
       console.error('Error in getUserProgressData:', error);
       // Return empty array instead of null to avoid undefined errors
@@ -42,8 +49,7 @@ export const useUserProgress = () => {
     
     if (isGuest) {
       try {
-        // Return mock streak data for guest users with artificial delay
-        await new Promise(resolve => setTimeout(resolve, 300));
+        // Return mock streak data for guest users with no artificial delay
         return await guestProgressService.getUserStreak();
       } catch (error) {
         console.error('Error in guest getUserStreakData:', error);
@@ -65,7 +71,14 @@ export const useUserProgress = () => {
     if (!user) return null;
     
     try {
-      const streak = await userProgressApi.getUserStreak(user.id);
+      // Add a timeout to the API call
+      const streakPromise = userProgressApi.getUserStreak(user.id);
+      const timeoutPromise = new Promise<null>((_, reject) => 
+        setTimeout(() => reject(new Error('Streak data fetch timeout')), 5000)
+      );
+      
+      // Race the real API call against the timeout
+      const streak = await Promise.race([streakPromise, timeoutPromise]) as UserStreak | null;
       
       // If no streak record exists yet, return a default one to avoid null errors
       if (!streak) {
@@ -114,6 +127,8 @@ export const useUserProgress = () => {
     try {
       if (user && !isGuest) {
         await service.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned);
+      } else if (isGuest) {
+        await service.updateLessonProgress('guest', lessonId, isCompleted, accuracy, xpEarned);
       }
     } catch (error) {
       console.error('Error updating lesson progress:', error);
@@ -125,6 +140,8 @@ export const useUserProgress = () => {
     try {
       if (user && !isGuest) {
         await service.submitExerciseResult(user.id, result);
+      } else if (isGuest) {
+        await service.submitExerciseResult('guest', result);
       }
     } catch (error) {
       console.error('Error submitting exercise result:', error);
@@ -136,6 +153,8 @@ export const useUserProgress = () => {
     try {
       if (user && !isGuest) {
         return await service.updateUserStreak(user.id, dailyXpToAdd, extendStreak);
+      } else if (isGuest) {
+        return await service.updateUserStreak('guest', dailyXpToAdd, extendStreak);
       }
       return null;
     } catch (error) {
