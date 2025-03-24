@@ -1,0 +1,81 @@
+
+import React from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Book, Check, Lock, ChevronRight } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface Lesson {
+  id: string;
+  unit_id: string;
+  title: string;
+  description: string;
+  order_index: number;
+  estimated_time: string;
+  xp_reward: number;
+  is_completed?: boolean;
+  is_locked?: boolean;
+}
+
+interface LessonCardProps {
+  lesson: Lesson;
+  isGuest: boolean;
+  onClick: () => void;
+}
+
+export const LessonCard: React.FC<LessonCardProps> = ({ lesson, isGuest, onClick }) => {
+  return (
+    <Card 
+      key={lesson.id} 
+      className={`border transition-all cursor-pointer ${
+        lesson.is_completed ? 'border-nihongo-green/30' : 
+        lesson.is_locked ? 'border-gray-200 opacity-70' : 'border-gray-200'
+      }`}
+      onClick={onClick}
+    >
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className={`w-10 h-10 rounded-full ${
+              lesson.is_completed ? 'bg-nihongo-green/10' : 
+              lesson.is_locked ? 'bg-gray-200' : 'bg-nihongo-red/10'
+            } flex items-center justify-center mr-3`}>
+              {lesson.is_completed ? (
+                <Check className="w-5 h-5 text-nihongo-green" />
+              ) : lesson.is_locked ? (
+                <Lock className="w-5 h-5 text-gray-400" />
+              ) : (
+                <Book className="w-5 h-5 text-nihongo-red" />
+              )}
+            </div>
+            <div>
+              <h3 className="font-semibold">{lesson.title}</h3>
+              <p className="text-xs text-muted-foreground">
+                {lesson.is_locked && isGuest ? 
+                  "Locked in demo mode" : 
+                  `Earn ${lesson.xp_reward} XP`}
+              </p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+export const LessonCardSkeleton: React.FC = () => {
+  return (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center">
+          <Skeleton className="w-10 h-10 rounded-full mr-3" />
+          <div className="flex-1">
+            <Skeleton className="h-5 w-3/4 mb-2" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+          <Skeleton className="w-5 h-5" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+};

@@ -33,3 +33,6 @@ export const toast = {
     });
   }
 };
+
+// Export the toast hook for components to use
+export default toast;

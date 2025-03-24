@@ -10,6 +10,14 @@ import contentService, { Unit, Lesson } from "@/services/contentService";
 import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
+import { 
+  UnitCard, 
+  UnitCardSkeleton,
+  LessonCard, 
+  LessonCardSkeleton,
+  GuestMessage,
+  ErrorMessage
+} from "@/components/units";
 
 // Extend the Unit and Lesson types with UI-specific properties
 interface UnitWithProgress extends Unit {
@@ -218,121 +226,14 @@ const Units = () => {
 
   const currentUnit = units.find(unit => unit.id === selectedUnit);
 
-  // Render different message for guest users
-  const renderGuestMessage = () => {
-    if (!isGuest) return null;
-    
-    return (
-      <Card className="border border-nihongo-blue/20 bg-nihongo-blue/5 mb-8">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <div className="shrink-0 mt-1">
-              <LockIcon className="h-5 w-5 text-nihongo-blue" />
-            </div>
-            <div>
-              <h3 className="font-medium text-nihongo-blue">Demo Mode</h3>
-              <p className="text-sm text-muted-foreground">
-                In demo mode, only the first lesson is available. 
-                <Button 
-                  variant="link" 
-                  className="h-auto p-0 text-nihongo-red"
-                  onClick={() => navigate('/auth?tab=signup')}
-                >
-                  Sign up
-                </Button>{' '}
-                to unlock all content.
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-  // Render error message
-  const renderErrorMessage = () => {
-    if (!error) return null;
-    
-    return (
-      <Card className="border border-destructive/20 bg-destructive/5 mb-8">
-        <CardContent className="p-4">
-          <div className="flex items-start space-x-3">
-            <div className="shrink-0 mt-1">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-            </div>
-            <div>
-              <h3 className="font-medium text-destructive">Error</h3>
-              <p className="text-sm text-muted-foreground">{error}</p>
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="mt-2"
-                onClick={() => {
-                  fetchUnits();
-                  if (selectedUnit) {
-                    fetchLessons();
-                  }
-                }}
-              >
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Try Again
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   const handleLessonClick = (lesson: LessonWithProgress) => {
     if (isGuest && lesson.is_locked) {
-      toast({
-        variant: "destructive",
-        title: "Feature locked in demo mode",
+      toast.error("Feature locked in demo mode", { 
         description: "Create an account to unlock all lessons and track your progress."
       });
       return;
     }
     navigate(`/app/lesson/${lesson.id}`);
-  };
-
-  // Unit Skeleton Loading UI
-  const renderUnitSkeletons = () => {
-    return (
-      <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="flex-shrink-0 w-36 h-36 snap-start">
-            <CardContent className="p-4 flex flex-col items-center justify-center h-full">
-              <Skeleton className="w-12 h-12 rounded-full mb-2" />
-              <Skeleton className="h-4 w-20 mb-1" />
-              <Skeleton className="h-2 w-16" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  };
-
-  // Lesson Skeleton Loading UI
-  const renderLessonSkeletons = () => {
-    return (
-      <div className="space-y-4">
-        {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <div className="flex items-center">
-                <Skeleton className="w-10 h-10 rounded-full mr-3" />
-                <div className="flex-1">
-                  <Skeleton className="h-5 w-3/4 mb-2" />
-                  <Skeleton className="h-3 w-1/2" />
-                </div>
-                <Skeleton className="w-5 h-5" />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
   };
 
   return (
@@ -345,42 +246,23 @@ const Units = () => {
         <h1 className="text-2xl font-bold">Japanese Lessons</h1>
       </header>
 
-      {renderGuestMessage()}
-      {renderErrorMessage()}
+      {isGuest && <GuestMessage navigate={navigate} />}
+      {error && <ErrorMessage error={error} onRetry={() => { fetchUnits(); fetchLessons(); }} />}
 
       <section className="mb-8 overflow-hidden">
         {loading && !units.length ? (
-          renderUnitSkeletons()
+          <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
+            {[1, 2, 3].map((i) => <UnitCardSkeleton key={i} />)}
+          </div>
         ) : (
           <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
             {units.map((unit) => (
-              <Card 
-                key={unit.id} 
-                className={`flex-shrink-0 w-36 h-36 snap-start cursor-pointer transition-all duration-300 transform ${
-                  selectedUnit === unit.id ? 'scale-[1.02] border-nihongo-red shadow-md' : 'border-gray-200'
-                } ${unit.is_locked ? 'opacity-70' : ''}`}
+              <UnitCard 
+                key={unit.id}
+                unit={unit}
+                isSelected={unit.id === selectedUnit}
                 onClick={() => !unit.is_locked && setSelectedUnit(unit.id)}
-              >
-                <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center relative">
-                  {unit.is_locked && (
-                    <div className="absolute inset-0 bg-gray-100/80 flex items-center justify-center rounded-md">
-                      <Lock className="w-8 h-8 text-gray-400" />
-                    </div>
-                  )}
-                  <div className={`w-12 h-12 rounded-full ${
-                    !unit.is_locked ? 'bg-nihongo-red/10' : 'bg-gray-200'
-                  } flex items-center justify-center mb-2`}>
-                    <Book className={`w-6 h-6 ${
-                      !unit.is_locked ? 'text-nihongo-red' : 'text-gray-400'
-                    }`} />
-                  </div>
-                  <h3 className="font-semibold text-sm">{unit.name}</h3>
-                  {unit.progress !== undefined && unit.progress > 0 && (
-                    <Progress value={unit.progress} className="h-1 mt-2 w-full bg-gray-100" 
-                      indicatorClassName="bg-nihongo-red" />
-                  )}
-                </CardContent>
-              </Card>
+              />
             ))}
           </div>
         )}
@@ -399,46 +281,18 @@ const Units = () => {
           <p className="text-muted-foreground mb-6">{currentUnit.description}</p>
 
           {loading && !lessons.length ? (
-            renderLessonSkeletons()
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => <LessonCardSkeleton key={i} />)}
+            </div>
           ) : (
             <div className="space-y-4">
               {lessons.map((lesson) => (
-                <Card 
-                  key={lesson.id} 
-                  className={`border transition-all cursor-pointer ${
-                    lesson.is_completed ? 'border-nihongo-green/30' : 
-                    lesson.is_locked ? 'border-gray-200 opacity-70' : 'border-gray-200'
-                  }`}
+                <LessonCard 
+                  key={lesson.id}
+                  lesson={lesson}
+                  isGuest={isGuest}
                   onClick={() => handleLessonClick(lesson)}
-                >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className={`w-10 h-10 rounded-full ${
-                          lesson.is_completed ? 'bg-nihongo-green/10' : 
-                          lesson.is_locked ? 'bg-gray-200' : 'bg-nihongo-red/10'
-                        } flex items-center justify-center mr-3`}>
-                          {lesson.is_completed ? (
-                            <Check className="w-5 h-5 text-nihongo-green" />
-                          ) : lesson.is_locked ? (
-                            <Lock className="w-5 h-5 text-gray-400" />
-                          ) : (
-                            <Book className="w-5 h-5 text-nihongo-red" />
-                          )}
-                        </div>
-                        <div>
-                          <h3 className="font-semibold">{lesson.title}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {lesson.is_locked && isGuest ? 
-                              "Locked in demo mode" : 
-                              `Earn ${lesson.xp_reward} XP`}
-                          </p>
-                        </div>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                    </div>
-                  </CardContent>
-                </Card>
+                />
               ))}
 
               {lessons.length === 0 && !loading && !error && (
