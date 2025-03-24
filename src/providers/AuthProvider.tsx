@@ -6,6 +6,15 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
 import { fetchUserProfile, signInWithIdentifier, handleSignUp } from "@/lib/auth-utils";
 import { AuthContext } from "@/contexts/AuthContext";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription,
+  DialogFooter
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
@@ -14,19 +23,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
+  const [showGuestDialog, setShowGuestDialog] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check for guest mode in localStorage
-    const guestMode = localStorage.getItem('guestMode') === 'true';
-    setIsGuest(guestMode);
-
-    // If in guest mode, no need to check Supabase session
-    if (guestMode) {
-      setIsLoading(false);
-      return;
-    }
-
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -76,6 +76,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setProfile(profileData);
           } catch (error) {
             console.error("Error fetching profile:", error);
+          }
+        } else {
+          // Check if the user was previously in guest mode
+          const wasInGuestMode = localStorage.getItem('guestMode') === 'true';
+          if (wasInGuestMode && window.location.pathname !== '/') {
+            // Instead of automatically logging in as guest, show a dialog
+            setShowGuestDialog(true);
           }
         }
       } catch (error) {
@@ -130,6 +137,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.success("Welcome, Guest!", {
         description: "You're exploring in demo mode. Sign up to track your progress!",
       });
+      
+      // Close the dialog if it was open
+      setShowGuestDialog(false);
+      
       navigate("/app");
     } catch (error: any) {
       toast.error("Error entering guest mode", {
@@ -184,6 +195,36 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }}
     >
       {children}
+      
+      {/* Guest Mode Dialog */}
+      <Dialog open={showGuestDialog} onOpenChange={setShowGuestDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Continue as Guest?</DialogTitle>
+            <DialogDescription>
+              You were previously browsing in guest mode. Would you like to continue as a guest or sign in with an account?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowGuestDialog(false);
+                navigate("/auth");
+              }}
+              className="sm:flex-1"
+            >
+              Sign In
+            </Button>
+            <Button 
+              onClick={signInAsGuest}
+              className="bg-nihongo-blue hover:bg-nihongo-blue/90 sm:flex-1"
+            >
+              Continue as Guest
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AuthContext.Provider>
   );
 };
