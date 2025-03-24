@@ -7,13 +7,14 @@ import {
   userProgressApi, 
   guestProgressService 
 } from "./userProgress";
+import { baseService } from "@/services/api/baseService";
 
 // Hook for accessing progress in components
 export const useUserProgress = () => {
   const { user, isLoading, isGuest } = useAuth();
   
   const getUserProgressData = async () => {
-    if (isLoading) return null;
+    if (isLoading) return [];
     
     if (isGuest) {
       try {
@@ -25,18 +26,17 @@ export const useUserProgress = () => {
       }
     }
     
-    if (!user) return null;
+    if (!user) return [];
     
     try {
       // Add a timeout to the API call
       const progressPromise = userProgressApi.getUserProgress(user.id);
-      const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Progress data fetch timeout')), 5000)
+      const timeoutPromise = new Promise<UserProgress[]>((_, reject) => 
+        setTimeout(() => reject(new Error('Progress data fetch timeout')), 3000)
       );
       
       // Race the real API call against the timeout
-      const result = await Promise.race([progressPromise, timeoutPromise]) as UserProgress[] | null;
-      return result || [];
+      return await Promise.race([progressPromise, timeoutPromise]);
     } catch (error) {
       console.error('Error in getUserProgressData:', error);
       // Return empty array instead of null to avoid undefined errors
@@ -45,7 +45,7 @@ export const useUserProgress = () => {
   };
   
   const getUserStreakData = async () => {
-    if (isLoading) return null;
+    if (isLoading) return getDefaultStreak();
     
     if (isGuest) {
       try {
@@ -54,64 +54,49 @@ export const useUserProgress = () => {
       } catch (error) {
         console.error('Error in guest getUserStreakData:', error);
         // Return fallback streak data
-        return {
-          id: 'guest-streak',
-          user_id: 'guest',
-          current_streak: 1,
-          longest_streak: 1,
-          last_activity_date: new Date().toISOString(),
-          daily_goal: 50,
-          daily_xp: 15,
-          total_xp: 15,
-          level: 1
-        };
+        return getDefaultStreak('guest');
       }
     }
     
-    if (!user) return null;
+    if (!user) return getDefaultStreak();
     
     try {
       // Add a timeout to the API call
       const streakPromise = userProgressApi.getUserStreak(user.id);
-      const timeoutPromise = new Promise<null>((_, reject) => 
-        setTimeout(() => reject(new Error('Streak data fetch timeout')), 5000)
+      const timeoutPromise = new Promise<UserStreak>((_, reject) => 
+        setTimeout(() => reject(new Error('Streak data fetch timeout')), 3000)
       );
       
       // Race the real API call against the timeout
-      const streak = await Promise.race([streakPromise, timeoutPromise]) as UserStreak | null;
+      const streak = await Promise.race([streakPromise, timeoutPromise]);
       
       // If no streak record exists yet, return a default one to avoid null errors
       if (!streak) {
         console.log('No streak record found, returning default');
-        return {
-          id: 'default-streak',
-          user_id: user.id,
-          current_streak: 0,
-          longest_streak: 0,
-          last_activity_date: new Date().toISOString(),
-          daily_goal: 50,
-          daily_xp: 0,
-          total_xp: 0,
-          level: 1
-        };
+        return getDefaultStreak(user.id);
       }
       
       return streak;
     } catch (error) {
       console.error('Error in getUserStreakData:', error);
       // Return fallback streak data
-      return {
-        id: 'fallback-streak',
-        user_id: user.id,
-        current_streak: 0,
-        longest_streak: 0,
-        last_activity_date: new Date().toISOString(),
-        daily_goal: 50,
-        daily_xp: 0,
-        total_xp: 0,
-        level: 1
-      };
+      return getDefaultStreak(user?.id || 'fallback');
     }
+  };
+  
+  // Helper function to get default streak data
+  const getDefaultStreak = (userId: string = 'default'): UserStreak => {
+    return {
+      id: `${userId}-streak`,
+      user_id: userId,
+      current_streak: 1,
+      longest_streak: 1,
+      last_activity_date: new Date().toISOString(),
+      daily_goal: 50,
+      daily_xp: 15,
+      total_xp: 15,
+      level: 1
+    };
   };
   
   // Choose between real or mock services based on guest mode
@@ -156,10 +141,10 @@ export const useUserProgress = () => {
       } else if (isGuest) {
         return await service.updateUserStreak('guest', dailyXpToAdd, extendStreak);
       }
-      return null;
+      return getDefaultStreak();
     } catch (error) {
       console.error('Error updating user streak:', error);
-      return null;
+      return getDefaultStreak();
     }
   };
   

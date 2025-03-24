@@ -15,7 +15,7 @@ export const baseService = {
    * @param timeoutMs Timeout in milliseconds
    * @param errorMessage Custom error message for timeout
    */
-  async executeWithTimeout(queryFn, timeoutMs = 2500, errorMessage = "Query timeout") {
+  async executeWithTimeout(queryFn, timeoutMs = 3500, errorMessage = "Query timeout") {
     try {
       // Create a promise that rejects after the timeout
       const timeoutPromise = new Promise((_, reject) => 
@@ -35,7 +35,7 @@ export const baseService = {
           error.message.includes("network") ||
           error.message.includes("fetch")) {
         toast.error("Connection issue", {
-          description: "Having trouble connecting to the server. Please check your internet connection."
+          description: "Having trouble connecting to the server. Using fallback data."
         });
       }
       
@@ -49,7 +49,7 @@ export const baseService = {
    * @param maxRetries Maximum number of retries
    * @param baseDelay Base delay in milliseconds
    */
-  async retryWithBackoff(fn, maxRetries = 1, baseDelay = 150) {
+  async retryWithBackoff(fn, maxRetries = 2, baseDelay = 200) {
     let lastError;
     
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
@@ -66,12 +66,12 @@ export const baseService = {
         console.log(`Retry attempt ${attempt} after ${delay}ms`);
         return await fn();
       } catch (error) {
-        console.log(`Attempt ${attempt} failed, ${attempt < maxRetries ? "retrying..." : "giving up."}`, error);
+        console.log(`Attempt ${attempt} failed, ${attempt < maxRetries ? "retrying..." : "using fallback data."}`, error);
         lastError = error;
         
         // Only show toast on first failure
         if (attempt === 0 && !error.message.includes("timeout")) {
-          toast.info("Retrying connection...");
+          toast.info("Trying to retrieve your data...");
         }
       }
     }

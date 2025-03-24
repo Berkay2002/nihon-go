@@ -30,12 +30,12 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
           await seedDataService.seedInitialData();
           // Don't refresh immediately, wait for the user to click the button
           toast.info("Initial data has been loaded", {
-            description: "Please refresh the page to see the lessons."
+            description: "Please refresh the page to see your lessons."
           });
         } catch (error) {
           console.error("Error auto-seeding data:", error);
         }
-      }, 3000);
+      }, 2000);
     }
     
     return () => {
@@ -51,7 +51,7 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
         <LoadingSpinner />
         <p className="text-center text-muted-foreground mt-4">
           {longLoading 
-            ? "Still loading... This is taking longer than usual." 
+            ? "We're preparing your learning experience..." 
             : "Loading your progress..."}
         </p>
         
