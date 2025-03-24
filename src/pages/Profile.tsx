@@ -3,12 +3,15 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { User, Book, Flame, Award, Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Profile = () => {
+  const { user, signOut } = useAuth();
+  
   // Mock data - would come from API in real app
   const userData = {
-    name: "User",
-    email: "user@example.com",
+    name: user?.email?.split('@')[0] || "User",
+    email: user?.email || "user@example.com",
     level: 3,
     xp: 285,
     xpToNextLevel: 400,
@@ -118,6 +121,7 @@ const Profile = () => {
           <Button 
             variant="outline" 
             className="w-full border-nihongo-error/30 text-nihongo-error hover:bg-nihongo-error/5 py-6"
+            onClick={signOut}
           >
             <LogOut className="w-5 h-5 mr-2" />
             Sign Out

@@ -15,6 +15,8 @@ import Exercise from "./pages/Exercise";
 import LessonComplete from "./pages/LessonComplete";
 import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
+import Auth from "./pages/Auth";
+import { AuthProvider } from "./hooks/useAuth";
 
 const queryClient = new QueryClient();
 
@@ -24,20 +26,23 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/app" element={<Layout />}>
-            <Route index element={<Home />} />
-            <Route path="units" element={<Units />} />
-            <Route path="units/:unitId" element={<Units />} />
-            <Route path="lesson/:lessonId" element={<Lesson />} />
-            <Route path="exercise/:exerciseId" element={<Exercise />} />
-            <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
-            <Route path="achievements" element={<Achievements />} />
-            <Route path="profile" element={<Profile />} />
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Welcome />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/app" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="units" element={<Units />} />
+              <Route path="units/:unitId" element={<Units />} />
+              <Route path="lesson/:lessonId" element={<Lesson />} />
+              <Route path="exercise/:exerciseId" element={<Exercise />} />
+              <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
+              <Route path="achievements" element={<Achievements />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

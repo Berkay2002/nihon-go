@@ -1,89 +1,69 @@
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { ChevronRight } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const [currentSlide, setCurrentSlide] = useState(0);
+  const { isAuthenticated, isLoading } = useAuth();
 
-  const slides = [
-    {
-      title: "Welcome to NihonGo",
-      subtitle: "Learn Japanese in small, fun lessons",
-      description: "Master vocabulary, grammar, and hiragana with our gamified approach.",
-      buttonText: "Next",
-    },
-    {
-      title: "Bite-sized Lessons",
-      subtitle: "Learn in just 5 minutes a day",
-      description: "Short, focused exercises help you learn efficiently and build a daily habit.",
-      buttonText: "Next",
-    },
-    {
-      title: "Track Your Progress",
-      subtitle: "Earn XP and unlock new content",
-      description: "Keep your streak alive and watch your Japanese skills improve daily.",
-      buttonText: "Get Started",
-    },
-  ];
-
-  const handleNext = () => {
-    if (currentSlide < slides.length - 1) {
-      setCurrentSlide(currentSlide + 1);
-    } else {
+  useEffect(() => {
+    if (!isLoading && isAuthenticated) {
       navigate("/app");
     }
-  };
+  }, [isAuthenticated, isLoading, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-white to-nihongo-lightGray p-4">
-      <div className="w-full max-w-md">
-        <Card className="glass-card overflow-hidden">
-          <div className="p-6">
-            <div className="flex justify-center mb-10">
-              <div className="w-24 h-24 rounded-full bg-gradient-to-r from-nihongo-red to-nihongo-blue flex items-center justify-center shadow-lg">
-                <span className="text-4xl font-bold text-white">日</span>
-              </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
+      <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+        <h1 className="font-bold text-5xl md:text-6xl mb-2 bg-clip-text text-transparent bg-gradient-to-r from-nihongo-red to-nihongo-blue">
+          NihonGo
+        </h1>
+        
+        <p className="text-lg md:text-xl text-gray-700 mb-8 max-w-md">
+          Learn Japanese step by step, with personalized lessons and interactive exercises.
+        </p>
+        
+        <div className="space-y-4 w-full max-w-xs">
+          <Button 
+            onClick={() => navigate("/auth")}
+            className="w-full h-12 text-lg bg-nihongo-blue hover:bg-nihongo-blue/90"
+          >
+            Get Started
+          </Button>
+        </div>
+        
+        <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-3xl">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-nihongo-red/10 rounded-full flex items-center justify-center mb-3">
+              <span className="text-nihongo-red text-2xl">あ</span>
             </div>
-            
-            <div className="text-center mb-8 animate-fade-in">
-              <h1 className="text-3xl font-bold mb-2 text-gradient">
-                {slides[currentSlide].title}
-              </h1>
-              <h2 className="text-xl font-medium mb-4 text-nihongo-blue">
-                {slides[currentSlide].subtitle}
-              </h2>
-              <p className="text-nihongo-text">
-                {slides[currentSlide].description}
-              </p>
-            </div>
-
-            <div className="flex justify-center mb-8">
-              {slides.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 mx-1 rounded-full transition-all duration-300 ${
-                    index === currentSlide
-                      ? "bg-nihongo-red w-8"
-                      : "bg-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-
-            <Button
-              onClick={handleNext}
-              className="w-full bg-nihongo-red hover:bg-nihongo-red/90 text-white font-semibold py-6 rounded-xl transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center group"
-            >
-              <span className="mr-2">{slides[currentSlide].buttonText}</span>
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </Button>
+            <h3 className="font-semibold mb-1">Learn Hiragana</h3>
+            <p className="text-gray-600 text-sm">Master the basic Japanese alphabet</p>
           </div>
-        </Card>
+          
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-nihongo-blue/10 rounded-full flex items-center justify-center mb-3">
+              <span className="text-nihongo-blue text-2xl">語</span>
+            </div>
+            <h3 className="font-semibold mb-1">Build Vocabulary</h3>
+            <p className="text-gray-600 text-sm">Learn practical words and phrases</p>
+          </div>
+          
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-16 bg-nihongo-gold/10 rounded-full flex items-center justify-center mb-3">
+              <span className="text-nihongo-gold text-2xl">文</span>
+            </div>
+            <h3 className="font-semibold mb-1">Practice Speaking</h3>
+            <p className="text-gray-600 text-sm">Gain confidence in conversations</p>
+          </div>
+        </div>
       </div>
+      
+      <footer className="pb-4 pt-8 text-center text-gray-500 text-sm">
+        <p>© {new Date().getFullYear()} NihonGo. Japanese learning made simple.</p>
+      </footer>
     </div>
   );
 };
