@@ -7,7 +7,8 @@ export interface Unit {
   description: string;
   order_index: number;
   is_locked: boolean;
-  progress?: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Lesson {
@@ -18,7 +19,8 @@ export interface Lesson {
   order_index: number;
   estimated_time: string;
   xp_reward: number;
-  is_completed?: boolean;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Vocabulary {
@@ -28,9 +30,11 @@ export interface Vocabulary {
   hiragana: string;
   romaji: string;
   english: string;
-  example_sentence: string | null;
+  example_sentence?: string | null;
   category: string;
   difficulty: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Hiragana {
@@ -42,6 +46,8 @@ export interface Hiragana {
   example_word_meaning: string;
   group_name: string;
   order_index: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Exercise {
@@ -51,10 +57,12 @@ export interface Exercise {
   question: string;
   options: any;
   correct_answer: string;
-  japanese: string | null;
-  romaji: string | null;
+  japanese?: string | null;
+  romaji?: string | null;
   xp_reward: number;
   order_index: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface GrammarPattern {
@@ -63,6 +71,8 @@ export interface GrammarPattern {
   explanation: string;
   example_sentences: any;
   difficulty: number;
+  created_at?: string;
+  updated_at?: string;
 }
 
 const contentService = {

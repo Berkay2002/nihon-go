@@ -1,9 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame, Zap, BookOpen, Trophy, ArrowRight } from "lucide-react";
+import { Flame, Zap, BookOpen, Trophy, ArrowRight, CheckCircle2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
@@ -294,7 +293,7 @@ const Home = () => {
                         <div className="flex items-center">
                           {lesson.isCompleted && (
                             <div className="flex items-center bg-nihongo-green/10 px-2 py-1 rounded-full mr-2">
-                              <CheckCircle className="w-3 h-3 text-nihongo-green mr-1" />
+                              <CheckCircle2 className="w-3 h-3 text-nihongo-green mr-1" />
                               <span className="text-xs font-medium text-nihongo-green">
                                 {lesson.accuracy}%
                               </span>

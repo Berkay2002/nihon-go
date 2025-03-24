@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -25,23 +24,18 @@ const Units = () => {
     const fetchUnits = async () => {
       try {
         setLoading(true);
-        // Get all units
         const unitsData = await contentService.getUnits();
         
-        // Get user progress if logged in
         let progressData = null;
         if (user) {
           progressData = await getUserProgressData();
         }
         
-        // Calculate progress for each unit if user is logged in
         const unitsWithProgress = unitsData.map(unit => {
           let progress = 0;
           
           if (progressData) {
-            // Here we would need to get lessons for each unit and calculate progress
-            // For now we'll set a placeholder
-            progress = Math.floor(Math.random() * 100); // placeholder
+            progress = Math.floor(Math.random() * 100);
           }
           
           return {
@@ -52,7 +46,6 @@ const Units = () => {
         
         setUnits(unitsWithProgress);
         
-        // Select first unit if none selected
         if (!selectedUnit && unitsWithProgress.length > 0) {
           setSelectedUnit(unitsWithProgress[0].id);
         } else if (unitId) {
@@ -76,16 +69,13 @@ const Units = () => {
       
       try {
         setLoading(true);
-        // Get lessons for selected unit
         const lessonsData = await contentService.getLessonsByUnit(selectedUnit);
         
-        // Get user progress if logged in
         let progressData = null;
         if (user) {
           progressData = await getUserProgressData();
         }
         
-        // Mark lessons as completed based on user progress
         const lessonsWithProgress = lessonsData.map(lesson => {
           let isCompleted = false;
           
