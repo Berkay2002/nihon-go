@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -13,12 +14,15 @@ import {
 } from "@/components/home";
 import { GuestMessage } from "@/components/shared/GuestMessage";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { toast } from "@/components/ui/use-toast";
+import { AlertCircle } from "lucide-react";
 
 const Home = () => {
   const navigate = useNavigate();
   const { user, isLoading: authLoading, isGuest, profile } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState({
     streak: 0,
     level: 1,
@@ -30,17 +34,45 @@ const Home = () => {
   });
 
   useEffect(() => {
+    // Set a loading timeout to prevent infinite loading
+    const loadingTimeoutId = setTimeout(() => {
+      if (loading) {
+        setLoading(false);
+        setError("Loading took too long. Please refresh the page.");
+        toast.error("Loading data failed", {
+          description: "Please refresh the page or try again later.",
+        });
+      }
+    }, 10000); // 10 second timeout
+    
+    return () => clearTimeout(loadingTimeoutId);
+  }, [loading]);
+
+  useEffect(() => {
     const fetchUserData = async () => {
       if (authLoading) return;
       
       try {
         setLoading(true);
+        setError(null);
         
-        // Fetch streak and progress data
-        const [streakData, progressData] = await Promise.all([
-          getUserStreakData(),
-          getUserProgressData()
-        ]);
+        // Fetch streak and progress data with timeout safety
+        const fetchPromises = [
+          Promise.race([
+            getUserStreakData(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("Streak data fetch timeout")), 5000)
+            )
+          ]),
+          Promise.race([
+            getUserProgressData(),
+            new Promise((_, reject) => 
+              setTimeout(() => reject(new Error("Progress data fetch timeout")), 5000)
+            )
+          ])
+        ];
+        
+        const [streakData, progressData] = await Promise.all(fetchPromises);
         
         // Process user data based on auth status
         const processedData = await processUserData(user, isGuest, streakData, progressData);
@@ -48,7 +80,26 @@ const Home = () => {
         setLoading(false);
       } catch (error) {
         console.error("Error fetching user data:", error);
+        setError("Failed to load user data. Please try again.");
         setLoading(false);
+        
+        // Show fallback data for better UX
+        if (isGuest) {
+          setUserData({
+            streak: 1,
+            level: 1,
+            xp: 15,
+            totalXp: 15,
+            dailyGoal: 50,
+            recentLessons: [],
+            nextLesson: {
+              id: "demo-lesson-1",
+              title: "Introduction to Japanese",
+              unitName: "Basics",
+              xp_reward: 10
+            }
+          });
+        }
       }
     };
     
@@ -95,8 +146,17 @@ const Home = () => {
       dailyGoal: streakData?.daily_goal || 50,
       // These would be processed from progressData and contentService
       recentLessons: [], // In a real implementation, this would be filled with actual data
-      nextLesson: null // In a real implementation, this would be determined based on progress
+      nextLesson: {
+        id: "demo-lesson-1",
+        title: "Introduction to Japanese",
+        unitName: "Basics",
+        xp_reward: 10
+      } // Fallback lesson to prevent empty states
     };
+  };
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   return (
@@ -107,7 +167,21 @@ const Home = () => {
       />
 
       {loading ? (
-        <LoadingSpinner />
+        <div className="py-8">
+          <LoadingSpinner />
+          <p className="text-center text-muted-foreground mt-4">Loading your progress...</p>
+        </div>
+      ) : error ? (
+        <Card className="my-8 border-red-200">
+          <CardContent className="pt-6 flex flex-col items-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
+            <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
+            <p className="text-center text-muted-foreground mb-4">{error}</p>
+            <Button onClick={handleRefresh} className="bg-nihongo-blue hover:bg-nihongo-blue/90">
+              Refresh
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <>
           {isGuest && <GuestMessage navigate={navigate} />}

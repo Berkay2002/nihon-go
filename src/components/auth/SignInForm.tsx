@@ -28,7 +28,7 @@ const SignInForm = () => {
         toast.error("Sign in is taking too long", {
           description: "Please try again or check your internet connection",
         });
-      }, 10000); // 10 seconds timeout
+      }, 8000); // Reduced from 10 to 8 seconds for faster feedback
     }
     
     return () => {
@@ -49,8 +49,10 @@ const SignInForm = () => {
     try {
       setLocalLoading(true);
       await signIn(email, password);
+      // Only navigate if successful (navigation actually happens in AuthProvider)
     } catch (error) {
       // Error is handled in the Auth provider
+      console.error("Sign in form error:", error);
       setLocalLoading(false);
     }
   };
