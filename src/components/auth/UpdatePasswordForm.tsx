@@ -1,18 +1,35 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 
 const UpdatePasswordForm = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Handle error query parameters that might be present after redirect
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
+    
+    if (error) {
+      toast.error("Password reset link error", {
+        description: errorDescription || "The password reset link is invalid or has expired. Please request a new one.",
+      });
+      // Redirect to reset password tab after a short delay
+      setTimeout(() => {
+        navigate("/auth?tab=reset");
+      }, 2000);
+    }
+  }, [searchParams, navigate]);
 
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,6 +37,13 @@ const UpdatePasswordForm = () => {
     if (password !== confirmPassword) {
       toast.error("Passwords don't match", {
         description: "Please make sure both passwords match",
+      });
+      return;
+    }
+
+    if (password.length < 6) {
+      toast.error("Password too short", {
+        description: "Password must be at least 6 characters long",
       });
       return;
     }
