@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "react-router-dom";
@@ -5,8 +6,6 @@ import AuthContainer from "@/components/auth/AuthContainer";
 import AuthCard from "@/components/auth/AuthCard";
 import SignInForm from "@/components/auth/SignInForm";
 import SignUpForm from "@/components/auth/SignUpForm";
-import GuestModeButton from "@/components/auth/GuestModeButton";
-import AuthDivider from "@/components/auth/AuthDivider";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import UpdatePasswordForm from "@/components/auth/UpdatePasswordForm";
 import { toast } from "@/components/ui/use-toast";
@@ -112,13 +111,6 @@ const Auth = () => {
     processUrl();
   }, [tabParam, showResetForm, searchParams]);
 
-  const authCardFooter = (
-    <>
-      <AuthDivider />
-      <GuestModeButton />
-    </>
-  );
-
   if (processingAuthLink) {
     return (
       <AuthContainer>
@@ -195,7 +187,6 @@ const Auth = () => {
           <AuthCard 
             title="Sign In" 
             description="Enter your username or email and password to sign in"
-            footer={authCardFooter}
           >
             <SignInForm />
           </AuthCard>
@@ -205,7 +196,6 @@ const Auth = () => {
           <AuthCard 
             title="Sign Up" 
             description="Create a new account to start learning Japanese"
-            footer={authCardFooter}
           >
             <SignUpForm />
           </AuthCard>

@@ -9,10 +9,9 @@ export type AuthContextType = {
   isLoading: boolean;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signIn: (identifier: string, password: string) => Promise<void>;
-  signInAsGuest: () => Promise<void>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
-  isGuest: boolean;
+  isGuest: boolean; // Keeping this for backward compatibility but will always be false
 };
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

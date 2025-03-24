@@ -9,16 +9,16 @@ import { TimeoutError } from "./shared/TimeoutError";
 import { toast } from "sonner";
 
 const Layout = () => {
-  const { isAuthenticated, isLoading, isGuest } = useAuth();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const [authTimeout, setAuthTimeout] = useState(false);
   const [seedingAttempted, setSeedingAttempted] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !isGuest) {
+    if (!isLoading && !isAuthenticated) {
       navigate("/auth");
     }
-  }, [isAuthenticated, isLoading, isGuest, navigate]);
+  }, [isAuthenticated, isLoading, navigate]);
 
   // Set a timeout for auth loading
   useEffect(() => {
@@ -54,10 +54,10 @@ const Layout = () => {
       }
     };
     
-    if (!isLoading && (isAuthenticated || isGuest)) {
+    if (!isLoading && isAuthenticated) {
       initializeApp();
     }
-  }, [isLoading, isAuthenticated, isGuest, seedingAttempted]);
+  }, [isLoading, isAuthenticated, seedingAttempted]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -86,7 +86,7 @@ const Layout = () => {
     );
   }
 
-  // If authenticated or in guest mode, show the app
+  // If authenticated, show the app
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 pb-16">

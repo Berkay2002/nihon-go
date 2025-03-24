@@ -13,7 +13,6 @@ export function useAuthService() {
   const [profile, setProfile] = useState<{ username: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [authLoading, setAuthLoading] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
   const navigate = useNavigate();
 
   // Initialize authentication session
@@ -47,12 +46,6 @@ export function useAuthService() {
           setProfile(profileData);
         } catch (error) {
           console.error("Error fetching profile:", error);
-        }
-      } else {
-        // Check if the user was previously in guest mode
-        const wasInGuestMode = localStorage.getItem('guestMode') === 'true';
-        if (wasInGuestMode && window.location.pathname !== '/') {
-          return { showGuestDialog: true };
         }
       }
       
@@ -115,45 +108,10 @@ export function useAuthService() {
     // Note: We don't set loading to false on success because the auth state change will trigger a redirect
   };
 
-  // Sign in as guest
-  const signInAsGuest = async () => {
-    try {
-      setAuthLoading(true);
-      setIsGuest(true);
-      localStorage.setItem('guestMode', 'true');
-      
-      // Set up a demo profile for guest users
-      setProfile({ username: "Guest" });
-      
-      toast.success("Welcome, Guest!", {
-        description: "You're exploring in demo mode. Sign up to track your progress!",
-      });
-      
-      navigate("/app");
-    } catch (error: any) {
-      toast.error("Error entering guest mode", {
-        description: error.message,
-      });
-      setIsGuest(false);
-      localStorage.removeItem('guestMode');
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
   // Sign out
   const signOut = async () => {
     try {
       setAuthLoading(true);
-      // Clear guest mode if active
-      if (isGuest) {
-        setIsGuest(false);
-        setProfile(null);
-        localStorage.removeItem('guestMode');
-        navigate("/auth");
-        setAuthLoading(false);
-        return;
-      }
       
       // Normal sign out for authenticated users
       const { error } = await supabase.auth.signOut();
@@ -174,14 +132,11 @@ export function useAuthService() {
     profile,
     isLoading,
     authLoading,
-    isGuest,
-    setIsGuest,
     setProfile,
     setSession,
     setUser,
     signUp,
     signIn,
-    signInAsGuest,
     signOut,
     initializeAuth
   };

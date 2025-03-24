@@ -3,9 +3,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthService } from "@/hooks/useAuthService";
-import GuestModeDialog from "@/components/auth/GuestModeDialog";
 import { toast } from "sonner";
 import { baseService } from "@/services/api/baseService";
+import { fetchUserProfile } from "@/lib/auth-utils";
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const {
@@ -14,19 +14,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     profile,
     isLoading,
     authLoading,
-    isGuest,
-    setIsGuest,
     setProfile,
     setSession,
     setUser,
     signUp,
     signIn,
-    signInAsGuest,
     signOut,
     initializeAuth
   } = useAuthService();
   
-  const [showGuestDialog, setShowGuestDialog] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,16 +48,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               toast.success("Signed in successfully", {
                 description: "Welcome back!",
               });
-              setIsGuest(false);
-              localStorage.removeItem('guestMode');
               setAuthError(null);
             } else if (event === 'SIGNED_OUT') {
               toast.success("Signed out", {
                 description: "You have been signed out.",
               });
               setProfile(null);
-              setIsGuest(false);
-              localStorage.removeItem('guestMode');
             } else if (event === 'PASSWORD_RECOVERY') {
               // Don't redirect or sign out on password recovery events
               console.log("Password recovery event detected");
@@ -70,13 +62,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         );
 
         // THEN check for existing session with improved error handling
-        const { showGuestDialog: shouldShowGuestDialog } = await baseService.retryWithBackoff(
+        await baseService.retryWithBackoff(
           () => initializeAuth(),
           3,  // 3 retries
           500  // Start with 500ms delay
         );
         
-        setShowGuestDialog(shouldShowGuestDialog);
         return () => subscription.unsubscribe();
       } catch (error) {
         console.error("Failed to initialize auth after retries:", error);
@@ -89,12 +80,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     setupAuthListener();
   }, []);
-
-  // Handle continuing as guest from dialog
-  const handleContinueAsGuest = () => {
-    signInAsGuest();
-    setShowGuestDialog(false);
-  };
 
   // If there's an authentication error, show it in a more user-friendly way
   if (authError) {
@@ -129,15 +114,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               >
                 Refresh Page
               </button>
-              <button
-                onClick={() => {
-                  setAuthError(null);
-                  signInAsGuest();
-                }}
-                className="border border-gray-300 px-4 py-2 rounded hover:bg-gray-50"
-              >
-                Continue as Guest
-              </button>
             </div>
           </div>
         </div>
@@ -153,23 +129,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         profile,
         isLoading,
         isAuthenticated: !!session,
-        isGuest,
+        isGuest: false,
         signUp,
         signIn,
-        signInAsGuest,
         signOut,
       }}
     >
       {children}
-      
-      <GuestModeDialog 
-        open={showGuestDialog} 
-        onOpenChange={setShowGuestDialog}
-        onContinueAsGuest={handleContinueAsGuest}
-      />
     </AuthContext.Provider>
   );
 };
-
-// Fix missing imports at the top
-import { fetchUserProfile } from "@/lib/auth-utils";
