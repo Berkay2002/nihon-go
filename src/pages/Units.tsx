@@ -1,24 +1,33 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { ChevronLeft, ChevronRight, Book, Lock, Check } from "lucide-react";
-import { useToast } from "sonner";
+import { toast } from "sonner";
 import contentService, { Unit, Lesson } from "@/services/contentService";
-import userProgressService, { useUserProgress } from "@/services/userProgressService";
+import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
+
+// Extend the Unit and Lesson types with UI-specific properties
+interface UnitWithProgress extends Unit {
+  progress?: number;
+}
+
+interface LessonWithProgress extends Lesson {
+  is_completed?: boolean;
+}
 
 const Units = () => {
   const navigate = useNavigate();
   const { unitId } = useParams<{ unitId: string }>();
   const [selectedUnit, setSelectedUnit] = useState<string>(unitId || "");
-  const [units, setUnits] = useState<Unit[]>([]);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [units, setUnits] = useState<UnitWithProgress[]>([]);
+  const [lessons, setLessons] = useState<LessonWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { getUserProgressData } = useUserProgress();
-  const toast = useToast();
 
   useEffect(() => {
     const fetchUnits = async () => {
@@ -61,7 +70,7 @@ const Units = () => {
     };
     
     fetchUnits();
-  }, [unitId, user, getUserProgressData, toast, selectedUnit]);
+  }, [unitId, user, getUserProgressData, selectedUnit]);
   
   useEffect(() => {
     const fetchLessons = async () => {
@@ -100,7 +109,7 @@ const Units = () => {
     };
     
     fetchLessons();
-  }, [selectedUnit, user, getUserProgressData, toast]);
+  }, [selectedUnit, user, getUserProgressData]);
 
   const currentUnit = units.find(unit => unit.id === selectedUnit);
 
