@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { LessonCard, LessonCardSkeleton } from "./LessonCard";
 import { NavigateFunction } from "react-router-dom";
 
@@ -21,7 +20,6 @@ interface LessonsListProps {
   lessons: Lesson[];
   loading: boolean;
   error: string | null;
-  isGuest: boolean;
   navigate: NavigateFunction;
   handleLessonClick: (lesson: Lesson) => void;
 }
@@ -30,7 +28,6 @@ export const LessonsList: React.FC<LessonsListProps> = ({
   lessons,
   loading,
   error,
-  isGuest,
   navigate,
   handleLessonClick
 }) => {
@@ -62,21 +59,9 @@ export const LessonsList: React.FC<LessonsListProps> = ({
         <LessonCard 
           key={lesson.id}
           lesson={lesson}
-          isGuest={isGuest}
           onClick={() => handleLessonClick(lesson)}
         />
       ))}
-
-      {isGuest && (
-        <div className="mt-6">
-          <Button 
-            className="w-full bg-nihongo-red hover:bg-nihongo-red/90"
-            onClick={() => navigate('/auth?tab=signup')}
-          >
-            Sign Up to Unlock All Lessons
-          </Button>
-        </div>
-      )}
     </div>
   );
 };

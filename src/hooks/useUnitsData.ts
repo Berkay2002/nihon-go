@@ -23,7 +23,7 @@ export const useUnitsData = (unitId?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingTimeout, setLoadingTimeout] = useState(false);
-  const { user, isGuest } = useAuth();
+  const { user } = useAuth();
   const { getUserProgressData } = useUserProgress();
 
   // Add a timeout to prevent infinite loading
@@ -48,48 +48,7 @@ export const useUnitsData = (unitId?: string) => {
       setError(null);
       setLoadingTimeout(false);
       
-      // For guest users, provide demo data instead of fetching from the database
-      if (isGuest) {
-        const demoUnits: UnitWithProgress[] = [
-          {
-            id: "demo-unit-1",
-            name: "Basics",
-            description: "Essential Japanese phrases and greetings",
-            order_index: 1,
-            is_locked: false,
-            progress: 10
-          },
-          {
-            id: "demo-unit-2",
-            name: "Greetings",
-            description: "Learn how to say hello and introduce yourself",
-            order_index: 2,
-            is_locked: true,
-            progress: 0
-          },
-          {
-            id: "demo-unit-3",
-            name: "Food",
-            description: "Learn vocabulary for ordering food and drinks",
-            order_index: 3,
-            is_locked: true,
-            progress: 0
-          }
-        ];
-        
-        setUnits(demoUnits);
-        
-        if (!selectedUnit && demoUnits.length > 0) {
-          setSelectedUnit(demoUnits[0].id);
-        } else if (unitId) {
-          setSelectedUnit(unitId);
-        }
-        
-        setLoading(false);
-        return;
-      }
-      
-      // Use Promise.race to add timeout for real data fetch
+      // Use Promise.race to add timeout for data fetch
       const unitsDataPromise = Promise.race([
         contentService.getUnits(),
         new Promise<Unit[]>((_, reject) => 
@@ -109,12 +68,30 @@ export const useUnitsData = (unitId?: string) => {
         }
       }
       
-      const unitsWithProgress = unitsData.map((unit, index) => {
+      const unitsWithProgress = unitsData.map((unit) => {
         let progress = 0;
         
         if (user && progressData) {
-          // Calculate real progress for authenticated users
-          progress = Math.floor(Math.random() * 100);
+          // Calculate actual progress based on completed lessons for this unit
+          // First get all lessons for this unit
+          contentService.getLessonsByUnit(unit.id)
+            .then(unitLessons => {
+              if (unitLessons.length > 0) {
+                // Get completed lessons for this unit
+                const lessonIds = unitLessons.map(lesson => lesson.id);
+                const completedLessons = progressData.filter(
+                  p => lessonIds.includes(p.lesson_id) && p.is_completed
+                );
+                
+                // Calculate percentage
+                if (lessonIds.length > 0) {
+                  progress = Math.floor((completedLessons.length / lessonIds.length) * 100);
+                }
+              }
+            })
+            .catch(err => {
+              console.error("Error getting lessons for progress calculation:", err);
+            });
         }
         
         return {
@@ -162,56 +139,6 @@ export const useUnitsData = (unitId?: string) => {
       setLoading(true);
       setError(null);
       
-      // For guest users, provide demo data instead of fetching from the database
-      if (isGuest) {
-        // Simulate demo lessons based on the selected unit
-        if (selectedUnit === "demo-unit-1") {
-          const demoLessons: LessonWithProgress[] = [
-            {
-              id: "demo-lesson-1",
-              unit_id: "demo-unit-1",
-              title: "Introduction to Hiragana",
-              description: "Learn the basics of the Japanese writing system",
-              order_index: 1,
-              estimated_time: "10 minutes",
-              xp_reward: 10,
-              is_completed: false,
-              is_locked: false
-            },
-            {
-              id: "demo-lesson-2",
-              unit_id: "demo-unit-1",
-              title: "Basic Phrases",
-              description: "Essential phrases for beginners",
-              order_index: 2,
-              estimated_time: "15 minutes",
-              xp_reward: 15,
-              is_completed: false,
-              is_locked: true
-            }
-          ];
-          setLessons(demoLessons);
-        } else {
-          // For any other unit in demo mode, show locked content
-          setLessons([
-            {
-              id: "demo-locked",
-              unit_id: selectedUnit,
-              title: "Locked Content",
-              description: "Sign up to unlock this content",
-              order_index: 1,
-              estimated_time: "Unknown",
-              xp_reward: 0,
-              is_completed: false,
-              is_locked: true
-            }
-          ]);
-        }
-        
-        setLoading(false);
-        return;
-      }
-      
       // Use Promise.race to add timeout for real data fetch
       const lessonsDataPromise = Promise.race([
         contentService.getLessonsByUnit(selectedUnit),
@@ -234,12 +161,23 @@ export const useUnitsData = (unitId?: string) => {
       
       const lessonsWithProgress = lessonsData.map((lesson, index) => {
         let isCompleted = false;
-        let isLocked = false;
+        let isLocked = index > 0; // Only first lesson is unlocked by default
         
         if (user && progressData) {
-          // Real completion status for authenticated users
+          // Get completion status from user progress data
           const lessonProgress = progressData.find(p => p.lesson_id === lesson.id);
           isCompleted = lessonProgress?.is_completed || false;
+          
+          // Unlock the next lesson if the previous one is completed
+          if (index > 0) {
+            const previousLesson = lessonsData[index - 1];
+            const previousLessonProgress = progressData.find(
+              p => p.lesson_id === previousLesson.id
+            );
+            isLocked = !(previousLessonProgress?.is_completed || false);
+          } else {
+            isLocked = false; // First lesson is always unlocked
+          }
         }
         
         return {
@@ -275,11 +213,11 @@ export const useUnitsData = (unitId?: string) => {
 
   useEffect(() => {
     fetchUnits();
-  }, [unitId, user, getUserProgressData, isGuest]);
+  }, [unitId, user, getUserProgressData]);
   
   useEffect(() => {
     fetchLessons();
-  }, [selectedUnit, user, getUserProgressData, isGuest]);
+  }, [selectedUnit, user, getUserProgressData]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -294,7 +232,6 @@ export const useUnitsData = (unitId?: string) => {
     error,
     loadingTimeout,
     currentUnit: units.find(unit => unit.id === selectedUnit),
-    isGuest,
     handleRefresh,
     fetchUnits,
     fetchLessons

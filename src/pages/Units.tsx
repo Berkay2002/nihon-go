@@ -1,6 +1,6 @@
 
 import { useNavigate, useParams } from "react-router-dom";
-import { ErrorMessage, GuestMessage } from "@/components/units";
+import { ErrorMessage } from "@/components/units";
 import { UnitsList } from "@/components/units/UnitsList";
 import { UnitsHeader } from "@/components/units/UnitsHeader";
 import { TimeoutError } from "@/components/units/TimeoutError";
@@ -19,7 +19,6 @@ const Units = () => {
     error,
     loadingTimeout,
     currentUnit,
-    isGuest,
     handleRefresh,
     fetchUnits,
     fetchLessons
@@ -28,8 +27,6 @@ const Units = () => {
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <UnitsHeader navigate={navigate} />
-
-      {isGuest && <GuestMessage navigate={navigate} />}
       
       {loadingTimeout ? (
         <TimeoutError onRefresh={handleRefresh} />
@@ -51,7 +48,6 @@ const Units = () => {
             lessons={lessons}
             loading={loading}
             error={error}
-            isGuest={isGuest}
             navigate={navigate}
           />
         </>

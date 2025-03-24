@@ -18,11 +18,10 @@ interface Lesson {
 
 interface LessonCardProps {
   lesson: Lesson;
-  isGuest: boolean;
   onClick: () => void;
 }
 
-export const LessonCard: React.FC<LessonCardProps> = ({ lesson, isGuest, onClick }) => {
+export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
   return (
     <Card 
       key={lesson.id} 
@@ -50,8 +49,8 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, isGuest, onClick
             <div>
               <h3 className="font-semibold">{lesson.title}</h3>
               <p className="text-xs text-muted-foreground">
-                {lesson.is_locked && isGuest ? 
-                  "Locked in demo mode" : 
+                {lesson.is_locked ? 
+                  "Complete previous lessons to unlock" : 
                   `Earn ${lesson.xp_reward} XP`}
               </p>
             </div>

@@ -13,7 +13,7 @@ import {
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, isGuest, profile } = useAuth();
+  const { user, isLoading: authLoading, profile } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
   const [loading, setLoading] = useState(true);
   const [longLoading, setLongLoading] = useState(false);
@@ -75,7 +75,7 @@ const Home = () => {
       if (shortTimeoutId) window.clearTimeout(shortTimeoutId);
       if (longTimeoutId) window.clearTimeout(longTimeoutId);
     };
-  }, [loading, error, isGuest]);
+  }, [loading, error]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -154,7 +154,7 @@ const Home = () => {
     };
     
     fetchUserData();
-  }, [user, authLoading, getUserStreakData, getUserProgressData, isGuest]);
+  }, [user, authLoading, getUserStreakData, getUserProgressData]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -165,7 +165,6 @@ const Home = () => {
     return (
       <LoadingState
         username={profile?.username || user?.user_metadata?.username || "Friend"}
-        isGuest={isGuest}
         longLoading={longLoading}
         handleRefresh={handleRefresh}
       />
@@ -176,7 +175,6 @@ const Home = () => {
     return (
       <ErrorState
         username={profile?.username || user?.user_metadata?.username || "Friend"}
-        isGuest={isGuest}
         error={error}
         handleRefresh={handleRefresh}
       />
@@ -186,7 +184,6 @@ const Home = () => {
   return (
     <HomeContent
       username={profile?.username || user?.user_metadata?.username || "Friend"}
-      isGuest={isGuest}
       userData={userData}
       navigate={navigate}
     />
