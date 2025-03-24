@@ -192,7 +192,14 @@ const seedDataService = {
       
       if (!unitSeedingRequired) {
         console.log('Unit seeding not required, units already exist');
-        return;
+        
+        // Get existing units to use for lesson seeding
+        const { data: existingUnits } = await supabase
+          .from('units')
+          .select('id, name')
+          .order('order_index');
+          
+        return existingUnits;
       }
       
       // Seed units
@@ -242,7 +249,7 @@ const seedDataService = {
       
       if (!lessonSeedingRequired) {
         console.log('Lesson seeding not required, lessons already exist');
-        return;
+        return true;
       }
       
       // Get all units to seed lessons for
@@ -253,7 +260,8 @@ const seedDataService = {
       
       if (unitsError || !units || units.length === 0) {
         console.error('Error getting units:', unitsError);
-        return;
+        toast.error("No units found to create lessons for");
+        return false;
       }
       
       console.log('Found units for lesson seeding:', units);
@@ -289,109 +297,307 @@ const seedDataService = {
       
       const seededLessons = await seedDataService.seedLessons(unitId, lessons);
       
-      if (seededLessons && seededLessons.length > 0) {
-        const introLessonId = seededLessons[0].id;
+      if (!seededLessons || seededLessons.length === 0) {
+        console.error('Failed to seed lessons');
+        toast.error("Failed to create lessons");
+        return false;
+      }
+      
+      console.log('Successfully seeded lessons:', seededLessons);
+      
+      // Seed vocabulary and exercises for each lesson
+      for (const lesson of seededLessons) {
+        // Different vocabulary for each lesson
+        let vocabulary = [];
         
-        // Seed vocabulary for the introduction lesson
-        const vocabulary = [
-          {
-            japanese: "こんにちは",
-            hiragana: "こんにちは",
-            romaji: "konnichiwa",
-            english: "Hello",
-            category: "Greetings",
-            difficulty: 1
-          },
-          {
-            japanese: "はじめまして",
-            hiragana: "はじめまして",
-            romaji: "hajimemashite",
-            english: "Nice to meet you",
-            category: "Greetings",
-            difficulty: 2
-          },
-          {
-            japanese: "私",
-            hiragana: "わたし",
-            romaji: "watashi",
-            english: "I/me",
-            category: "Pronouns",
-            difficulty: 1
-          },
-          {
-            japanese: "です",
-            hiragana: "です",
-            romaji: "desu",
-            english: "am/is",
-            category: "Verb",
-            difficulty: 1
-          }
-        ];
-        
-        await seedDataService.seedVocabulary(introLessonId, vocabulary);
-        
-        // Seed exercises for the introduction lesson
-        const exercises = [
-          {
-            type: "multiple_choice",
-            question: "What does 'こんにちは' mean?",
-            options: JSON.stringify(["Hello", "Goodbye", "Good morning", "Thank you"]),
-            correct_answer: "Hello",
-            japanese: "こんにちは",
-            romaji: "konnichiwa",
-            xp_reward: 5,
-            order_index: 1
-          },
-          {
-            type: "multiple_choice",
-            question: "How do you say 'Nice to meet you' in Japanese?",
-            options: JSON.stringify(["さようなら", "ありがとう", "はじめまして", "おはよう"]),
-            correct_answer: "はじめまして",
-            japanese: "はじめまして",
-            romaji: "hajimemashite",
-            xp_reward: 5,
-            order_index: 2
-          },
-          {
-            type: "translation",
-            question: "Translate to English: 私はジョンです",
-            options: JSON.stringify(["My name is John", "I am John", "Hello John", "Thank you John"]),
-            correct_answer: "I am John",
-            japanese: "私はジョンです",
-            romaji: "watashi wa jon desu",
-            xp_reward: 5,
-            order_index: 3
-          }
-        ];
-        
-        await seedDataService.seedExercises(introLessonId, exercises);
-        
-        // Seed some basic lessons for other units too
-        for (let i = 1; i < units.length; i++) {
-          const unit = units[i];
-          const unitLessons = [
+        if (lesson.title === "Introduction") {
+          vocabulary = [
             {
-              title: `${unit.name} Basics`,
-              description: `Introduction to ${unit.name.toLowerCase()} in Japanese.`,
-              order_index: 1,
-              estimated_time: "5 min",
-              xp_reward: 10
+              japanese: "こんにちは",
+              hiragana: "こんにちは",
+              romaji: "konnichiwa",
+              english: "Hello",
+              category: "Greetings",
+              difficulty: 1
             },
             {
-              title: `Common ${unit.name}`,
-              description: `Learn common ${unit.name.toLowerCase()} in Japanese.`,
-              order_index: 2,
-              estimated_time: "7 min",
-              xp_reward: 15
+              japanese: "はじめまして",
+              hiragana: "はじめまして",
+              romaji: "hajimemashite",
+              english: "Nice to meet you",
+              category: "Greetings",
+              difficulty: 2
+            },
+            {
+              japanese: "私",
+              hiragana: "わたし",
+              romaji: "watashi",
+              english: "I/me",
+              category: "Pronouns",
+              difficulty: 1
+            },
+            {
+              japanese: "です",
+              hiragana: "です",
+              romaji: "desu",
+              english: "am/is",
+              category: "Verb",
+              difficulty: 1
             }
           ];
           
-          await seedDataService.seedLessons(unit.id, unitLessons);
+          // Exercises for the Introduction lesson
+          const exercises = [
+            {
+              type: "multiple_choice",
+              question: "What does 'こんにちは' mean?",
+              options: JSON.stringify(["Hello", "Goodbye", "Good morning", "Thank you"]),
+              correct_answer: "Hello",
+              japanese: "こんにちは",
+              romaji: "konnichiwa",
+              xp_reward: 5,
+              order_index: 1
+            },
+            {
+              type: "multiple_choice",
+              question: "How do you say 'Nice to meet you' in Japanese?",
+              options: JSON.stringify(["さようなら", "ありがとう", "はじめまして", "おはよう"]),
+              correct_answer: "はじめまして",
+              japanese: "はじめまして",
+              romaji: "hajimemashite",
+              xp_reward: 5,
+              order_index: 2
+            },
+            {
+              type: "translation",
+              question: "Translate to English: 私はジョンです",
+              options: JSON.stringify(["My name is John", "I am John", "Hello John", "Thank you John"]),
+              correct_answer: "I am John",
+              japanese: "私はジョンです",
+              romaji: "watashi wa jon desu",
+              xp_reward: 5,
+              order_index: 3
+            }
+          ];
+          
+          await seedDataService.seedVocabulary(lesson.id, vocabulary);
+          await seedDataService.seedExercises(lesson.id, exercises);
         }
-        
-        console.log('Initial seed data created successfully');
-        return true;
+        else if (lesson.title === "Basic Phrases") {
+          vocabulary = [
+            {
+              japanese: "ありがとう",
+              hiragana: "ありがとう",
+              romaji: "arigatou",
+              english: "Thank you",
+              category: "Greetings",
+              difficulty: 1
+            },
+            {
+              japanese: "さようなら",
+              hiragana: "さようなら",
+              romaji: "sayounara",
+              english: "Goodbye",
+              category: "Greetings",
+              difficulty: 1
+            },
+            {
+              japanese: "お願いします",
+              hiragana: "おねがいします",
+              romaji: "onegaishimasu",
+              english: "Please",
+              category: "Phrases",
+              difficulty: 2
+            },
+            {
+              japanese: "すみません",
+              hiragana: "すみません",
+              romaji: "sumimasen",
+              english: "Excuse me/I'm sorry",
+              category: "Phrases",
+              difficulty: 2
+            }
+          ];
+          
+          // Exercises for Basic Phrases
+          const exercises = [
+            {
+              type: "multiple_choice",
+              question: "What does 'ありがとう' mean?",
+              options: JSON.stringify(["Thank you", "Sorry", "Please", "Goodbye"]),
+              correct_answer: "Thank you",
+              japanese: "ありがとう",
+              romaji: "arigatou",
+              xp_reward: 5,
+              order_index: 1
+            },
+            {
+              type: "multiple_choice",
+              question: "How do you say 'Goodbye' in Japanese?",
+              options: JSON.stringify(["こんにちは", "ありがとう", "さようなら", "おはよう"]),
+              correct_answer: "さようなら",
+              japanese: "さようなら",
+              romaji: "sayounara",
+              xp_reward: 5,
+              order_index: 2
+            },
+            {
+              type: "translation",
+              question: "Translate to English: すみません",
+              options: JSON.stringify(["Thank you", "Excuse me/I'm sorry", "Please", "You're welcome"]),
+              correct_answer: "Excuse me/I'm sorry",
+              japanese: "すみません",
+              romaji: "sumimasen",
+              xp_reward: 5,
+              order_index: 3
+            }
+          ];
+          
+          await seedDataService.seedVocabulary(lesson.id, vocabulary);
+          await seedDataService.seedExercises(lesson.id, exercises);
+        }
+        else if (lesson.title === "Yes and No") {
+          vocabulary = [
+            {
+              japanese: "はい",
+              hiragana: "はい",
+              romaji: "hai",
+              english: "Yes",
+              category: "Basic",
+              difficulty: 1
+            },
+            {
+              japanese: "いいえ",
+              hiragana: "いいえ",
+              romaji: "iie",
+              english: "No",
+              category: "Basic",
+              difficulty: 1
+            },
+            {
+              japanese: "分かりません",
+              hiragana: "わかりません",
+              romaji: "wakarimasen",
+              english: "I don't understand",
+              category: "Phrases",
+              difficulty: 2
+            },
+            {
+              japanese: "大丈夫",
+              hiragana: "だいじょうぶ",
+              romaji: "daijoubu",
+              english: "It's okay/I'm fine",
+              category: "Phrases",
+              difficulty: 2
+            }
+          ];
+          
+          // Exercises for Yes and No
+          const exercises = [
+            {
+              type: "multiple_choice",
+              question: "What does 'はい' mean?",
+              options: JSON.stringify(["Yes", "No", "Maybe", "I don't know"]),
+              correct_answer: "Yes",
+              japanese: "はい",
+              romaji: "hai",
+              xp_reward: 5,
+              order_index: 1
+            },
+            {
+              type: "multiple_choice",
+              question: "How do you say 'No' in Japanese?",
+              options: JSON.stringify(["はい", "いいえ", "ありがとう", "すみません"]),
+              correct_answer: "いいえ",
+              japanese: "いいえ",
+              romaji: "iie",
+              xp_reward: 5,
+              order_index: 2
+            },
+            {
+              type: "translation",
+              question: "Translate to English: 分かりません",
+              options: JSON.stringify(["Yes, I understand", "No, thank you", "I don't understand", "It's okay"]),
+              correct_answer: "I don't understand",
+              japanese: "分かりません",
+              romaji: "wakarimasen",
+              xp_reward: 5,
+              order_index: 3
+            }
+          ];
+          
+          await seedDataService.seedVocabulary(lesson.id, vocabulary);
+          await seedDataService.seedExercises(lesson.id, exercises);
+        }
       }
+      
+      // Seed some basic lessons for other units too
+      for (let i = 1; i < units.length; i++) {
+        const unit = units[i];
+        const unitLessons = [
+          {
+            title: `${unit.name} Basics`,
+            description: `Introduction to ${unit.name.toLowerCase()} in Japanese.`,
+            order_index: 1,
+            estimated_time: "5 min",
+            xp_reward: 10
+          },
+          {
+            title: `Common ${unit.name}`,
+            description: `Learn common ${unit.name.toLowerCase()} in Japanese.`,
+            order_index: 2,
+            estimated_time: "7 min",
+            xp_reward: 15
+          }
+        ];
+        
+        const otherLessons = await seedDataService.seedLessons(unit.id, unitLessons);
+        
+        if (otherLessons && otherLessons.length > 0) {
+          // Add some basic vocabulary and exercises to these lessons too
+          for (const lesson of otherLessons) {
+            // Simple vocabulary for other lessons
+            const sampleVocab = [
+              {
+                japanese: "これ",
+                hiragana: "これ",
+                romaji: "kore",
+                english: "This",
+                category: "Basic",
+                difficulty: 1
+              },
+              {
+                japanese: "それ",
+                hiragana: "それ",
+                romaji: "sore",
+                english: "That",
+                category: "Basic",
+                difficulty: 1
+              }
+            ];
+            
+            // Simple exercises for other lessons
+            const sampleExercises = [
+              {
+                type: "multiple_choice",
+                question: `Sample question for ${lesson.title}`,
+                options: JSON.stringify(["Option A", "Option B", "Option C", "Option D"]),
+                correct_answer: "Option A",
+                japanese: "サンプル",
+                romaji: "sanpuru",
+                xp_reward: 5,
+                order_index: 1
+              }
+            ];
+            
+            await seedDataService.seedVocabulary(lesson.id, sampleVocab);
+            await seedDataService.seedExercises(lesson.id, sampleExercises);
+          }
+        }
+      }
+      
+      console.log('Initial seed data created successfully');
+      return true;
     } catch (error) {
       console.error('Error seeding initial lessons data:', error);
       return false;
@@ -402,7 +608,14 @@ const seedDataService = {
   seedInitialData: async () => {
     try {
       // First check and seed units if needed
-      await seedDataService.seedInitialUnits();
+      const units = await seedDataService.seedInitialUnits();
+      
+      if (!units) {
+        toast.error("Failed to create basic units", {
+          description: "Could not create the basic units structure."
+        });
+        return false;
+      }
       
       // Then check and seed lessons if needed
       const lessonSeeded = await seedDataService.seedInitialLessons();
@@ -411,9 +624,13 @@ const seedDataService = {
         toast.success("Demo lessons loaded successfully", {
           description: "Sample content has been created for you to explore."
         });
+        return true;
+      } else {
+        toast.error("Some lessons could not be created", {
+          description: "The database may be partially seeded."
+        });
+        return false;
       }
-      
-      return true;
     } catch (error) {
       console.error('Error seeding initial data:', error);
       toast.error("Error loading demo lessons", {
