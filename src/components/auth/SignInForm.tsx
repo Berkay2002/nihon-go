@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const SignInForm = () => {
   const [email, setEmail] = useState("");
@@ -28,7 +28,7 @@ const SignInForm = () => {
         toast.error("Sign in is taking too long", {
           description: "Please try again or check your internet connection",
         });
-      }, 3000); // Reduced from 5 to 3 seconds for faster feedback
+      }, 2500); // Reduced from 3 to 2.5 seconds for faster feedback
     }
     
     return () => {
@@ -61,18 +61,22 @@ const SignInForm = () => {
     navigate("/auth?tab=reset");
   };
 
+  // Use email type for email-like inputs to optimize mobile keyboards
+  const inputType = email.includes('@') ? 'email' : 'text';
+
   return (
     <form onSubmit={handleSignIn} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="identifier">Username or Email</Label>
+        <Label htmlFor="identifier">Email</Label>
         <Input 
           id="identifier" 
-          type="text" 
-          placeholder="username or email" 
+          type={inputType}
+          placeholder="Your email address" 
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           disabled={isLoading}
           required
+          autoComplete="email"
         />
       </div>
       
@@ -85,6 +89,7 @@ const SignInForm = () => {
           onChange={(e) => setPassword(e.target.value)}
           disabled={isLoading}
           required
+          autoComplete="current-password"
         />
       </div>
       
@@ -108,7 +113,7 @@ const SignInForm = () => {
         {isLoading ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            Please wait
+            Signing in...
           </>
         ) : (
           "Sign In"

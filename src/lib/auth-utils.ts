@@ -1,6 +1,6 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
+import { baseService } from "@/services/api/baseService";
 
 /**
  * Fetch a user's profile from the database with optimized query
@@ -9,12 +9,15 @@ export const fetchUserProfile = async (userId: string) => {
   if (!userId) return null;
   
   try {
-    // Use a more targeted query with minimal columns
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('username')
-      .eq('id', userId)
-      .single();
+    // Use a faster, more direct query with the new index
+    const { data, error } = await baseService.executeWithTimeout(
+      () => supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', userId)
+        .single(),
+      2000
+    );
       
     if (error) {
       console.error('Error fetching profile:', error);
@@ -38,38 +41,42 @@ export const signInWithIdentifier = async (identifier: string, password: string)
 
   console.log(`Attempting to sign in with identifier: ${identifier.includes('@') ? 'email' : 'username'}`);
 
-  // Email is always preferred and faster, try it first
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email: identifier,
-    password,
-  });
+  // Use email directly when it's provided (faster path)
+  if (identifier.includes('@')) {
+    const { data, error } = await baseService.executeWithTimeout(
+      () => supabase.auth.signInWithPassword({
+        email: identifier,
+        password,
+      }),
+      5000,
+      "Authentication service timeout"
+    );
+    
+    if (error) throw error;
+    return data;
+  }
   
-  // If error and the identifier doesn't look like an email, try username
-  if (error && !identifier.includes('@')) {
-    console.log("Email sign-in failed, attempting username lookup");
-    try {
-      // Simplify the username lookup for faster processing
-      const { data: profiles, error: profileError } = await supabase
+  // If it's a username, try a more direct approach
+  try {
+    // Check if the username exists
+    const { data: profiles, error: profileError } = await baseService.executeWithTimeout(
+      () => supabase
         .from('profiles')
         .select('id')
         .eq('username', identifier)
-        .single();
-        
-      if (profileError || !profiles) {
-        throw new Error("Username not found");
-      }
+        .single(),
+      2000
+    );
       
-      // If username exists, instruct to use email
-      throw new Error("Please use your email to sign in instead of username");
-    } catch (usernameError: any) {
-      throw usernameError;
+    if (profileError || !profiles) {
+      throw new Error("Username not found");
     }
-  } else if (error) {
-    console.error("Authentication error:", error.message);
-    throw error;
+    
+    // Tell user to use email instead for faster login
+    throw new Error("Please use your email to sign in instead of username");
+  } catch (usernameError: any) {
+    throw usernameError;
   }
-  
-  return data;
 };
 
 /**

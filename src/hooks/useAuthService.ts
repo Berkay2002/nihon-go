@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -15,24 +15,20 @@ export function useAuthService() {
   const [authLoading, setAuthLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Initialize authentication session
-  const initializeAuth = async () => {
+  // Initialize authentication session with improved performance
+  const initializeAuth = useCallback(async () => {
     try {
-      // Set a timeout to prevent infinite loading
+      // Set a shorter timeout for authentication check
       const timeoutId = window.setTimeout(() => {
         setIsLoading(false);
         console.error("Session loading timed out");
         toast.error("Connection issue detected", {
           description: "Could not retrieve authentication status. Please refresh the page.",
         });
-      }, 3000); // Reduced to 3000ms for faster feedback
+      }, 2500); // Reduced to 2500ms for faster feedback
 
-      // Use optimized call to get session with shorter timeout
-      const { data: { session } } = await baseService.executeWithTimeout(
-        () => supabase.auth.getSession(),
-        3000,
-        "Authentication service timeout"
-      );
+      // Use direct call to get session without retries for initial load
+      const { data: { session } } = await supabase.auth.getSession();
       
       // Clear the timeout since we got a response
       clearTimeout(timeoutId);
@@ -57,7 +53,7 @@ export function useAuthService() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   // Sign up with email, password, and username
   const signUp = async (email: string, password: string, username: string) => {
@@ -74,56 +70,84 @@ export function useAuthService() {
     }
   };
 
-  // Sign in with email/username and password
+  // Sign in with email/username and password - optimized for performance
   const signIn = async (identifier: string, password: string) => {
+    let timeoutId: number | null = null;
+    
     try {
       setAuthLoading(true);
       
       // Set a timeout to prevent infinite loading
-      const timeoutId = window.setTimeout(() => {
+      timeoutId = window.setTimeout(() => {
         setAuthLoading(false);
         toast.error("Sign in timed out", {
           description: "The server is taking too long to respond. Please try again later.",
         });
-      }, 5000); // Reduced from 10000 to 5000ms
+      }, 4000); // Reduced to 4000ms
       
-      // Use retryWithBackoff with faster retries for better reliability
-      await baseService.retryWithBackoff(
-        () => signInWithIdentifier(identifier, password),
-        2, // Reduced number of retries for faster feedback
-        200 // Reduced from 300 to 200ms for faster initial retry
-      );
+      // Try to sign in directly without retries first (faster path)
+      await signInWithIdentifier(identifier, password);
       
       // Clear the timeout if sign in is successful
-      clearTimeout(timeoutId);
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = null;
       
-      navigate("/app");
+      // Don't navigate here - AuthProvider will handle this via listener
     } catch (error: any) {
       console.error("Sign in error:", error);
-      toast.error("Sign in failed", {
-        description: error.message || "Invalid credentials or server error",
-      });
-      setAuthLoading(false); // Make sure to set loading to false on error
+      
+      // Only try again for network-related errors
+      if (error.message.includes("network") || error.message.includes("fetch")) {
+        try {
+          // Single retry for network issues only
+          await baseService.retryWithBackoff(
+            () => signInWithIdentifier(identifier, password),
+            1, // Single retry
+            150 // Shorter delay
+          );
+        } catch (retryError: any) {
+          console.error("Sign in retry failed:", retryError);
+          toast.error("Sign in failed", {
+            description: retryError.message || "Invalid credentials or server error",
+          });
+          setAuthLoading(false);
+          return;
+        }
+      } else {
+        toast.error("Sign in failed", {
+          description: error.message || "Invalid credentials or server error",
+        });
+        setAuthLoading(false);
+      }
     }
-    // Note: We don't set loading to false on success because the auth state change will trigger a redirect
+    
+    // Navigate to app on success - this will only execute if there was no error
+    navigate("/app");
   };
 
-  // Sign out
+  // Sign out with improved reliability
   const signOut = async () => {
     try {
       setAuthLoading(true);
       
-      // Normal sign out for authenticated users
+      // Normal sign out
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
+      
+      // Don't wait for auth state change, just navigate
       navigate("/auth");
+      
+      // Reset state manually for immediate feedback
+      setSession(null);
+      setUser(null);
+      setProfile(null);
     } catch (error: any) {
       toast.error("Sign out failed", {
         description: error.message,
       });
+    } finally {
       setAuthLoading(false);
     }
-    // We don't set loading to false on successful signout as the auth state change will handle it
   };
 
   return {

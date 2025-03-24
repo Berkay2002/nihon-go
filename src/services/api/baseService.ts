@@ -15,7 +15,7 @@ export const baseService = {
    * @param timeoutMs Timeout in milliseconds
    * @param errorMessage Custom error message for timeout
    */
-  async executeWithTimeout(queryFn, timeoutMs = 3000, errorMessage = "Query timeout") {
+  async executeWithTimeout(queryFn, timeoutMs = 2500, errorMessage = "Query timeout") {
     try {
       // Create a promise that rejects after the timeout
       const timeoutPromise = new Promise((_, reject) => 
@@ -49,24 +49,30 @@ export const baseService = {
    * @param maxRetries Maximum number of retries
    * @param baseDelay Base delay in milliseconds
    */
-  async retryWithBackoff(fn, maxRetries = 2, baseDelay = 200) {
+  async retryWithBackoff(fn, maxRetries = 1, baseDelay = 150) {
     let lastError;
     
-    for (let attempt = 0; attempt < maxRetries; attempt++) {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
+        // For the first attempt, just run the function without delay
+        if (attempt === 0) {
+          return await fn();
+        }
+        
+        // For retries, add a small delay
+        const delay = baseDelay * attempt + Math.random() * 50;
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        console.log(`Retry attempt ${attempt} after ${delay}ms`);
         return await fn();
       } catch (error) {
-        console.log(`Attempt ${attempt + 1} failed, retrying...`, error);
+        console.log(`Attempt ${attempt} failed, ${attempt < maxRetries ? "retrying..." : "giving up."}`, error);
         lastError = error;
         
         // Only show toast on first failure
         if (attempt === 0 && !error.message.includes("timeout")) {
           toast.info("Retrying connection...");
         }
-        
-        // Linear backoff with minimal delay for faster retries
-        const delay = baseDelay * (attempt + 1) + Math.random() * 50;
-        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
     
