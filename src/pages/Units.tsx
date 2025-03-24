@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "@/components/ui/use-toast";
@@ -223,9 +222,7 @@ const Units = () => {
 
   const handleLessonClick = (lesson: LessonWithProgress) => {
     if (isGuest && lesson.is_locked) {
-      toast({
-        variant: "destructive",
-        title: "Feature locked in demo mode",
+      toast.error("Feature locked in demo mode", {
         description: "Create an account to unlock all lessons and track your progress."
       });
       return;
