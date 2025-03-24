@@ -93,3 +93,29 @@ export const handleSignUp = async (email: string, password: string, username: st
 
   return { success: true };
 };
+
+/**
+ * Reset password using email
+ */
+export const resetPassword = async (email: string, redirectUrl: string) => {
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: redirectUrl,
+  });
+  
+  if (error) throw error;
+  
+  return { success: true };
+};
+
+/**
+ * Update user's password
+ */
+export const updateUserPassword = async (newPassword: string) => {
+  const { error } = await supabase.auth.updateUser({
+    password: newPassword,
+  });
+  
+  if (error) throw error;
+  
+  return { success: true };
+};
