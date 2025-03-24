@@ -12,6 +12,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<{ username: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const navigate = useNavigate();
 
@@ -28,8 +29,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          const profileData = await fetchUserProfile(session.user.id);
-          setProfile(profileData);
+          try {
+            const profileData = await fetchUserProfile(session.user.id);
+            setProfile(profileData);
+          } catch (error) {
+            console.error("Error fetching profile:", error);
+          }
         }
         
         if (event === 'SIGNED_IN') {
@@ -50,24 +55,34 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const profileData = await fetchUserProfile(session.user.id);
-        setProfile(profileData);
+    const getInitialSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          try {
+            const profileData = await fetchUserProfile(session.user.id);
+            setProfile(profileData);
+          } catch (error) {
+            console.error("Error fetching profile:", error);
+          }
+        }
+      } catch (error) {
+        console.error("Error getting session:", error);
+      } finally {
+        setIsLoading(false);
       }
-      
-      setIsLoading(false);
-    });
+    };
 
+    getInitialSession();
     return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
     try {
-      setIsLoading(true);
+      setAuthLoading(true);
       await handleSignUp(email, password, username);
       navigate("/auth");
     } catch (error: any) {
@@ -75,27 +90,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         description: error.message,
       });
     } finally {
-      setIsLoading(false);
+      setAuthLoading(false);
     }
   };
 
   const signIn = async (identifier: string, password: string) => {
     try {
-      setIsLoading(true);
+      setAuthLoading(true);
       await signInWithIdentifier(identifier, password);
       navigate("/app");
     } catch (error: any) {
+      console.error("Sign in error:", error);
       toast.error("Sign in failed", {
-        description: error.message,
+        description: error.message || "Invalid credentials or server error",
       });
-    } finally {
-      setIsLoading(false);
+      setAuthLoading(false); // Make sure to set loading to false on error
     }
+    // Note: We don't set loading to false on success because the auth state change will trigger a redirect
   };
 
   const signInAsGuest = async () => {
     try {
-      setIsLoading(true);
+      setAuthLoading(true);
       setIsGuest(true);
       localStorage.setItem('guestMode', 'true');
       toast.success("Welcome, Guest!", {
@@ -109,18 +125,19 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsGuest(false);
       localStorage.removeItem('guestMode');
     } finally {
-      setIsLoading(false);
+      setAuthLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
-      setIsLoading(true);
+      setAuthLoading(true);
       // Clear guest mode if active
       if (isGuest) {
         setIsGuest(false);
         localStorage.removeItem('guestMode');
         navigate("/auth");
+        setAuthLoading(false);
         return;
       }
       
@@ -132,9 +149,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       toast.error("Sign out failed", {
         description: error.message,
       });
-    } finally {
-      setIsLoading(false);
+      setAuthLoading(false);
     }
+    // We don't set loading to false on successful signout as the auth state change will handle it
   };
 
   return (
