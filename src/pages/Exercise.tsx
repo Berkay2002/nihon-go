@@ -99,7 +99,15 @@ const Exercise = () => {
       <section className="mb-8">
         <Card className="border border-nihongo-blue/10 shadow-md mb-8">
           <CardContent className="p-6">
-            <h2 className="text-lg font-semibold mb-6">{currentExercise.question}</h2>
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-2">{currentExercise.question}</h2>
+              {/* Add romaji pronunciation when Japanese text is in the question */}
+              {currentExercise.question.includes("'") && (
+                <div className="text-sm text-gray-600 mb-4">
+                  <span className="font-medium">{currentExercise.romaji}</span> <span className="text-xs italic">(pronunciation)</span>
+                </div>
+              )}
+            </div>
             
             {currentExercise.type === "multiple_choice" && (
               <div className="space-y-3">
