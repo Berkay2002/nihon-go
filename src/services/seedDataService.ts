@@ -1,8 +1,76 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { baseService } from "./api/baseService";
 
 const seedDataService = {
+  // Get database status
+  getDatabaseStatus: async () => {
+    try {
+      // Check units
+      const unitsPromise = baseService.executeWithTimeout(
+        () => supabase.from('units').select('id', { count: 'exact' }).limit(0),
+        5000,
+        "Units query timeout"
+      );
+      
+      // Check lessons
+      const lessonsPromise = baseService.executeWithTimeout(
+        () => supabase.from('lessons').select('id', { count: 'exact' }).limit(0),
+        5000,
+        "Lessons query timeout"
+      );
+      
+      // Check vocabulary
+      const vocabularyPromise = baseService.executeWithTimeout(
+        () => supabase.from('vocabulary').select('id', { count: 'exact' }).limit(0),
+        5000,
+        "Vocabulary query timeout"
+      );
+      
+      // Check exercises
+      const exercisesPromise = baseService.executeWithTimeout(
+        () => supabase.from('exercises').select('id', { count: 'exact' }).limit(0),
+        5000,
+        "Exercises query timeout"
+      );
+      
+      // Execute all queries in parallel
+      const [unitsResult, lessonsResult, vocabularyResult, exercisesResult] = await Promise.all([
+        unitsPromise, lessonsPromise, vocabularyPromise, exercisesPromise
+      ]);
+      
+      // Prepare status data
+      const unitsCount = unitsResult.count || 0;
+      const lessonsCount = lessonsResult.count || 0;
+      const vocabularyCount = vocabularyResult.count || 0;
+      const exercisesCount = exercisesResult.count || 0;
+      
+      // Generate status message
+      let message = "";
+      if (unitsCount === 0) {
+        message = "No units found in database. Please seed the database.";
+      } else if (lessonsCount === 0) {
+        message = "Units exist but no lessons found. Please seed the database.";
+      } else if (vocabularyCount === 0 || exercisesCount === 0) {
+        message = "Lessons exist but vocabulary or exercises are missing. Consider reseeding the database.";
+      } else {
+        message = "Database is properly seeded with all required data.";
+      }
+      
+      return {
+        units: { exists: unitsCount > 0, count: unitsCount },
+        lessons: { exists: lessonsCount > 0, count: lessonsCount },
+        vocabulary: { exists: vocabularyCount > 0, count: vocabularyCount },
+        exercises: { exists: exercisesCount > 0, count: exercisesCount },
+        message
+      };
+    } catch (error) {
+      console.error('Error checking database status:', error);
+      throw error;
+    }
+  },
+
   // Seed lessons data
   seedLessons: async (unitId: string, lessons: any[]) => {
     try {

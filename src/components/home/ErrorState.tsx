@@ -6,6 +6,7 @@ import { AlertCircle, RefreshCw } from "lucide-react";
 import { HomeHeader } from "./HomeHeader";
 import seedDataService from "@/services/seedDataService";
 import { toast } from "sonner";
+import DatabaseDebugger from "@/components/debug/DatabaseDebugger";
 
 interface ErrorStateProps {
   username: string;
@@ -41,6 +42,8 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <HomeHeader username={username} isGuest={isGuest} />
+      
+      <DatabaseDebugger />
       
       <Card className="my-8 border-red-200">
         <CardContent className="pt-6 flex flex-col items-center">

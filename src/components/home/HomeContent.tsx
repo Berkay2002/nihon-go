@@ -7,6 +7,7 @@ import { ContinueLearningSection } from "./ContinueLearningSection";
 import { RecentLessonsSection } from "./RecentLessonsSection";
 import { GuestPromotion } from "./GuestPromotion";
 import { GuestMessage } from "@/components/shared/GuestMessage";
+import DatabaseDebugger from "@/components/debug/DatabaseDebugger";
 
 interface UserData {
   streak: number;
@@ -41,6 +42,8 @@ export const HomeContent: React.FC<HomeContentProps> = ({
       <HomeHeader username={username} isGuest={isGuest} />
       
       {isGuest && <GuestMessage navigate={navigate} />}
+      
+      <DatabaseDebugger />
       
       <StatsSection 
         streak={userData.streak} 
