@@ -4,6 +4,7 @@ import { Outlet, useNavigate } from "react-router-dom";
 import Navigation from "./Navigation";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import seedDataService from "@/services/seedDataService";
 
 const Layout = () => {
   const { isAuthenticated, isLoading, isGuest } = useAuth();
@@ -14,6 +15,20 @@ const Layout = () => {
       navigate("/auth");
     }
   }, [isAuthenticated, isLoading, isGuest, navigate]);
+
+  // Run seed data when the app loads
+  useEffect(() => {
+    const initializeApp = async () => {
+      try {
+        // Check if seed data is needed and create it
+        await seedDataService.seedInitialData();
+      } catch (error) {
+        console.error("Error initializing app data:", error);
+      }
+    };
+    
+    initializeApp();
+  }, []);
 
   // If still checking auth status, show loading
   if (isLoading) {

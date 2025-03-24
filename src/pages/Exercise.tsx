@@ -1,56 +1,57 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Zap, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import contentService, { Exercise as ExerciseType } from "@/services/contentService";
+import userProgressService, { useUserProgress, ExerciseResult } from "@/services/userProgressService";
+import { useAuth } from "@/hooks/useAuth";
 
 const Exercise = () => {
   const navigate = useNavigate();
-  const { exerciseId } = useParams<{ exerciseId: string }>();
+  const { lessonId, exerciseId } = useParams<{ lessonId: string; exerciseId: string }>();
+  const [exercises, setExercises] = useState<ExerciseType[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const { submitExerciseResult } = useUserProgress();
+  const [startTime, setStartTime] = useState<Date>(new Date());
 
-  // Mock data - would come from API in real app
-  const exercises = [
-    {
-      id: "1",
-      type: "multiple_choice",
-      question: "What does 'こんにちは' mean?",
-      options: ["Hello", "Goodbye", "Good morning", "Thank you"],
-      correctAnswer: "Hello",
-      japanese: "こんにちは",
-      romaji: "konnichiwa",
-      xpReward: 5,
-    },
-    {
-      id: "2",
-      type: "multiple_choice",
-      question: "How do you say 'Nice to meet you' in Japanese?",
-      options: ["さようなら", "ありがとう", "はじめまして", "おはよう"],
-      correctAnswer: "はじめまして",
-      japanese: "はじめまして",
-      romaji: "hajimemashite",
-      xpReward: 5,
-    },
-    {
-      id: "3",
-      type: "translation",
-      question: "Translate to English: 私はジョンです",
-      options: ["My name is John", "I am John", "Hello John", "Thank you John"],
-      correctAnswer: "I am John",
-      japanese: "私はジョンです",
-      romaji: "watashi wa jon desu",
-      xpReward: 5,
-    },
-  ];
+  useEffect(() => {
+    const fetchExercises = async () => {
+      if (!lessonId) return;
+      
+      try {
+        setLoading(true);
+        const exercisesData = await contentService.getExercisesByLesson(lessonId);
+        
+        if (exercisesData.length === 0) {
+          toast.error("No exercises found for this lesson");
+          navigate(`/app/lesson/${lessonId}`);
+          return;
+        }
+        
+        setExercises(exercisesData);
+        setLoading(false);
+        setStartTime(new Date()); // Reset timer when exercises load
+      } catch (error) {
+        console.error("Error fetching exercises:", error);
+        toast.error("Failed to load exercises");
+        setLoading(false);
+      }
+    };
+    
+    fetchExercises();
+  }, [lessonId, navigate]);
 
   const currentExercise = exercises[currentExerciseIndex];
-  const progress = ((currentExerciseIndex + 1) / exercises.length) * 100;
+  const progress = exercises.length > 0 ? ((currentExerciseIndex + 1) / exercises.length) * 100 : 0;
   
   const handleSelectAnswer = (answer: string) => {
     if (!isAnswerChecked) {
@@ -58,13 +59,37 @@ const Exercise = () => {
     }
   };
 
-  const handleCheckAnswer = () => {
-    if (selectedAnswer === null) return;
+  const handleCheckAnswer = async () => {
+    if (selectedAnswer === null || !currentExercise) return;
     
+    const isCorrect = selectedAnswer === currentExercise.correct_answer;
     setIsAnswerChecked(true);
-    if (selectedAnswer === currentExercise.correctAnswer) {
+    
+    if (isCorrect) {
       toast.success("Correct answer!");
-      setXpEarned(xpEarned + currentExercise.xpReward);
+      const newXp = xpEarned + currentExercise.xp_reward;
+      setXpEarned(newXp);
+      
+      // Calculate time spent on this exercise
+      const timeSpent = Math.floor((new Date().getTime() - startTime.getTime()) / 1000);
+      
+      // Submit result if user is logged in
+      if (user && lessonId) {
+        try {
+          const result: ExerciseResult = {
+            lessonId,
+            exerciseId: currentExercise.id,
+            isCorrect,
+            userAnswer: selectedAnswer,
+            timeSpent,
+            xpEarned: currentExercise.xp_reward
+          };
+          
+          await submitExerciseResult(result);
+        } catch (error) {
+          console.error("Error submitting exercise result:", error);
+        }
+      }
     } else {
       toast.error("Not quite right");
     }
@@ -75,11 +100,33 @@ const Exercise = () => {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setSelectedAnswer(null);
       setIsAnswerChecked(false);
+      setStartTime(new Date()); // Reset timer for next exercise
     } else {
       // Navigate to lesson complete screen
-      navigate(`/app/lesson-complete/1`);
+      navigate(`/app/lesson-complete/${lessonId}`);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="container max-w-md mx-auto px-4 pt-6 flex items-center justify-center h-[80vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nihongo-red"></div>
+      </div>
+    );
+  }
+
+  if (!currentExercise) {
+    return (
+      <div className="container max-w-md mx-auto px-4 pt-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No exercises found</h1>
+          <Button onClick={() => navigate(`/app/lesson/${lessonId}`)}>
+            Return to Lesson
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
@@ -101,8 +148,7 @@ const Exercise = () => {
           <CardContent className="p-6">
             <div className="mb-6">
               <h2 className="text-lg font-semibold mb-2">{currentExercise.question}</h2>
-              {/* Add romaji pronunciation when Japanese text is in the question */}
-              {currentExercise.question.includes("'") && (
+              {currentExercise.romaji && (
                 <div className="text-sm text-gray-600 mb-4">
                   <span className="font-medium">{currentExercise.romaji}</span> <span className="text-xs italic">(pronunciation)</span>
                 </div>
@@ -111,37 +157,40 @@ const Exercise = () => {
             
             {currentExercise.type === "multiple_choice" && (
               <div className="space-y-3">
-                {currentExercise.options.map((option, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className={`w-full justify-start py-6 px-4 h-auto text-left font-normal transition-all ${
-                      selectedAnswer === option
-                        ? isAnswerChecked
-                          ? option === currentExercise.correctAnswer
-                            ? "border-nihongo-green bg-nihongo-green/5 hover:bg-nihongo-green/5"
-                            : "border-nihongo-error bg-nihongo-error/5 hover:bg-nihongo-error/5"
-                          : "border-nihongo-blue bg-nihongo-blue/5 hover:bg-nihongo-blue/5"
-                        : "border-gray-200 hover:border-nihongo-blue/50"
-                    }`}
-                    onClick={() => handleSelectAnswer(option)}
-                    disabled={isAnswerChecked && option !== currentExercise.correctAnswer && option !== selectedAnswer}
-                  >
-                    <div className="flex items-center w-full justify-between">
-                      <span>{option}</span>
-                      {isAnswerChecked && option === currentExercise.correctAnswer && (
-                        <Check className="w-5 h-5 text-nihongo-green" />
-                      )}
-                      {isAnswerChecked && option === selectedAnswer && option !== currentExercise.correctAnswer && (
-                        <X className="w-5 h-5 text-nihongo-error" />
-                      )}
-                    </div>
-                  </Button>
-                ))}
+                {Array.isArray(currentExercise.options) ? (
+                  currentExercise.options.map((option, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className={`w-full justify-start py-6 px-4 h-auto text-left font-normal transition-all ${
+                        selectedAnswer === option
+                          ? isAnswerChecked
+                            ? option === currentExercise.correct_answer
+                              ? "border-nihongo-green bg-nihongo-green/5 hover:bg-nihongo-green/5"
+                              : "border-nihongo-error bg-nihongo-error/5 hover:bg-nihongo-error/5"
+                            : "border-nihongo-blue bg-nihongo-blue/5 hover:bg-nihongo-blue/5"
+                          : "border-gray-200 hover:border-nihongo-blue/50"
+                      }`}
+                      onClick={() => handleSelectAnswer(option)}
+                      disabled={isAnswerChecked && option !== currentExercise.correct_answer && option !== selectedAnswer}
+                    >
+                      <div className="flex items-center w-full justify-between">
+                        <span>{option}</span>
+                        {isAnswerChecked && option === currentExercise.correct_answer && (
+                          <Check className="w-5 h-5 text-nihongo-green" />
+                        )}
+                        {isAnswerChecked && option === selectedAnswer && option !== currentExercise.correct_answer && (
+                          <X className="w-5 h-5 text-nihongo-error" />
+                        )}
+                      </div>
+                    </Button>
+                  ))
+                ) : (
+                  <p className="text-red-500">Error: Options are not properly formatted</p>
+                )}
               </div>
             )}
 
-            {/* For translation exercises, using same UI as multiple choice for the MVP */}
             {currentExercise.type === "translation" && (
               <div className="space-y-3">
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -149,33 +198,37 @@ const Exercise = () => {
                   <p className="text-sm text-center font-medium">{currentExercise.romaji}</p>
                   <p className="text-xs text-muted-foreground text-center italic mt-1">pronunciation</p>
                 </div>
-                {currentExercise.options.map((option, index) => (
-                  <Button
-                    key={index}
-                    variant="outline"
-                    className={`w-full justify-start py-6 px-4 h-auto text-left font-normal transition-all ${
-                      selectedAnswer === option
-                        ? isAnswerChecked
-                          ? option === currentExercise.correctAnswer
-                            ? "border-nihongo-green bg-nihongo-green/5 hover:bg-nihongo-green/5"
-                            : "border-nihongo-error bg-nihongo-error/5 hover:bg-nihongo-error/5"
-                          : "border-nihongo-blue bg-nihongo-blue/5 hover:bg-nihongo-blue/5"
-                        : "border-gray-200 hover:border-nihongo-blue/50"
-                    }`}
-                    onClick={() => handleSelectAnswer(option)}
-                    disabled={isAnswerChecked && option !== currentExercise.correctAnswer && option !== selectedAnswer}
-                  >
-                    <div className="flex items-center w-full justify-between">
-                      <span>{option}</span>
-                      {isAnswerChecked && option === currentExercise.correctAnswer && (
-                        <Check className="w-5 h-5 text-nihongo-green" />
-                      )}
-                      {isAnswerChecked && option === selectedAnswer && option !== currentExercise.correctAnswer && (
-                        <X className="w-5 h-5 text-nihongo-error" />
-                      )}
-                    </div>
-                  </Button>
-                ))}
+                {Array.isArray(currentExercise.options) ? (
+                  currentExercise.options.map((option, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      className={`w-full justify-start py-6 px-4 h-auto text-left font-normal transition-all ${
+                        selectedAnswer === option
+                          ? isAnswerChecked
+                            ? option === currentExercise.correct_answer
+                              ? "border-nihongo-green bg-nihongo-green/5 hover:bg-nihongo-green/5"
+                              : "border-nihongo-error bg-nihongo-error/5 hover:bg-nihongo-error/5"
+                            : "border-nihongo-blue bg-nihongo-blue/5 hover:bg-nihongo-blue/5"
+                          : "border-gray-200 hover:border-nihongo-blue/50"
+                      }`}
+                      onClick={() => handleSelectAnswer(option)}
+                      disabled={isAnswerChecked && option !== currentExercise.correct_answer && option !== selectedAnswer}
+                    >
+                      <div className="flex items-center w-full justify-between">
+                        <span>{option}</span>
+                        {isAnswerChecked && option === currentExercise.correct_answer && (
+                          <Check className="w-5 h-5 text-nihongo-green" />
+                        )}
+                        {isAnswerChecked && option === selectedAnswer && option !== currentExercise.correct_answer && (
+                          <X className="w-5 h-5 text-nihongo-error" />
+                        )}
+                      </div>
+                    </Button>
+                  ))
+                ) : (
+                  <p className="text-red-500">Error: Options are not properly formatted</p>
+                )}
               </div>
             )}
           </CardContent>
