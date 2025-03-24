@@ -1,22 +1,14 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
-import { 
-  HomeHeader, 
-  StatsSection, 
-  ContinueLearningSection, 
-  RecentLessonsSection, 
-  GuestPromotion 
-} from "@/components/home";
-import { GuestMessage } from "@/components/shared/GuestMessage";
-import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { toast } from "@/components/ui/use-toast";
-import { AlertCircle } from "lucide-react";
 import { UserStreak } from "@/services/userProgress/types";
+import {
+  LoadingState,
+  ErrorState,
+  HomeContent
+} from "@/components/home";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -205,89 +197,36 @@ const Home = () => {
     window.location.reload();
   };
 
-  // Show appropriate loading/error state with better UX
+  // Display appropriate component based on state
   if (loading) {
     return (
-      <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-        <HomeHeader 
-          username={profile?.username || user?.user_metadata?.username || "Friend"} 
-          isGuest={isGuest} 
-        />
-        
-        <div className="py-8">
-          <LoadingSpinner />
-          <p className="text-center text-muted-foreground mt-4">
-            {longLoading 
-              ? "Still loading... This is taking longer than usual." 
-              : "Loading your progress..."}
-          </p>
-          
-          {longLoading && (
-            <div className="flex justify-center mt-4">
-              <Button onClick={handleRefresh} size="sm" variant="outline">
-                Refresh Page
-              </Button>
-            </div>
-          )}
-        </div>
-      </div>
+      <LoadingState
+        username={profile?.username || user?.user_metadata?.username || "Friend"}
+        isGuest={isGuest}
+        longLoading={longLoading}
+        handleRefresh={handleRefresh}
+      />
     );
   }
 
   if (error) {
     return (
-      <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-        <HomeHeader 
-          username={profile?.username || user?.user_metadata?.username || "Friend"} 
-          isGuest={isGuest} 
-        />
-        
-        <Card className="my-8 border-red-200">
-          <CardContent className="pt-6 flex flex-col items-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
-            <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
-            <p className="text-center text-muted-foreground mb-4">{error}</p>
-            <Button onClick={handleRefresh} className="bg-nihongo-blue hover:bg-nihongo-blue/90">
-              Refresh
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <ErrorState
+        username={profile?.username || user?.user_metadata?.username || "Friend"}
+        isGuest={isGuest}
+        error={error}
+        handleRefresh={handleRefresh}
+      />
     );
   }
 
   return (
-    <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-      <HomeHeader 
-        username={profile?.username || user?.user_metadata?.username || "Friend"} 
-        isGuest={isGuest} 
-      />
-      
-      {isGuest && <GuestMessage navigate={navigate} />}
-      
-      <StatsSection 
-        streak={userData.streak} 
-        level={userData.level} 
-        totalXp={userData.totalXp}
-        xp={userData.xp}
-        dailyGoal={userData.dailyGoal}
-      />
-
-      <ContinueLearningSection 
-        nextLesson={userData.nextLesson} 
-        navigate={navigate} 
-      />
-      
-      {userData.recentLessons.length > 0 && (
-        <RecentLessonsSection 
-          recentLessons={userData.recentLessons} 
-          isGuest={isGuest}
-          navigate={navigate} 
-        />
-      )}
-
-      {isGuest && <GuestPromotion navigate={navigate} />}
-    </div>
+    <HomeContent
+      username={profile?.username || user?.user_metadata?.username || "Friend"}
+      isGuest={isGuest}
+      userData={userData}
+      navigate={navigate}
+    />
   );
 };
 
