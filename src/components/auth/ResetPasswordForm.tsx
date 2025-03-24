@@ -23,8 +23,9 @@ const ResetPasswordForm = ({ onBack }: ResetPasswordFormProps) => {
     try {
       // Get the current site URL from the browser
       const siteUrl = window.location.origin;
-      // Create the correct redirect URL with the auth reset path
-      const redirectUrl = `${siteUrl}/auth?reset=true`;
+      // Create the correct redirect URL with the auth page
+      // Don't include specific parameters, let Supabase add them
+      const redirectUrl = `${siteUrl}/auth`;
       
       console.log("Sending reset email with redirect to:", redirectUrl);
       

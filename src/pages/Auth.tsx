@@ -11,11 +11,12 @@ import AuthDivider from "@/components/auth/AuthDivider";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import UpdatePasswordForm from "@/components/auth/UpdatePasswordForm";
 import { toast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const [showResetForm, setShowResetForm] = useState(false);
   const [searchParams] = useSearchParams();
-  const isResetMode = searchParams.get("reset") === "true";
+  const isResetMode = searchParams.get("reset") === "true" || searchParams.get("type") === "recovery";
   const tabParam = searchParams.get("tab");
 
   // Set default tab or use the tab from URL
@@ -30,10 +31,12 @@ const Auth = () => {
       setShowResetForm(true);
     }
     
-    // Check for hash errors (from password reset links)
-    const checkHashErrors = () => {
+    // Process the URL for auth errors or recovery tokens
+    const processUrl = async () => {
+      // Check for hash errors (from password reset links)
       const hash = window.location.hash;
-      if (hash && hash.includes('error=')) {
+      if (hash) {
+        // Parse the hash parameters
         const params = new URLSearchParams(hash.substring(1));
         const error = params.get('error');
         const errorDescription = params.get('error_description');
@@ -48,12 +51,54 @@ const Auth = () => {
           
           // Show the reset form
           setShowResetForm(true);
+          return;
         }
+        
+        // Check if this is a recovery token hash
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+        const type = params.get('type');
+        
+        if (type === 'recovery' && accessToken) {
+          try {
+            // Set the recovery session
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || '',
+            });
+            
+            if (error) throw error;
+            
+            // Add reset=true to the URL for the update password form
+            const url = new URL(window.location.href);
+            url.searchParams.set('reset', 'true');
+            url.hash = '';
+            window.history.replaceState(null, "", url.toString());
+            
+            console.log("Recovery token processed successfully");
+          } catch (error) {
+            console.error("Error setting recovery session:", error);
+            toast.error("Recovery session error", {
+              description: "There was an error processing your recovery token. Please request a new reset link.",
+            });
+          }
+        }
+      }
+      
+      // Check for error query parameters
+      const error = searchParams.get("error");
+      const errorDescription = searchParams.get("error_description");
+      
+      if (error) {
+        toast.error("Password reset link error", {
+          description: errorDescription || "The password reset link is invalid or has expired. Please request a new one.",
+        });
+        setShowResetForm(true);
       }
     };
     
-    checkHashErrors();
-  }, [tabParam, showResetForm]);
+    processUrl();
+  }, [tabParam, showResetForm, searchParams]);
 
   const authCardFooter = (
     <>

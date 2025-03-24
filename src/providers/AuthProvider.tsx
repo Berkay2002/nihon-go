@@ -56,6 +56,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setProfile(null);
           setIsGuest(false);
           localStorage.removeItem('guestMode');
+        } else if (event === 'PASSWORD_RECOVERY') {
+          // Don't redirect or sign out on password recovery events
+          console.log("Password recovery event detected");
         }
       }
     );
