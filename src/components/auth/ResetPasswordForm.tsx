@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, ArrowLeft } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { resetPassword } from "@/lib/auth-utils";
 import { toast } from "@/components/ui/use-toast";
 
 type ResetPasswordFormProps = {
@@ -21,20 +21,14 @@ const ResetPasswordForm = ({ onBack }: ResetPasswordFormProps) => {
     setIsLoading(true);
 
     try {
-      // Get the current origin to use as the redirect URL
-      const origin = window.location.origin;
-      const redirectTo = `${origin}/auth?reset=true`;
+      // Get the current site URL from the browser
+      const siteUrl = window.location.origin;
+      // Create the correct redirect URL with the auth reset path
+      const redirectUrl = `${siteUrl}/auth?reset=true`;
       
-      console.log("Sending reset email with redirect to:", redirectTo);
+      console.log("Sending reset email with redirect to:", redirectUrl);
       
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
-      });
-
-      if (error) {
-        throw error;
-      }
-
+      await resetPassword(email, redirectUrl);
       setIsSuccess(true);
       toast.success("Password reset email sent", {
         description: "Check your email for the password reset link",

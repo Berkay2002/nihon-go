@@ -27,6 +27,30 @@ const Auth = () => {
     } else if (!showResetForm && tabParam === "reset") {
       setShowResetForm(true);
     }
+    
+    // Check for hash errors (from password reset links)
+    const checkHashErrors = () => {
+      const hash = window.location.hash;
+      if (hash && hash.includes('error=')) {
+        const params = new URLSearchParams(hash.substring(1));
+        const error = params.get('error');
+        const errorDescription = params.get('error_description');
+        
+        if (error) {
+          toast.error("Password reset link error", {
+            description: errorDescription || "The password reset link is invalid or has expired. Please request a new one.",
+          });
+          
+          // Clear the hash
+          window.history.replaceState(null, "", window.location.pathname + window.location.search);
+          
+          // Show the reset form
+          setShowResetForm(true);
+        }
+      }
+    };
+    
+    checkHashErrors();
   }, [tabParam, showResetForm]);
 
   const authCardFooter = (

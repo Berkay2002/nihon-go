@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { updateUserPassword } from "@/lib/auth-utils";
 import { toast } from "@/components/ui/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -15,6 +15,31 @@ const UpdatePasswordForm = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
+  useEffect(() => {
+    // Check for error parameters in the URL hash
+    const hash = window.location.hash;
+    if (hash) {
+      // Parse the hash parameters
+      const hashParams = new URLSearchParams(hash.substring(1));
+      const error = hashParams.get("error");
+      const errorDescription = hashParams.get("error_description");
+      
+      if (error) {
+        toast.error("Password reset link error", {
+          description: errorDescription || "The password reset link is invalid or has expired. Please request a new one.",
+        });
+        
+        // Clear the hash from the URL
+        window.history.replaceState(null, "", window.location.pathname + window.location.search);
+        
+        // Redirect to reset password tab after a short delay
+        setTimeout(() => {
+          navigate("/auth?tab=reset");
+        }, 1500);
+      }
+    }
+  }, [navigate]);
+
   // Handle error query parameters that might be present after redirect
   useEffect(() => {
     const error = searchParams.get("error");
@@ -27,7 +52,7 @@ const UpdatePasswordForm = () => {
       // Redirect to reset password tab after a short delay
       setTimeout(() => {
         navigate("/auth?tab=reset");
-      }, 2000);
+      }, 1500);
     }
   }, [searchParams, navigate]);
 
@@ -51,13 +76,7 @@ const UpdatePasswordForm = () => {
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password,
-      });
-
-      if (error) {
-        throw error;
-      }
+      await updateUserPassword(password);
 
       toast.success("Password updated successfully", {
         description: "You can now sign in with your new password",

@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/use-toast";
 
@@ -106,6 +105,8 @@ export const resetPassword = async (email: string, redirectUrl: string) => {
   if (!email) {
     throw new Error("Email is required");
   }
+  
+  console.log(`Resetting password with redirect URL: ${redirectUrl}`);
   
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
     redirectTo: redirectUrl,
