@@ -6,12 +6,13 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import seedDataService from "@/services/seedDataService";
 import { TimeoutError } from "./shared/TimeoutError";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const Layout = () => {
   const { isAuthenticated, isLoading, isGuest } = useAuth();
   const navigate = useNavigate();
   const [authTimeout, setAuthTimeout] = useState(false);
+  const [seedingAttempted, setSeedingAttempted] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isGuest) {
@@ -42,16 +43,21 @@ const Layout = () => {
   // Run seed data when the app loads
   useEffect(() => {
     const initializeApp = async () => {
+      if (seedingAttempted) return;
+      
       try {
         // Check if seed data is needed and create it
+        setSeedingAttempted(true);
         await seedDataService.seedInitialData();
       } catch (error) {
         console.error("Error initializing app data:", error);
       }
     };
     
-    initializeApp();
-  }, []);
+    if (!isLoading && (isAuthenticated || isGuest)) {
+      initializeApp();
+    }
+  }, [isLoading, isAuthenticated, isGuest, seedingAttempted]);
 
   const handleRefresh = () => {
     window.location.reload();

@@ -1,103 +1,200 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const seedDataService = {
   // Seed lessons data
   seedLessons: async (unitId: string, lessons: any[]) => {
-    const { data, error } = await supabase
-      .from('lessons')
-      .insert(lessons.map(lesson => ({
-        ...lesson,
-        unit_id: unitId
-      })))
-      .select();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('lessons')
+        .insert(lessons.map(lesson => ({
+          ...lesson,
+          unit_id: unitId
+        })))
+        .select();
+      
+      if (error) {
+        console.error('Error seeding lessons:', error);
+        throw error;
+      }
+      
+      console.log('Successfully seeded lessons:', data);
+      return data;
+    } catch (error) {
       console.error('Error seeding lessons:', error);
       throw error;
     }
-    
-    return data;
   },
   
   // Seed vocabulary data
   seedVocabulary: async (lessonId: string, vocabulary: any[]) => {
-    const { data, error } = await supabase
-      .from('vocabulary')
-      .insert(vocabulary.map(word => ({
-        ...word,
-        lesson_id: lessonId
-      })))
-      .select();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('vocabulary')
+        .insert(vocabulary.map(word => ({
+          ...word,
+          lesson_id: lessonId
+        })))
+        .select();
+      
+      if (error) {
+        console.error('Error seeding vocabulary:', error);
+        throw error;
+      }
+      
+      console.log('Successfully seeded vocabulary:', data);
+      return data;
+    } catch (error) {
       console.error('Error seeding vocabulary:', error);
       throw error;
     }
-    
-    return data;
   },
   
   // Seed exercises data
   seedExercises: async (lessonId: string, exercises: any[]) => {
-    const { data, error } = await supabase
-      .from('exercises')
-      .insert(exercises.map(exercise => ({
-        ...exercise,
-        lesson_id: lessonId
-      })))
-      .select();
-    
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('exercises')
+        .insert(exercises.map(exercise => ({
+          ...exercise,
+          lesson_id: lessonId
+        })))
+        .select();
+      
+      if (error) {
+        console.error('Error seeding exercises:', error);
+        throw error;
+      }
+      
+      console.log('Successfully seeded exercises:', data);
+      return data;
+    } catch (error) {
       console.error('Error seeding exercises:', error);
       throw error;
     }
-    
-    return data;
   },
   
-  // Helper function to check if seed data is needed
-  checkIfSeedingRequired: async () => {
+  // Helper function to check if seed data is needed for lesson tables
+  checkIfLessonSeedingRequired: async () => {
     // Check if there are any lessons
-    const { data: lessons, error: lessonsError } = await supabase
-      .from('lessons')
-      .select('id')
-      .limit(1);
-    
-    if (lessonsError) {
-      console.error('Error checking lessons:', lessonsError);
-      return true; // Assume seeding is required if there's an error
+    try {
+      const { data: lessons, error: lessonsError } = await supabase
+        .from('lessons')
+        .select('id')
+        .limit(1);
+      
+      if (lessonsError) {
+        console.error('Error checking lessons:', lessonsError);
+        return true; // Assume seeding is required if there's an error
+      }
+      
+      return !lessons || lessons.length === 0;
+    } catch (error) {
+      console.error('Error checking if lesson seeding required:', error);
+      return true;
     }
-    
-    return !lessons || lessons.length === 0;
+  },
+
+  // Helper function to check if seed data is needed for units
+  checkIfUnitSeedingRequired: async () => {
+    // Check if there are any units
+    try {
+      const { data: units, error: unitsError } = await supabase
+        .from('units')
+        .select('id')
+        .limit(1);
+      
+      if (unitsError) {
+        console.error('Error checking units:', unitsError);
+        return true; // Assume seeding is required if there's an error
+      }
+      
+      return !units || units.length === 0;
+    } catch (error) {
+      console.error('Error checking if unit seeding required:', error);
+      return true;
+    }
   },
   
-  // Seed initial data for the first unit
-  seedInitialData: async () => {
+  // Seed initial data for units if needed
+  seedInitialUnits: async () => {
     try {
-      // Check if seeding is required
-      const seedingRequired = await seedDataService.checkIfSeedingRequired();
+      const unitSeedingRequired = await seedDataService.checkIfUnitSeedingRequired();
       
-      if (!seedingRequired) {
-        console.log('Seeding not required, data already exists');
+      if (!unitSeedingRequired) {
+        console.log('Unit seeding not required, units already exist');
         return;
       }
       
-      // Get the first unit
+      // Seed units
+      const units = [
+        {
+          name: "Basics",
+          description: "Essential Japanese phrases and greetings",
+          order_index: 1,
+          is_locked: false
+        },
+        {
+          name: "Greetings",
+          description: "Learn how to say hello and introduce yourself",
+          order_index: 2,
+          is_locked: false
+        },
+        {
+          name: "Food",
+          description: "Learn vocabulary for ordering food and drinks",
+          order_index: 3,
+          is_locked: true
+        }
+      ];
+      
+      const { data: seededUnits, error } = await supabase
+        .from('units')
+        .insert(units)
+        .select();
+      
+      if (error) {
+        console.error('Error seeding units:', error);
+        throw error;
+      }
+      
+      console.log('Successfully seeded units:', seededUnits);
+      return seededUnits;
+    } catch (error) {
+      console.error('Error seeding initial units:', error);
+      throw error;
+    }
+  },
+  
+  // Seed initial lessons for existing units
+  seedInitialLessons: async () => {
+    try {
+      const lessonSeedingRequired = await seedDataService.checkIfLessonSeedingRequired();
+      
+      if (!lessonSeedingRequired) {
+        console.log('Lesson seeding not required, lessons already exist');
+        return;
+      }
+      
+      // Get all units to seed lessons for
       const { data: units, error: unitsError } = await supabase
         .from('units')
         .select('id, name')
-        .eq('order_index', 1)
-        .limit(1);
+        .order('order_index');
       
       if (unitsError || !units || units.length === 0) {
-        console.error('Error getting first unit:', unitsError);
+        console.error('Error getting units:', unitsError);
         return;
       }
       
-      const unitId = units[0].id;
+      console.log('Found units for lesson seeding:', units);
       
-      // Seed lessons for the first unit
+      // Seed lessons for the "Basics" unit first
+      const basicsUnit = units.find(unit => unit.name === "Basics") || units[0];
+      const unitId = basicsUnit.id;
+      
+      // Lessons for Basics unit
       const lessons = [
         {
           title: "Introduction",
@@ -201,10 +298,60 @@ const seedDataService = {
         
         await seedDataService.seedExercises(introLessonId, exercises);
         
+        // Seed some basic lessons for other units too
+        for (let i = 1; i < units.length; i++) {
+          const unit = units[i];
+          const unitLessons = [
+            {
+              title: `${unit.name} Basics`,
+              description: `Introduction to ${unit.name.toLowerCase()} in Japanese.`,
+              order_index: 1,
+              estimated_time: "5 min",
+              xp_reward: 10
+            },
+            {
+              title: `Common ${unit.name}`,
+              description: `Learn common ${unit.name.toLowerCase()} in Japanese.`,
+              order_index: 2,
+              estimated_time: "7 min",
+              xp_reward: 15
+            }
+          ];
+          
+          await seedDataService.seedLessons(unit.id, unitLessons);
+        }
+        
         console.log('Initial seed data created successfully');
+        return true;
       }
     } catch (error) {
+      console.error('Error seeding initial lessons data:', error);
+      return false;
+    }
+  },
+  
+  // Seed initial data for the app
+  seedInitialData: async () => {
+    try {
+      // First check and seed units if needed
+      await seedDataService.seedInitialUnits();
+      
+      // Then check and seed lessons if needed
+      const lessonSeeded = await seedDataService.seedInitialLessons();
+      
+      if (lessonSeeded) {
+        toast.success("Demo lessons loaded successfully", {
+          description: "Sample content has been created for you to explore."
+        });
+      }
+      
+      return true;
+    } catch (error) {
       console.error('Error seeding initial data:', error);
+      toast.error("Error loading demo lessons", {
+        description: "There was a problem creating sample content. Please try refreshing the page."
+      });
+      return false;
     }
   }
 };

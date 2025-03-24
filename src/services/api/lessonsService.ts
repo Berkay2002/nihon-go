@@ -15,37 +15,57 @@ export interface Lesson {
 
 const lessonsService = {
   getLessonsByUnit: async (unitId: string): Promise<Lesson[]> => {
-    const { data, error } = await baseService.client
-      .from('lessons')
-      .select('*')
-      .eq('unit_id', unitId)
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching lessons:', error);
-      throw error;
+    try {
+      const { data, error } = await baseService.executeWithTimeout(
+        () => baseService.client
+          .from('lessons')
+          .select('*')
+          .eq('unit_id', unitId)
+          .order('order_index'),
+        5000,
+        "Lessons fetch timeout"
+      );
+      
+      if (error) {
+        console.error('Error fetching lessons:', error);
+        throw error;
+      }
+      
+      // Return empty array instead of null to prevent downstream errors
+      return data || [];
+    } catch (error) {
+      console.error('Error in getLessonsByUnit:', error);
+      // Return empty array on error to prevent app from crashing
+      return [];
     }
-    
-    return data || [];
   },
   
   getLesson: async (lessonId: string): Promise<Lesson> => {
-    const { data, error } = await baseService.client
-      .from('lessons')
-      .select('*')
-      .eq('id', lessonId)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error fetching lesson:', error);
+    try {
+      const { data, error } = await baseService.executeWithTimeout(
+        () => baseService.client
+          .from('lessons')
+          .select('*')
+          .eq('id', lessonId)
+          .maybeSingle(),
+        5000,
+        "Lesson fetch timeout"
+      );
+      
+      if (error) {
+        console.error('Error fetching lesson:', error);
+        throw error;
+      }
+      
+      if (!data) {
+        throw new Error('Lesson not found');
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error in getLesson:', error);
       throw error;
     }
-    
-    if (!data) {
-      throw new Error('Lesson not found');
-    }
-    
-    return data;
   }
 };
 
