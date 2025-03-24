@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "react-router-dom";
@@ -8,8 +7,8 @@ import SignInForm from "@/components/auth/SignInForm";
 import SignUpForm from "@/components/auth/SignUpForm";
 import GuestModeButton from "@/components/auth/GuestModeButton";
 import AuthDivider from "@/components/auth/AuthDivider";
-import ResetPasswordForm from "@/components/ResetPasswordForm";
-import UpdatePasswordForm from "@/components/UpdatePasswordForm";
+import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
+import UpdatePasswordForm from "@/components/auth/UpdatePasswordForm";
 
 const Auth = () => {
   const [showResetForm, setShowResetForm] = useState(false);
