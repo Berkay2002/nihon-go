@@ -47,13 +47,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
         
         if (event === 'SIGNED_IN') {
-          toast("Signed in successfully", {
+          toast.success("Signed in successfully", {
             description: "Welcome back!",
           });
           setIsGuest(false);
           localStorage.removeItem('guestMode');
         } else if (event === 'SIGNED_OUT') {
-          toast("Signed out", {
+          toast.success("Signed out", {
             description: "You have been signed out.",
           });
           setProfile(null);
@@ -94,7 +94,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
       
-      toast("Sign up successful!", {
+      toast.success("Sign up successful!", {
         description: "Please check your email to confirm your account.",
       });
       navigate("/auth");
@@ -126,7 +126,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsLoading(true);
       setIsGuest(true);
       localStorage.setItem('guestMode', 'true');
-      toast("Welcome, Guest!", {
+      toast.success("Welcome, Guest!", {
         description: "You're exploring in guest mode. Sign up to save your progress!",
       });
       navigate("/app");
