@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Fetch a user's profile from the database
@@ -68,4 +69,27 @@ export const signInWithIdentifier = async (identifier: string, password: string)
   }
   
   return data;
+};
+
+/**
+ * Handle sign up process
+ */
+export const handleSignUp = async (email: string, password: string, username: string) => {
+  const { error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      data: {
+        username,
+      },
+    },
+  });
+
+  if (error) throw error;
+  
+  toast.success("Sign up successful!", {
+    description: "Please check your email to confirm your account.",
+  });
+
+  return { success: true };
 };
