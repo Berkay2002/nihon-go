@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams } from "react-router-dom";
@@ -9,6 +10,7 @@ import GuestModeButton from "@/components/auth/GuestModeButton";
 import AuthDivider from "@/components/auth/AuthDivider";
 import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import UpdatePasswordForm from "@/components/auth/UpdatePasswordForm";
+import { toast } from "@/components/ui/use-toast";
 
 const Auth = () => {
   const [showResetForm, setShowResetForm] = useState(false);
