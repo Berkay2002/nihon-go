@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { GuestMessage } from "@/components/shared/GuestMessage";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { toast } from "@/components/ui/use-toast";
 import { AlertCircle } from "lucide-react";
+import { UserStreak } from "@/services/userProgress/types";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -114,9 +116,15 @@ const Home = () => {
         // Use Promise.allSettled to ensure we get a response even if one fails
         const results = await Promise.allSettled([streakPromise, progressPromise]);
         
-        // Process the results, using null for any rejected promises
-        const streakData = results[0].status === 'fulfilled' ? results[0].value : null;
-        const progressData = results[1].status === 'fulfilled' ? results[1].value : null;
+        // Process the results with proper type checking
+        const streakResult = results[0];
+        const progressResult = results[1];
+        
+        const streakData: UserStreak | null = 
+          streakResult.status === 'fulfilled' ? streakResult.value as UserStreak : null;
+        
+        const progressData = 
+          progressResult.status === 'fulfilled' ? progressResult.value : null;
         
         // Process user data based on auth status
         let processedData;

@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { TimeoutError } from "@/components/shared/TimeoutError";
 
 const Lesson = () => {
   const navigate = useNavigate();
@@ -100,9 +102,17 @@ const Lesson = () => {
           ])
         ]);
         
-        // Extract results safely, handling any rejections
-        const lessonData = results[0].status === 'fulfilled' ? results[0].value : null;
-        const vocabData = results[1].status === 'fulfilled' ? results[1].value : [];
+        // Extract results safely with proper type checking
+        const lessonResult = results[0];
+        const vocabResult = results[1];
+        
+        const lessonData = lessonResult.status === 'fulfilled' 
+          ? lessonResult.value as LessonType 
+          : null;
+          
+        const vocabData = vocabResult.status === 'fulfilled' 
+          ? vocabResult.value as Vocabulary[] 
+          : [];
         
         // Handle missing lesson data
         if (!lessonData) {
