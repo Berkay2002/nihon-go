@@ -1,7 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
-import contentService, { Unit, Lesson } from "@/services/contentService";
+import contentService from "@/services/contentService";
+import type { Unit, Lesson } from "@/services/contentService";
 import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
 

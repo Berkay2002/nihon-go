@@ -27,8 +27,10 @@ export const UnitContent: React.FC<UnitContentProps> = ({
 
   const handleLessonClick = (lesson: LessonWithProgress) => {
     if (isGuest && lesson.is_locked) {
-      toast.error("Feature locked in demo mode", {
-        description: "Create an account to unlock all lessons and track your progress."
+      toast({
+        title: "Feature locked in demo mode",
+        description: "Create an account to unlock all lessons and track your progress.",
+        variant: "destructive"
       });
       return;
     }

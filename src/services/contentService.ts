@@ -1,220 +1,43 @@
 
-import { supabase } from "@/integrations/supabase/client";
+import unitsService, { Unit } from "./api/unitsService";
+import lessonsService, { Lesson } from "./api/lessonsService";
+import vocabularyService, { Vocabulary } from "./api/vocabularyService";
+import hiraganaService, { Hiragana } from "./api/hiraganaService";
+import grammarService, { GrammarPattern } from "./api/grammarService";
+import exercisesService, { Exercise } from "./api/exercisesService";
 
-export interface Unit {
-  id: string;
-  name: string;
-  description: string;
-  order_index: number;
-  is_locked: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+// Re-export interfaces
+export type {
+  Unit,
+  Lesson,
+  Vocabulary,
+  Hiragana,
+  GrammarPattern,
+  Exercise
+};
 
-export interface Lesson {
-  id: string;
-  unit_id: string;
-  title: string;
-  description: string;
-  order_index: number;
-  estimated_time: string;
-  xp_reward: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Vocabulary {
-  id: string;
-  lesson_id: string | null;
-  japanese: string;
-  hiragana: string;
-  romaji: string;
-  english: string;
-  example_sentence?: string | null;
-  category: string;
-  difficulty: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Hiragana {
-  id: string;
-  character: string;
-  romaji: string;
-  stroke_order: string;
-  example_word: string;
-  example_word_meaning: string;
-  group_name: string;
-  order_index: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface Exercise {
-  id: string;
-  lesson_id: string;
-  type: string;
-  question: string;
-  options: any;
-  correct_answer: string;
-  japanese?: string | null;
-  romaji?: string | null;
-  xp_reward: number;
-  order_index: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
-export interface GrammarPattern {
-  id: string;
-  pattern: string;
-  explanation: string;
-  example_sentences: any;
-  difficulty: number;
-  created_at?: string;
-  updated_at?: string;
-}
-
+// Combine all services into a single contentService
 const contentService = {
   // Units
-  getUnits: async (): Promise<Unit[]> => {
-    const { data, error } = await supabase
-      .from('units')
-      .select('*')
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching units:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
+  getUnits: unitsService.getUnits,
   
   // Lessons
-  getLessonsByUnit: async (unitId: string): Promise<Lesson[]> => {
-    const { data, error } = await supabase
-      .from('lessons')
-      .select('*')
-      .eq('unit_id', unitId)
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching lessons:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
-  
-  getLesson: async (lessonId: string): Promise<Lesson> => {
-    const { data, error } = await supabase
-      .from('lessons')
-      .select('*')
-      .eq('id', lessonId)
-      .maybeSingle();
-    
-    if (error) {
-      console.error('Error fetching lesson:', error);
-      throw error;
-    }
-    
-    if (!data) {
-      throw new Error('Lesson not found');
-    }
-    
-    return data;
-  },
+  getLessonsByUnit: lessonsService.getLessonsByUnit,
+  getLesson: lessonsService.getLesson,
   
   // Vocabulary
-  getVocabularyByLesson: async (lessonId: string): Promise<Vocabulary[]> => {
-    const { data, error } = await supabase
-      .from('vocabulary')
-      .select('*')
-      .eq('lesson_id', lessonId);
-    
-    if (error) {
-      console.error('Error fetching vocabulary:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
-  
-  getVocabularyByCategory: async (category: string): Promise<Vocabulary[]> => {
-    const { data, error } = await supabase
-      .from('vocabulary')
-      .select('*')
-      .eq('category', category);
-    
-    if (error) {
-      console.error('Error fetching vocabulary by category:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
+  getVocabularyByLesson: vocabularyService.getVocabularyByLesson,
+  getVocabularyByCategory: vocabularyService.getVocabularyByCategory,
   
   // Hiragana
-  getHiragana: async (): Promise<Hiragana[]> => {
-    const { data, error } = await supabase
-      .from('hiragana')
-      .select('*')
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching hiragana:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
-  
-  getHiraganaByGroup: async (groupName: string): Promise<Hiragana[]> => {
-    const { data, error } = await supabase
-      .from('hiragana')
-      .select('*')
-      .eq('group_name', groupName)
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching hiragana by group:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
+  getHiragana: hiraganaService.getHiragana,
+  getHiraganaByGroup: hiraganaService.getHiraganaByGroup,
   
   // Grammar patterns
-  getGrammarPatterns: async (): Promise<GrammarPattern[]> => {
-    const { data, error } = await supabase
-      .from('grammar_patterns')
-      .select('*')
-      .order('difficulty');
-    
-    if (error) {
-      console.error('Error fetching grammar patterns:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
+  getGrammarPatterns: grammarService.getGrammarPatterns,
   
   // Exercises
-  getExercisesByLesson: async (lessonId: string): Promise<Exercise[]> => {
-    const { data, error } = await supabase
-      .from('exercises')
-      .select('*')
-      .eq('lesson_id', lessonId)
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching exercises:', error);
-      throw error;
-    }
-    
-    return data || [];
-  },
+  getExercisesByLesson: exercisesService.getExercisesByLesson,
 };
 
 export default contentService;
