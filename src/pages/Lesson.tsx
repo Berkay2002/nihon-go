@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -14,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
+import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 const Lesson = () => {
   const navigate = useNavigate();
@@ -21,23 +21,54 @@ const Lesson = () => {
   const [lesson, setLesson] = useState<LessonType | null>(null);
   const [vocabulary, setVocabulary] = useState<Vocabulary[]>([]);
   const [loading, setLoading] = useState(true);
+  const [longLoading, setLongLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { isGuest } = useAuth();
 
-  // Add a timeout to prevent infinite loading
+  // Add a better timeout mechanism with two stages
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
+    let shortTimeoutId: number | null = null;
+    let longTimeoutId: number | null = null;
+
+    if (loading && !error) {
+      // First timeout - show "taking longer than expected" message after 4 seconds
+      shortTimeoutId = window.setTimeout(() => {
+        setLongLoading(true);
+        toast.info("Loading is taking longer than expected", {
+          description: "Please be patient or refresh the page if this continues."
+        });
+      }, 4000);
+      
+      // Second timeout - treat as an error after 12 seconds total
+      longTimeoutId = window.setTimeout(() => {
         setLoading(false);
         setError("Loading took too long. Please try again.");
         toast.error("Failed to load lesson data", {
           description: "Please refresh the page or try again later."
         });
-      }
-    }, 10000);
+        
+        // Provide fallback data to prevent empty UI
+        if (!lesson) {
+          setLesson({
+            id: lessonId || "fallback-lesson",
+            unit_id: "fallback-unit",
+            title: "Lesson Content Unavailable",
+            description: "We're having trouble loading the lesson content.",
+            order_index: 1,
+            estimated_time: "Unknown",
+            xp_reward: 10,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+        }
+      }, 12000);
+    }
     
-    return () => clearTimeout(timeoutId);
-  }, [loading]);
+    return () => {
+      if (shortTimeoutId) window.clearTimeout(shortTimeoutId);
+      if (longTimeoutId) window.clearTimeout(longTimeoutId);
+    };
+  }, [loading, error, lesson, lessonId]);
 
   useEffect(() => {
     const fetchLessonData = async () => {
@@ -45,29 +76,40 @@ const Lesson = () => {
       
       try {
         setLoading(true);
+        setLongLoading(false);
         setError(null);
         
-        // Use Promise.race to add timeout safeguards
-        const lessonDataPromise = Promise.race([
-          contentService.getLesson(lessonId),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error("Lesson fetch timeout")), 5000)
-          )
+        // Define a safer timeout promise creation function
+        const createTimeoutPromise = (ms: number, name: string) => 
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`${name} timeout after ${ms}ms`)), ms)
+          );
+        
+        // Use Promise.allSettled to get partial data even if some requests fail
+        const results = await Promise.allSettled([
+          // Lesson data with timeout
+          Promise.race([
+            contentService.getLesson(lessonId),
+            createTimeoutPromise(6000, "Lesson fetch")
+          ]),
+          
+          // Vocabulary data with timeout
+          Promise.race([
+            contentService.getVocabularyByLesson(lessonId),
+            createTimeoutPromise(6000, "Vocabulary fetch")
+          ])
         ]);
         
-        const vocabularyPromise = Promise.race([
-          contentService.getVocabularyByLesson(lessonId),
-          new Promise<never>((_, reject) => 
-            setTimeout(() => reject(new Error("Vocabulary fetch timeout")), 5000)
-          )
-        ]);
+        // Extract results safely, handling any rejections
+        const lessonData = results[0].status === 'fulfilled' ? results[0].value : null;
+        const vocabData = results[1].status === 'fulfilled' ? results[1].value : [];
         
-        // Fetch lesson details
-        const lessonData = await lessonDataPromise;
+        // Handle missing lesson data
+        if (!lessonData) {
+          throw new Error("Could not load lesson data");
+        }
+        
         setLesson(lessonData);
-        
-        // Fetch vocabulary for this lesson
-        const vocabData = await vocabularyPromise;
         
         // If in guest mode, limit vocabulary items
         if (isGuest) {
@@ -75,13 +117,9 @@ const Lesson = () => {
         } else {
           setVocabulary(vocabData);
         }
-        
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching lesson:", error);
         setError("Failed to load lesson data. Please try refreshing the page.");
-        toast.error("Failed to load lesson data");
-        setLoading(false);
         
         // Provide fallback data to prevent completely empty UI
         if (!lesson) {
@@ -97,6 +135,10 @@ const Lesson = () => {
             updated_at: new Date().toISOString()
           });
         }
+      } finally {
+        // Ensure loading is always set to false, even on errors
+        setLoading(false);
+        setLongLoading(false);
       }
     };
     
@@ -107,17 +149,33 @@ const Lesson = () => {
     window.location.reload();
   };
 
+  // Better loading state with multi-stage feedback
   if (loading) {
     return (
-      <div className="container max-w-md mx-auto px-4 pt-6 flex items-center justify-center h-[80vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nihongo-red"></div>
+      <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
+        <div className="flex flex-col items-center justify-center py-12">
+          <LoadingSpinner />
+          <p className="mt-4 text-center text-muted-foreground">
+            {longLoading 
+              ? "Still loading... This is taking longer than usual." 
+              : "Loading lesson content..."}
+          </p>
+          
+          {longLoading && (
+            <div className="flex justify-center mt-4">
+              <Button onClick={handleRefresh} size="sm" variant="outline">
+                Refresh Page
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container max-w-md mx-auto px-4 pt-6">
+      <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
         <Card className="border-red-200">
           <CardContent className="pt-6 flex flex-col items-center">
             <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
@@ -139,7 +197,7 @@ const Lesson = () => {
 
   if (!lesson) {
     return (
-      <div className="container max-w-md mx-auto px-4 pt-6">
+      <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Lesson not found</h1>
           <Button onClick={() => navigate('/app/units')} className="bg-nihongo-blue hover:bg-nihongo-blue/90">
