@@ -93,7 +93,7 @@ const Exercise = () => {
             {currentExerciseIndex + 1}/{exercises.length}
           </div>
         </div>
-        <Progress value={progress} className="h-2 bg-gray-100" indicatorClassName="bg-nihongo-blue" />
+        <Progress value={progress} className="h-2 bg-gray-100" />
       </header>
 
       <section className="mb-8">
@@ -138,7 +138,8 @@ const Exercise = () => {
               <div className="space-y-3">
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                   <p className="text-2xl font-japanese text-center mb-2">{currentExercise.japanese}</p>
-                  <p className="text-sm text-muted-foreground text-center">{currentExercise.romaji}</p>
+                  <p className="text-sm text-center font-medium">{currentExercise.romaji}</p>
+                  <p className="text-xs text-muted-foreground text-center italic mt-1">pronunciation</p>
                 </div>
                 {currentExercise.options.map((option, index) => (
                   <Button
