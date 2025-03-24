@@ -1,0 +1,140 @@
+
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { ChevronLeft, ChevronRight, Book, Lock, Check } from "lucide-react";
+
+const Units = () => {
+  const navigate = useNavigate();
+  const { unitId } = useParams<{ unitId: string }>();
+  const [selectedUnit, setSelectedUnit] = useState<string>(unitId || "1");
+
+  // Mock data - would come from API in real app
+  const units = [
+    { id: "1", name: "Basics", description: "Essential Japanese phrases", progress: 80, isUnlocked: true },
+    { id: "2", name: "Greetings", description: "Common greetings and responses", progress: 40, isUnlocked: true },
+    { id: "3", name: "Food", description: "Food and restaurant vocabulary", progress: 0, isUnlocked: true },
+    { id: "4", name: "Numbers", description: "Counting in Japanese", progress: 0, isUnlocked: false },
+    { id: "5", name: "Travel", description: "Essential travel phrases", progress: 0, isUnlocked: false },
+  ];
+
+  const lessons = {
+    "1": [
+      { id: "1", title: "Introduction", xpReward: 10, isCompleted: true },
+      { id: "2", title: "Basic Phrases", xpReward: 15, isCompleted: true },
+      { id: "3", title: "Yes and No", xpReward: 15, isCompleted: true },
+      { id: "4", title: "Practice", xpReward: 20, isCompleted: false },
+      { id: "5", title: "Review", xpReward: 25, isCompleted: false },
+    ],
+    "2": [
+      { id: "6", title: "Hello & Goodbye", xpReward: 15, isCompleted: true },
+      { id: "7", title: "Morning & Evening", xpReward: 15, isCompleted: false },
+      { id: "8", title: "Formal Greetings", xpReward: 20, isCompleted: false },
+      { id: "9", title: "Practice", xpReward: 20, isCompleted: false },
+    ],
+    "3": [
+      { id: "10", title: "Basic Food Items", xpReward: 15, isCompleted: false },
+      { id: "11", title: "Restaurant Phrases", xpReward: 20, isCompleted: false },
+      { id: "12", title: "Ordering Food", xpReward: 20, isCompleted: false },
+      { id: "13", title: "Practice", xpReward: 25, isCompleted: false },
+    ],
+  };
+
+  const selectedUnitLessons = lessons[selectedUnit as keyof typeof lessons] || [];
+  const currentUnit = units.find(unit => unit.id === selectedUnit);
+
+  return (
+    <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
+      <header className="mb-6">
+        <Button variant="ghost" className="p-0 h-auto mb-4" onClick={() => navigate('/app')}>
+          <ChevronLeft className="w-5 h-5 mr-1" />
+          <span>Back to Home</span>
+        </Button>
+        <h1 className="text-2xl font-bold">Japanese Lessons</h1>
+      </header>
+
+      <section className="mb-8 overflow-hidden">
+        <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
+          {units.map((unit) => (
+            <Card 
+              key={unit.id} 
+              className={`flex-shrink-0 w-36 h-36 snap-start cursor-pointer transition-all duration-300 transform ${
+                selectedUnit === unit.id ? 'scale-[1.02] border-nihongo-red shadow-md' : 'border-gray-200'
+              } ${!unit.isUnlocked ? 'opacity-70' : ''}`}
+              onClick={() => unit.isUnlocked && setSelectedUnit(unit.id)}
+            >
+              <CardContent className="p-4 flex flex-col items-center justify-center h-full text-center relative">
+                {!unit.isUnlocked && (
+                  <div className="absolute inset-0 bg-gray-100/80 flex items-center justify-center rounded-md">
+                    <Lock className="w-8 h-8 text-gray-400" />
+                  </div>
+                )}
+                <div className={`w-12 h-12 rounded-full ${
+                  unit.isUnlocked ? 'bg-nihongo-red/10' : 'bg-gray-200'
+                } flex items-center justify-center mb-2`}>
+                  <Book className={`w-6 h-6 ${
+                    unit.isUnlocked ? 'text-nihongo-red' : 'text-gray-400'
+                  }`} />
+                </div>
+                <h3 className="font-semibold text-sm">{unit.name}</h3>
+                {unit.progress > 0 && (
+                  <Progress value={unit.progress} className="h-1 mt-2 w-full bg-gray-100" 
+                    indicatorClassName="bg-nihongo-red" />
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {currentUnit && (
+        <section className="mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold">{currentUnit.name}</h2>
+            <div className="bg-nihongo-blue/10 px-3 py-1 rounded-full text-xs font-medium text-nihongo-blue">
+              {currentUnit.progress}% Complete
+            </div>
+          </div>
+          <p className="text-muted-foreground mb-6">{currentUnit.description}</p>
+
+          <div className="space-y-4">
+            {selectedUnitLessons.map((lesson) => (
+              <Card 
+                key={lesson.id} 
+                className={`border hover:shadow-md transition-all cursor-pointer ${
+                  lesson.isCompleted ? 'border-nihongo-green/30' : 'border-gray-200'
+                }`}
+                onClick={() => navigate(`/app/lesson/${lesson.id}`)}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className={`w-10 h-10 rounded-full ${
+                        lesson.isCompleted ? 'bg-nihongo-green/10' : 'bg-nihongo-red/10'
+                      } flex items-center justify-center mr-3`}>
+                        {lesson.isCompleted ? (
+                          <Check className="w-5 h-5 text-nihongo-green" />
+                        ) : (
+                          <Book className="w-5 h-5 text-nihongo-red" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">{lesson.title}</h3>
+                        <p className="text-xs text-muted-foreground">Earn {lesson.xpReward} XP</p>
+                      </div>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+};
+
+export default Units;
