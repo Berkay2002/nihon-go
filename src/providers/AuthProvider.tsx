@@ -66,7 +66,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // THEN check for existing session
     const getInitialSession = async () => {
       try {
+        // Set a timeout to prevent infinite loading
+        const timeoutId = window.setTimeout(() => {
+          setIsLoading(false);
+          console.error("Session loading timed out");
+          toast.error("Connection issue detected", {
+            description: "Could not retrieve authentication status. Please refresh the page.",
+          });
+        }, 8000); // 8 seconds timeout
+
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Clear the timeout since we got a response
+        clearTimeout(timeoutId);
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -113,7 +126,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signIn = async (identifier: string, password: string) => {
     try {
       setAuthLoading(true);
+      
+      // Set a timeout to prevent infinite loading
+      const timeoutId = window.setTimeout(() => {
+        setAuthLoading(false);
+        toast.error("Sign in timed out", {
+          description: "The server is taking too long to respond. Please try again later.",
+        });
+      }, 15000); // 15 seconds timeout
+      
       await signInWithIdentifier(identifier, password);
+      
+      // Clear the timeout if sign in is successful
+      clearTimeout(timeoutId);
+      
       navigate("/app");
     } catch (error: any) {
       console.error("Sign in error:", error);

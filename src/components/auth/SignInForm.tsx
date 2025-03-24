@@ -1,21 +1,58 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { toast } from "@/components/ui/use-toast";
 
 const SignInForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { signIn, isLoading } = useAuth();
+  const [localLoading, setLocalLoading] = useState(false);
+  const { signIn, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Combine both loading states to handle edge cases
+  const isLoading = localLoading || authLoading;
+
+  // Set a timeout to prevent infinite loading
+  useEffect(() => {
+    let timeoutId: number;
+    
+    if (localLoading) {
+      timeoutId = window.setTimeout(() => {
+        setLocalLoading(false);
+        toast.error("Sign in is taking too long", {
+          description: "Please try again or check your internet connection",
+        });
+      }, 10000); // 10 seconds timeout
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [localLoading]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
-    await signIn(email, password);
+    
+    if (!email || !password) {
+      toast.error("Missing information", {
+        description: "Please enter both username/email and password",
+      });
+      return;
+    }
+    
+    try {
+      setLocalLoading(true);
+      await signIn(email, password);
+    } catch (error) {
+      // Error is handled in the Auth provider
+      setLocalLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
