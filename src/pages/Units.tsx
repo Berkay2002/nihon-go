@@ -1,23 +1,18 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { ChevronLeft, ChevronRight, Book, Lock, Check, LockIcon, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import contentService, { Unit, Lesson } from "@/services/contentService";
 import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
-import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  UnitCard, 
-  UnitCardSkeleton,
-  LessonCard, 
-  LessonCardSkeleton,
   GuestMessage,
   ErrorMessage
 } from "@/components/units";
+import { UnitsList } from "@/components/units/UnitsList";
+import { LessonsList } from "@/components/units/LessonsList";
+import { UnitInfo } from "@/components/units/UnitInfo";
+import { UnitsHeader } from "@/components/units/UnitsHeader";
 
 // Extend the Unit and Lesson types with UI-specific properties
 interface UnitWithProgress extends Unit {
@@ -228,7 +223,9 @@ const Units = () => {
 
   const handleLessonClick = (lesson: LessonWithProgress) => {
     if (isGuest && lesson.is_locked) {
-      toast.error("Feature locked in demo mode", { 
+      toast({
+        variant: "destructive",
+        title: "Feature locked in demo mode",
         description: "Create an account to unlock all lessons and track your progress."
       });
       return;
@@ -238,83 +235,32 @@ const Units = () => {
 
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-      <header className="mb-6">
-        <Button variant="ghost" className="p-0 h-auto mb-4" onClick={() => navigate('/app')}>
-          <ChevronLeft className="w-5 h-5 mr-1" />
-          <span>Back to Home</span>
-        </Button>
-        <h1 className="text-2xl font-bold">Japanese Lessons</h1>
-      </header>
+      <UnitsHeader navigate={navigate} />
 
       {isGuest && <GuestMessage navigate={navigate} />}
       {error && <ErrorMessage error={error} onRetry={() => { fetchUnits(); fetchLessons(); }} />}
 
       <section className="mb-8 overflow-hidden">
-        {loading && !units.length ? (
-          <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
-            {[1, 2, 3].map((i) => <UnitCardSkeleton key={i} />)}
-          </div>
-        ) : (
-          <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
-            {units.map((unit) => (
-              <UnitCard 
-                key={unit.id}
-                unit={unit}
-                isSelected={unit.id === selectedUnit}
-                onClick={() => !unit.is_locked && setSelectedUnit(unit.id)}
-              />
-            ))}
-          </div>
-        )}
+        <UnitsList 
+          units={units} 
+          selectedUnit={selectedUnit} 
+          loading={loading && !units.length} 
+          onSelectUnit={setSelectedUnit} 
+        />
       </section>
 
       {currentUnit && (
         <section className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">{currentUnit.name}</h2>
-            {currentUnit.progress !== undefined && currentUnit.progress > 0 && (
-              <div className="bg-nihongo-blue/10 px-3 py-1 rounded-full text-xs font-medium text-nihongo-blue">
-                {currentUnit.progress}% Complete
-              </div>
-            )}
-          </div>
-          <p className="text-muted-foreground mb-6">{currentUnit.description}</p>
-
-          {loading && !lessons.length ? (
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => <LessonCardSkeleton key={i} />)}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {lessons.map((lesson) => (
-                <LessonCard 
-                  key={lesson.id}
-                  lesson={lesson}
-                  isGuest={isGuest}
-                  onClick={() => handleLessonClick(lesson)}
-                />
-              ))}
-
-              {lessons.length === 0 && !loading && !error && (
-                <Card className="border">
-                  <CardContent className="p-4 text-center">
-                    <p className="text-muted-foreground">No lessons available for this unit yet.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {isGuest && (
-            <div className="mt-6">
-              <Button 
-                className="w-full bg-nihongo-red hover:bg-nihongo-red/90"
-                onClick={() => navigate('/auth?tab=signup')}
-              >
-                Sign Up to Unlock All Lessons
-              </Button>
-            </div>
-          )}
+          <UnitInfo unit={currentUnit} />
+          
+          <LessonsList 
+            lessons={lessons}
+            loading={loading && !lessons.length}
+            error={error}
+            isGuest={isGuest}
+            navigate={navigate}
+            handleLessonClick={handleLessonClick}
+          />
         </section>
       )}
     </div>
