@@ -6,13 +6,13 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Welcome = () => {
   const navigate = useNavigate();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isGuest } = useAuth();
 
   useEffect(() => {
-    if (!isLoading && isAuthenticated) {
+    if (!isLoading && (isAuthenticated || isGuest)) {
       navigate("/app");
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, isGuest, navigate]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">

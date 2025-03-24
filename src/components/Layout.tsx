@@ -6,14 +6,14 @@ import { Loader2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 
 const Layout = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isGuest } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
+    if (!isLoading && !isAuthenticated && !isGuest) {
       navigate("/auth");
     }
-  }, [isAuthenticated, isLoading, navigate]);
+  }, [isAuthenticated, isLoading, isGuest, navigate]);
 
   // If still checking auth status, show loading
   if (isLoading) {
@@ -25,7 +25,7 @@ const Layout = () => {
     );
   }
 
-  // If authenticated, show the app
+  // If authenticated or in guest mode, show the app
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <main className="flex-1 pb-16">
