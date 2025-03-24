@@ -4,18 +4,18 @@ import { toast } from "sonner";
 
 /**
  * Base service providing the Supabase client for other services
- * with timeout handling for better error recovery
+ * with optimized timeout handling for better performance
  */
 export const baseService = {
   client: supabase,
   
   /**
-   * Execute a query with timeout handling
+   * Execute a query with improved timeout handling
    * @param queryFn Function that executes the Supabase query
    * @param timeoutMs Timeout in milliseconds
    * @param errorMessage Custom error message for timeout
    */
-  async executeWithTimeout(queryFn, timeoutMs = 5000, errorMessage = "Query timeout") {
+  async executeWithTimeout(queryFn, timeoutMs = 3000, errorMessage = "Query timeout") {
     try {
       // Create a promise that rejects after the timeout
       const timeoutPromise = new Promise((_, reject) => 
@@ -44,12 +44,12 @@ export const baseService = {
   },
   
   /**
-   * Retry a function with exponential backoff and increased flexibility
+   * Retry a function with optimized backoff strategy
    * @param fn Function to retry
    * @param maxRetries Maximum number of retries
    * @param baseDelay Base delay in milliseconds
    */
-  async retryWithBackoff(fn, maxRetries = 3, baseDelay = 300) {
+  async retryWithBackoff(fn, maxRetries = 2, baseDelay = 200) {
     let lastError;
     
     for (let attempt = 0; attempt < maxRetries; attempt++) {
@@ -59,13 +59,13 @@ export const baseService = {
         console.log(`Attempt ${attempt + 1} failed, retrying...`, error);
         lastError = error;
         
-        // Show toast on first failure so user knows something's happening
+        // Only show toast on first failure
         if (attempt === 0 && !error.message.includes("timeout")) {
-          toast.info("Connection issue, retrying...");
+          toast.info("Retrying connection...");
         }
         
-        // Exponential backoff with smaller delay and less jitter
-        const delay = baseDelay * Math.pow(1.5, attempt) + Math.random() * 100;
+        // Linear backoff with minimal delay for faster retries
+        const delay = baseDelay * (attempt + 1) + Math.random() * 50;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

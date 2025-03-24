@@ -28,7 +28,7 @@ const SignInForm = () => {
         toast.error("Sign in is taking too long", {
           description: "Please try again or check your internet connection",
         });
-      }, 5000); // Reduced from 8 to 5 seconds for faster feedback
+      }, 3000); // Reduced from 5 to 3 seconds for faster feedback
     }
     
     return () => {

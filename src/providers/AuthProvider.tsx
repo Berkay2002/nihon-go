@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -27,10 +26,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [initComplete, setInitComplete] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST with better error handling
     const setupAuthListener = async () => {
       try {
-        // Set auth state listener first to avoid missing events
+        // Set auth state listener first with optimized error handling
         const { data: { subscription } } = await baseService.executeWithTimeout(
           () => supabase.auth.onAuthStateChange(async (event, session) => {
             console.log("Auth state changed:", event, session);
@@ -57,23 +55,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               });
               setProfile(null);
             } else if (event === 'PASSWORD_RECOVERY') {
-              // Don't redirect or sign out on password recovery events
               console.log("Password recovery event detected");
             }
           }),
-          5000, // Reduced from implicit default to 5000ms
+          3000, // Reduced to 3000ms
           "Auth listener setup timeout"
         );
 
-        // Mark initialization as complete even if getSession fails
+        // Mark initialization as complete early
         setInitComplete(true);
         
-        // THEN check for existing session with improved error handling
+        // Then check for existing session with minimal retries
         try {
           await baseService.retryWithBackoff(
             () => initializeAuth(),
-            3,  // 3 retries
-            300  // Start with 300ms delay (reduced from 500ms)
+            2,  // 2 retries
+            200  // Start with 200ms delay
           );
         } catch (error) {
           console.error("Failed to get session:", error);
@@ -94,7 +91,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setupAuthListener();
   }, []);
 
-  // If there's an authentication error, show it in a more user-friendly way
   if (authError) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-background/95 z-50 p-4">
