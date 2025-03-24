@@ -2,18 +2,22 @@
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface TimeoutErrorProps {
   onRefresh: () => void;
   title?: string;
   description?: string;
+  showGuestOption?: boolean;
+  onContinueAsGuest?: () => void;
 }
 
 export const TimeoutError: React.FC<TimeoutErrorProps> = ({ 
   onRefresh, 
   title = "Connection Issue",
-  description = "We're having trouble connecting to the server. This might be due to network issues."
+  description = "We're having trouble connecting to the server. This might be due to network issues.",
+  showGuestOption = false,
+  onContinueAsGuest
 }) => {
   return (
     <Card className="my-8 border-red-200">
@@ -23,9 +27,25 @@ export const TimeoutError: React.FC<TimeoutErrorProps> = ({
         <p className="text-center text-muted-foreground mb-4">
           {description}
         </p>
-        <Button onClick={onRefresh} className="bg-nihongo-blue hover:bg-nihongo-blue/90">
-          Refresh Page
-        </Button>
+        <div className="flex flex-col gap-3 w-full">
+          <Button 
+            onClick={onRefresh} 
+            className="bg-nihongo-blue hover:bg-nihongo-blue/90 w-full flex items-center justify-center"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Page
+          </Button>
+          
+          {showGuestOption && onContinueAsGuest && (
+            <Button 
+              onClick={onContinueAsGuest}
+              variant="outline" 
+              className="w-full"
+            >
+              Continue as Guest
+            </Button>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

@@ -3,8 +3,9 @@ import { useState } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { fetchUserProfile, signInWithIdentifier, handleSignUp } from "@/lib/auth-utils";
+import { baseService } from "@/services/api/baseService";
 
 export function useAuthService() {
   const [session, setSession] = useState<Session | null>(null);
@@ -27,7 +28,12 @@ export function useAuthService() {
         });
       }, 8000); // 8 seconds timeout
 
-      const { data: { session } } = await supabase.auth.getSession();
+      // Use baseService with retries to get session
+      const { data: { session } } = await baseService.executeWithTimeout(
+        () => supabase.auth.getSession(),
+        8000,
+        "Authentication service timeout"
+      );
       
       // Clear the timeout since we got a response
       clearTimeout(timeoutId);
@@ -88,7 +94,12 @@ export function useAuthService() {
         });
       }, 15000); // 15 seconds timeout
       
-      await signInWithIdentifier(identifier, password);
+      // Use retryWithBackoff for better reliability
+      await baseService.retryWithBackoff(
+        () => signInWithIdentifier(identifier, password),
+        2, // 2 retries
+        500 // Start with 500ms delay
+      );
       
       // Clear the timeout if sign in is successful
       clearTimeout(timeoutId);

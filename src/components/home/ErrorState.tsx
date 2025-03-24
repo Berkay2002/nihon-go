@@ -2,9 +2,10 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import { HomeHeader } from "./HomeHeader";
 import seedDataService from "@/services/seedDataService";
+import { toast } from "sonner";
 
 interface ErrorStateProps {
   username: string;
@@ -19,12 +20,21 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
   error,
   handleRefresh,
 }) => {
+  const [isLoading, setIsLoading] = React.useState(false);
+
   const handleLoadDemoLessons = async () => {
     try {
+      setIsLoading(true);
       await seedDataService.seedInitialData();
+      toast.success("Demo lessons loaded successfully");
       handleRefresh(); // Refresh page after loading demo data
     } catch (err) {
       console.error("Error loading demo lessons:", err);
+      toast.error("Failed to load demo lessons", {
+        description: "Please try again or refresh the page"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -38,15 +48,21 @@ export const ErrorState: React.FC<ErrorStateProps> = ({
           <h3 className="text-lg font-semibold mb-2">Connection Error</h3>
           <p className="text-center text-muted-foreground mb-4">{error}</p>
           <div className="flex flex-col gap-3 w-full items-center">
-            <Button onClick={handleRefresh} className="bg-nihongo-blue hover:bg-nihongo-blue/90 w-full">
+            <Button 
+              onClick={handleRefresh} 
+              className="bg-nihongo-blue hover:bg-nihongo-blue/90 w-full flex items-center justify-center"
+              disabled={isLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button 
               onClick={handleLoadDemoLessons} 
               variant="outline" 
               className="w-full"
+              disabled={isLoading}
             >
-              Load Demo Lessons
+              {isLoading ? "Loading..." : "Load Demo Lessons"}
             </Button>
           </div>
         </CardContent>
