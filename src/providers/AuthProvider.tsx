@@ -24,13 +24,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   } = useAuthService();
   
   const [authError, setAuthError] = useState<string | null>(null);
+  const [initComplete, setInitComplete] = useState(false);
 
   useEffect(() => {
     // Set up auth state listener FIRST with better error handling
     const setupAuthListener = async () => {
       try {
-        const { data: { subscription } } = await baseService.retryWithBackoff(() => 
-          supabase.auth.onAuthStateChange(async (event, session) => {
+        // Set auth state listener first to avoid missing events
+        const { data: { subscription } } = await baseService.executeWithTimeout(
+          () => supabase.auth.onAuthStateChange(async (event, session) => {
             console.log("Auth state changed:", event, session);
             setSession(session);
             setUser(session?.user ?? null);
@@ -58,15 +60,25 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               // Don't redirect or sign out on password recovery events
               console.log("Password recovery event detected");
             }
-          })
+          }),
+          5000, // Reduced from implicit default to 5000ms
+          "Auth listener setup timeout"
         );
 
+        // Mark initialization as complete even if getSession fails
+        setInitComplete(true);
+        
         // THEN check for existing session with improved error handling
-        await baseService.retryWithBackoff(
-          () => initializeAuth(),
-          3,  // 3 retries
-          500  // Start with 500ms delay
-        );
+        try {
+          await baseService.retryWithBackoff(
+            () => initializeAuth(),
+            3,  // 3 retries
+            300  // Start with 300ms delay (reduced from 500ms)
+          );
+        } catch (error) {
+          console.error("Failed to get session:", error);
+          // We've already set initComplete so the app can proceed
+        }
         
         return () => subscription.unsubscribe();
       } catch (error) {
@@ -75,6 +87,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           description: "Please try refreshing the page or check your internet connection."
         });
         setAuthError("Authentication service unavailable. Please refresh the page.");
+        setInitComplete(true); // Mark as complete even on error so UI isn't stuck
       }
     };
 
@@ -127,7 +140,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         session,
         user,
         profile,
-        isLoading,
+        isLoading: isLoading && !initComplete, // Only show loading if not initialized
         isAuthenticated: !!session,
         isGuest: false,
         signUp,

@@ -15,12 +15,14 @@ export const baseService = {
    * @param timeoutMs Timeout in milliseconds
    * @param errorMessage Custom error message for timeout
    */
-  async executeWithTimeout(queryFn, timeoutMs = 8000, errorMessage = "Query timeout") {
+  async executeWithTimeout(queryFn, timeoutMs = 5000, errorMessage = "Query timeout") {
     try {
+      // Create a promise that rejects after the timeout
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
       );
       
+      // Race between the query and the timeout
       return await Promise.race([
         queryFn(),
         timeoutPromise
@@ -42,7 +44,7 @@ export const baseService = {
   },
   
   /**
-   * Retry a function with exponential backoff
+   * Retry a function with exponential backoff and increased flexibility
    * @param fn Function to retry
    * @param maxRetries Maximum number of retries
    * @param baseDelay Base delay in milliseconds
@@ -54,11 +56,16 @@ export const baseService = {
       try {
         return await fn();
       } catch (error) {
-        console.log(`Attempt ${attempt + 1} failed, retrying...`);
+        console.log(`Attempt ${attempt + 1} failed, retrying...`, error);
         lastError = error;
         
-        // Exponential backoff with jitter
-        const delay = baseDelay * Math.pow(2, attempt) + Math.random() * 200;
+        // Show toast on first failure so user knows something's happening
+        if (attempt === 0 && !error.message.includes("timeout")) {
+          toast.info("Connection issue, retrying...");
+        }
+        
+        // Exponential backoff with smaller delay and less jitter
+        const delay = baseDelay * Math.pow(1.5, attempt) + Math.random() * 100;
         await new Promise(resolve => setTimeout(resolve, delay));
       }
     }

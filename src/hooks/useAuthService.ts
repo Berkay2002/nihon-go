@@ -25,12 +25,12 @@ export function useAuthService() {
         toast.error("Connection issue detected", {
           description: "Could not retrieve authentication status. Please refresh the page.",
         });
-      }, 8000); // 8 seconds timeout
+      }, 5000); // Reduced from 8000 to 5000ms for faster feedback
 
       // Use baseService with retries to get session
       const { data: { session } } = await baseService.executeWithTimeout(
         () => supabase.auth.getSession(),
-        8000,
+        5000, // Reduced from 8000 to 5000ms
         "Authentication service timeout"
       );
       
@@ -49,11 +49,11 @@ export function useAuthService() {
         }
       }
       
-      return { showGuestDialog: false };
+      return { success: true };
     } catch (error) {
       console.error("Error getting session:", error);
       setIsLoading(false);
-      return { showGuestDialog: false };
+      return { success: false };
     } finally {
       setIsLoading(false);
     }
@@ -85,13 +85,13 @@ export function useAuthService() {
         toast.error("Sign in timed out", {
           description: "The server is taking too long to respond. Please try again later.",
         });
-      }, 15000); // 15 seconds timeout
+      }, 10000); // Reduced from 15000 to 10000ms
       
-      // Use retryWithBackoff for better reliability
+      // Use retryWithBackoff for better reliability with more retries
       await baseService.retryWithBackoff(
         () => signInWithIdentifier(identifier, password),
-        2, // 2 retries
-        500 // Start with 500ms delay
+        3, // Increased from 2 to 3 retries
+        300 // Reduced from 500 to 300ms for faster initial retry
       );
       
       // Clear the timeout if sign in is successful
