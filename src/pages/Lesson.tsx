@@ -3,9 +3,10 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ChevronLeft, BookOpen, Zap } from "lucide-react";
+import { ChevronLeft, BookOpen, Zap, Lock } from "lucide-react";
 import { toast } from "sonner";
 import contentService, { Lesson as LessonType, Vocabulary } from "@/services/contentService";
+import { useAuth } from "@/hooks/useAuth";
 
 const Lesson = () => {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ const Lesson = () => {
   const [lesson, setLesson] = useState<LessonType | null>(null);
   const [vocabulary, setVocabulary] = useState<Vocabulary[]>([]);
   const [loading, setLoading] = useState(true);
+  const { isGuest } = useAuth();
 
   useEffect(() => {
     const fetchLessonData = async () => {
@@ -27,7 +29,13 @@ const Lesson = () => {
         
         // Fetch vocabulary for this lesson
         const vocabData = await contentService.getVocabularyByLesson(lessonId);
-        setVocabulary(vocabData);
+        
+        // If in guest mode, limit vocabulary items
+        if (isGuest) {
+          setVocabulary(vocabData.slice(0, 3)); // Only show first 3 vocabulary items in demo mode
+        } else {
+          setVocabulary(vocabData);
+        }
         
         setLoading(false);
       } catch (error) {
@@ -38,7 +46,7 @@ const Lesson = () => {
     };
     
     fetchLessonData();
-  }, [lessonId]);
+  }, [lessonId, isGuest]);
 
   if (loading) {
     return (
@@ -61,6 +69,37 @@ const Lesson = () => {
     );
   }
 
+  // Demo mode message for guest users
+  const renderGuestMessage = () => {
+    if (!isGuest) return null;
+    
+    return (
+      <Card className="border border-nihongo-blue/20 bg-nihongo-blue/5 mb-8">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <div className="shrink-0 mt-1">
+              <Lock className="h-5 w-5 text-nihongo-blue" />
+            </div>
+            <div>
+              <h3 className="font-medium text-nihongo-blue">Demo Mode</h3>
+              <p className="text-sm text-muted-foreground">
+                You're viewing a preview of this lesson. 
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-nihongo-red"
+                  onClick={() => navigate('/auth?tab=signup')}
+                >
+                  Sign up
+                </Button>{' '}
+                to access all vocabulary and save your progress.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <header className="mb-6">
@@ -69,8 +108,10 @@ const Lesson = () => {
           <span>Back to Units</span>
         </Button>
         <h1 className="text-2xl font-bold">{lesson.title}</h1>
-        <p className="text-muted-foreground">{lesson.title}</p>
+        <p className="text-muted-foreground">{lesson.description}</p>
       </header>
+
+      {renderGuestMessage()}
 
       <section className="mb-8">
         <Card className="border border-nihongo-blue/10 shadow-md">
@@ -117,15 +158,43 @@ const Lesson = () => {
               </Card>
             ))}
           </div>
+          
+          {isGuest && vocabulary.length === 3 && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 text-center">
+              <Lock className="inline-block w-5 h-5 text-muted-foreground mb-2" />
+              <p className="text-sm text-muted-foreground">
+                Sign up to access all vocabulary items
+              </p>
+            </div>
+          )}
         </section>
       )}
 
       <Button 
         className="w-full bg-nihongo-red hover:bg-nihongo-red/90 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-        onClick={() => navigate(`/app/exercise/${lessonId}`)}
+        onClick={() => {
+          if (isGuest) {
+            toast.info("Demo lesson", {
+              description: "In demo mode, lesson progress won't be saved. Sign up to track your progress."
+            });
+          }
+          navigate(`/app/exercise/${lessonId}`);
+        }}
       >
         Start Lesson
       </Button>
+      
+      {isGuest && (
+        <div className="mt-4">
+          <Button 
+            variant="outline"
+            className="w-full" 
+            onClick={() => navigate('/auth?tab=signup')}
+          >
+            Sign Up to Save Progress
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

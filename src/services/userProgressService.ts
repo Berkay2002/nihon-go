@@ -33,6 +33,44 @@ export interface ExerciseResult {
   xpEarned: number;
 }
 
+// Fake data for guest mode
+const guestProgressService = {
+  getUserProgress: async (): Promise<UserProgress[]> => {
+    return [];
+  },
+  
+  getUserStreak: async (): Promise<UserStreak> => {
+    return {
+      id: 'guest-streak',
+      user_id: 'guest',
+      current_streak: 1,
+      longest_streak: 1,
+      last_activity_date: new Date().toISOString(),
+      daily_goal: 50,
+      daily_xp: 15,
+      total_xp: 15,
+      level: 1
+    };
+  },
+  
+  // These functions don't actually save anything in guest mode
+  updateLessonProgress: async (): Promise<void> => {},
+  submitExerciseResult: async (): Promise<void> => {},
+  updateUserStreak: async (): Promise<UserStreak | null> => {
+    return {
+      id: 'guest-streak',
+      user_id: 'guest',
+      current_streak: 1,
+      longest_streak: 1,
+      last_activity_date: new Date().toISOString(),
+      daily_goal: 50,
+      daily_xp: 15,
+      total_xp: 15,
+      level: 1
+    };
+  }
+};
+
 const userProgressService = {
   // Get user progress for all lessons
   getUserProgress: async (userId: string): Promise<UserProgress[]> => {
@@ -255,10 +293,17 @@ const userProgressService = {
 
 // Hook for accessing progress in components
 export const useUserProgress = () => {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, isGuest } = useAuth();
   
   const getUserProgressData = async () => {
-    if (!user || isLoading) return null;
+    if (isLoading) return null;
+    
+    if (isGuest) {
+      // Return mock data for guest users
+      return await guestProgressService.getUserProgress();
+    }
+    
+    if (!user) return null;
     
     try {
       return await userProgressService.getUserProgress(user.id);
@@ -269,7 +314,14 @@ export const useUserProgress = () => {
   };
   
   const getUserStreakData = async () => {
-    if (!user || isLoading) return null;
+    if (isLoading) return null;
+    
+    if (isGuest) {
+      // Return mock streak data for guest users
+      return await guestProgressService.getUserStreak();
+    }
+    
+    if (!user) return null;
     
     try {
       return await userProgressService.getUserStreak(user.id);
@@ -279,20 +331,23 @@ export const useUserProgress = () => {
     }
   };
   
+  // Choose between real or mock services based on guest mode
+  const service = isGuest ? guestProgressService : userProgressService;
+  
   return {
     getUserProgressData,
     getUserStreakData,
-    updateLessonProgress: user ? 
+    updateLessonProgress: user && !isGuest ? 
       (lessonId: string, isCompleted: boolean, accuracy: number, xpEarned: number) => 
-        userProgressService.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned) : 
-      () => Promise.reject('User not authenticated'),
-    submitExerciseResult: user ?
-      (result: ExerciseResult) => userProgressService.submitExerciseResult(user.id, result) :
-      () => Promise.reject('User not authenticated'),
-    updateUserStreak: user ?
+        service.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned) : 
+      () => Promise.resolve(),
+    submitExerciseResult: user && !isGuest ?
+      (result: ExerciseResult) => service.submitExerciseResult(user.id, result) :
+      () => Promise.resolve(),
+    updateUserStreak: user && !isGuest ?
       (dailyXpToAdd: number, extendStreak: boolean = true) => 
-        userProgressService.updateUserStreak(user.id, dailyXpToAdd, extendStreak) :
-      () => Promise.reject('User not authenticated')
+        service.updateUserStreak(user.id, dailyXpToAdd, extendStreak) :
+      (dailyXpToAdd: number) => Promise.resolve(null)
   };
 };
 

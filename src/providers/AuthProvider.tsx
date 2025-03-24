@@ -21,6 +21,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const guestMode = localStorage.getItem('guestMode') === 'true';
     setIsGuest(guestMode);
 
+    // If in guest mode, no need to check Supabase session
+    if (guestMode) {
+      setIsLoading(false);
+      return;
+    }
+
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
@@ -114,8 +120,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setAuthLoading(true);
       setIsGuest(true);
       localStorage.setItem('guestMode', 'true');
+      
+      // Set up a demo profile for guest users
+      setProfile({ username: "Guest" });
+      
       toast.success("Welcome, Guest!", {
-        description: "You're exploring in guest mode. Sign up to save your progress!",
+        description: "You're exploring in demo mode. Sign up to track your progress!",
       });
       navigate("/app");
     } catch (error: any) {
@@ -135,6 +145,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Clear guest mode if active
       if (isGuest) {
         setIsGuest(false);
+        setProfile(null);
         localStorage.removeItem('guestMode');
         navigate("/auth");
         setAuthLoading(false);

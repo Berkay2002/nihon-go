@@ -1,8 +1,9 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Flame, Zap, BookOpen, Trophy, ArrowRight, CheckCircle2 } from "lucide-react";
+import { Flame, Zap, BookOpen, Trophy, ArrowRight, CheckCircle2, LockIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
@@ -10,7 +11,7 @@ import contentService from "@/services/contentService";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, isLoading: authLoading, isGuest, profile } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
@@ -119,22 +120,52 @@ const Home = () => {
           }
           
           setRecentLessons(recentLessonsList);
-        } else {
-          // Guest user - get first lesson from first unit
-          const units = await contentService.getUnits();
-          const firstUnit = units.find(unit => !unit.is_locked);
+        } else if (isGuest) {
+          // Demo content for guest users
+          setStreak(1);
+          setLevel(1);
+          setXp(15);
+          setTotalXp(15);
+          setDailyGoal(50);
           
-          if (firstUnit) {
-            const lessons = await contentService.getLessonsByUnit(firstUnit.id);
+          // Get first unit and first lesson for demo
+          try {
+            const units = await contentService.getUnits();
+            const firstUnit = units.find(unit => !unit.is_locked);
             
-            if (lessons.length > 0) {
-              setNextLesson({
-                id: lessons[0].id,
-                title: lessons[0].title,
-                unitName: firstUnit.name,
-                xp_reward: lessons[0].xp_reward
-              });
+            if (firstUnit) {
+              const lessons = await contentService.getLessonsByUnit(firstUnit.id);
+              
+              if (lessons.length > 0) {
+                setNextLesson({
+                  id: lessons[0].id,
+                  title: lessons[0].title,
+                  unitName: firstUnit.name,
+                  xp_reward: lessons[0].xp_reward
+                });
+                
+                // Add a mock "recent lesson" for demo purposes
+                setRecentLessons([
+                  {
+                    id: lessons[0].id,
+                    title: "Introduction to Hiragana",
+                    unitName: "Basics",
+                    isCompleted: false,
+                    accuracy: 0,
+                    xpEarned: 0
+                  }
+                ]);
+              }
             }
+          } catch (error) {
+            console.error("Error fetching demo content:", error);
+            // Fallback demo content if data can't be fetched
+            setNextLesson({
+              id: "demo-lesson",
+              title: "Introduction to Japanese",
+              unitName: "Basics",
+              xp_reward: 10
+            });
           }
         }
         
@@ -146,13 +177,46 @@ const Home = () => {
     };
     
     fetchUserData();
-  }, [user, authLoading, getUserStreakData, getUserProgressData]);
+  }, [user, authLoading, getUserStreakData, getUserProgressData, isGuest]);
+
+  // Render different content for guest users
+  const renderGuestMessage = () => {
+    if (!isGuest) return null;
+    
+    return (
+      <Card className="border border-nihongo-blue/20 bg-nihongo-blue/5 mb-8">
+        <CardContent className="p-4">
+          <div className="flex items-start space-x-3">
+            <div className="shrink-0 mt-1">
+              <LockIcon className="h-5 w-5 text-nihongo-blue" />
+            </div>
+            <div>
+              <h3 className="font-medium text-nihongo-blue">Demo Mode</h3>
+              <p className="text-sm text-muted-foreground">
+                You're currently exploring in demo mode. Progress will not be saved. 
+                <Button 
+                  variant="link" 
+                  className="h-auto p-0 text-nihongo-red"
+                  onClick={() => navigate('/auth?tab=signup')}
+                >
+                  Sign up
+                </Button>{' '}
+                to track your progress and unlock all features.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <header className="mb-8">
         <h1 className="text-2xl font-bold">
-          {user ? `こんにちは, ${user.user_metadata?.username || "Friend"}!` : "こんにちは, Guest!"}
+          {isGuest ? 
+            `こんにちは, Guest!` : 
+            `こんにちは, ${profile?.username || user?.user_metadata?.username || "Friend"}!`}
         </h1>
         <p className="text-muted-foreground">Welcome to your Japanese learning journey</p>
       </header>
@@ -163,57 +227,57 @@ const Home = () => {
         </div>
       ) : (
         <>
-          {user && (
-            <section className="mb-8">
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <Card className="border border-nihongo-red/10">
-                  <CardContent className="flex flex-col items-center justify-center p-4 h-full">
-                    <div className="flex items-center justify-center w-12 h-12 bg-nihongo-red/10 rounded-full mb-2">
-                      <Flame className="w-6 h-6 text-nihongo-red" />
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-1">Streak</p>
-                    <p className="text-2xl font-bold">{streak}</p>
-                    <p className="text-xs text-muted-foreground">days</p>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border border-nihongo-blue/10">
-                  <CardContent className="flex flex-col items-center justify-center p-4 h-full">
-                    <div className="flex items-center justify-center w-12 h-12 bg-nihongo-blue/10 rounded-full mb-2">
-                      <Zap className="w-6 h-6 text-nihongo-blue" />
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-1">Level</p>
-                    <p className="text-2xl font-bold">{level}</p>
-                    <p className="text-xs text-muted-foreground">{totalXp} XP total</p>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <Card className="border border-nihongo-gold/10 mb-4">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center">
-                      <div className="flex items-center justify-center w-10 h-10 bg-nihongo-gold/10 rounded-full mr-3">
-                        <Trophy className="w-5 h-5 text-nihongo-gold" />
-                      </div>
-                      <div>
-                        <p className="font-semibold">Daily Goal</p>
-                        <p className="text-xs text-muted-foreground">{xp}/{dailyGoal} XP today</p>
-                      </div>
-                    </div>
-                    <span className="text-sm font-medium">
-                      {Math.min(Math.round((xp / dailyGoal) * 100), 100)}%
-                    </span>
+          {renderGuestMessage()}
+          
+          <section className="mb-8">
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <Card className="border border-nihongo-red/10">
+                <CardContent className="flex flex-col items-center justify-center p-4 h-full">
+                  <div className="flex items-center justify-center w-12 h-12 bg-nihongo-red/10 rounded-full mb-2">
+                    <Flame className="w-6 h-6 text-nihongo-red" />
                   </div>
-                  <Progress 
-                    value={Math.min((xp / dailyGoal) * 100, 100)} 
-                    className="h-2 bg-gray-100" 
-                    indicatorClassName="bg-nihongo-gold" 
-                  />
+                  <p className="text-xs text-muted-foreground mb-1">Streak</p>
+                  <p className="text-2xl font-bold">{streak}</p>
+                  <p className="text-xs text-muted-foreground">days</p>
                 </CardContent>
               </Card>
-            </section>
-          )}
+              
+              <Card className="border border-nihongo-blue/10">
+                <CardContent className="flex flex-col items-center justify-center p-4 h-full">
+                  <div className="flex items-center justify-center w-12 h-12 bg-nihongo-blue/10 rounded-full mb-2">
+                    <Zap className="w-6 h-6 text-nihongo-blue" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-1">Level</p>
+                  <p className="text-2xl font-bold">{level}</p>
+                  <p className="text-xs text-muted-foreground">{totalXp} XP total</p>
+                </CardContent>
+              </Card>
+            </div>
+            
+            <Card className="border border-nihongo-gold/10 mb-4">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center">
+                    <div className="flex items-center justify-center w-10 h-10 bg-nihongo-gold/10 rounded-full mr-3">
+                      <Trophy className="w-5 h-5 text-nihongo-gold" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">Daily Goal</p>
+                      <p className="text-xs text-muted-foreground">{xp}/{dailyGoal} XP today</p>
+                    </div>
+                  </div>
+                  <span className="text-sm font-medium">
+                    {Math.min(Math.round((xp / dailyGoal) * 100), 100)}%
+                  </span>
+                </div>
+                <Progress 
+                  value={Math.min((xp / dailyGoal) * 100, 100)} 
+                  className="h-2 bg-gray-100" 
+                  indicatorClassName="bg-nihongo-gold" 
+                />
+              </CardContent>
+            </Card>
+          </section>
 
           <section className="mb-8">
             <div className="flex justify-between items-center mb-4">
@@ -267,7 +331,7 @@ const Home = () => {
             </Button>
           </section>
           
-          {user && recentLessons.length > 0 && (
+          {recentLessons.length > 0 && (
             <section>
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-bold">Recent Lessons</h2>
@@ -299,6 +363,11 @@ const Home = () => {
                               </span>
                             </div>
                           )}
+                          {isGuest && (
+                            <div className="mr-2">
+                              <LockIcon className="w-4 h-4 text-muted-foreground" />
+                            </div>
+                          )}
                           <ArrowRight className="w-4 h-4 text-muted-foreground" />
                         </div>
                       </div>
@@ -306,6 +375,22 @@ const Home = () => {
                   </Card>
                 ))}
               </div>
+            </section>
+          )}
+
+          {isGuest && (
+            <section className="mt-8">
+              <Card className="border-nihongo-red/20 bg-nihongo-red/5">
+                <CardContent className="p-4">
+                  <h3 className="font-semibold text-center mb-3">Ready to track your progress?</h3>
+                  <Button 
+                    className="w-full bg-nihongo-red hover:bg-nihongo-red/90"
+                    onClick={() => navigate('/auth?tab=signup')}
+                  >
+                    Create Free Account
+                  </Button>
+                </CardContent>
+              </Card>
             </section>
           )}
         </>
