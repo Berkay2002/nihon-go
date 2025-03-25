@@ -32,11 +32,25 @@ export interface Lesson {
   title: string;
   description: string;
   order_index: number;
-  is_locked?: boolean; // Changed to optional
+  is_locked?: boolean; // Optional to accommodate DB structure
   estimated_time: string;
   xp_reward: number;
   created_at?: string;
   updated_at?: string;
+}
+
+// Define a DB lesson type to match what comes from the database
+interface DBLesson {
+  id: string;
+  unit_id: string;
+  title: string;
+  description: string;
+  order_index: number;
+  estimated_time: string;
+  xp_reward: number;
+  created_at: string;
+  updated_at: string;
+  is_locked?: boolean; // Maybe present in DB
 }
 
 export interface Unit {
@@ -107,7 +121,10 @@ const contentService = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(lesson => ({
+      ...lesson,
+      is_locked: lesson.is_locked ?? false
+    }));
   },
   
   getLessonsByUnit: async (unitId: string) => {
@@ -122,7 +139,10 @@ const contentService = {
       throw error;
     }
     
-    return data || [];
+    return (data || []).map(lesson => ({
+      ...lesson,
+      is_locked: lesson.is_locked ?? false
+    }));
   },
   
   getLesson: async (lessonId: string) => {
@@ -137,8 +157,9 @@ const contentService = {
       throw error;
     }
     
-    // Ensure is_locked has a default value if not present
-    return data ? {...data, is_locked: data.is_locked ?? false} : null;
+    // Cast data to DBLesson type before adding is_locked property
+    const dbLesson = data as DBLesson | null;
+    return dbLesson ? {...dbLesson, is_locked: dbLesson.is_locked ?? false} : null;
   },
 
   getVocabularyByLesson: async (lessonId: string): Promise<Vocabulary[]> => {
@@ -167,7 +188,7 @@ const contentService = {
     }
     
     // Map to match the GrammarPattern interface
-    return data.map(pattern => ({
+    return (data || []).map(pattern => ({
       id: pattern.id,
       lesson_id: pattern.id, // Placeholder, adjust as needed
       pattern: pattern.pattern,
@@ -175,7 +196,7 @@ const contentService = {
       example: JSON.stringify(pattern.example_sentences),
       created_at: pattern.created_at,
       updated_at: pattern.updated_at
-    })) || [];
+    }));
   },
 
   getGrammarPatternsByLesson: async (lessonId: string): Promise<GrammarPattern[]> => {
@@ -190,7 +211,7 @@ const contentService = {
     }
     
     // Map to match the GrammarPattern interface
-    return data.map(pattern => ({
+    return (data || []).map(pattern => ({
       id: pattern.id,
       lesson_id: pattern.id, // Placeholder, adjust as needed
       pattern: pattern.pattern,
@@ -198,7 +219,7 @@ const contentService = {
       example: JSON.stringify(pattern.example_sentences),
       created_at: pattern.created_at,
       updated_at: pattern.updated_at
-    })) || [];
+    }));
   },
 
   // Add method for fetching hiragana
