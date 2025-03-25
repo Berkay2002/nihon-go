@@ -1,8 +1,8 @@
 
-import { ReviewSessionContainer } from "@/components/review";
+import { Navigate } from "react-router-dom";
 
 const Index = () => {
-  return <ReviewSessionContainer />;
+  return <Navigate to="/app/home" replace />;
 };
 
 export default Index;

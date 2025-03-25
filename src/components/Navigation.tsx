@@ -1,3 +1,4 @@
+
 import { NavLink } from "react-router-dom";
 
 // Custom colorful navigation icons based on Duolingo
@@ -31,22 +32,37 @@ const ProfileIcon = ({ className }: { className?: string }) => (
   </div>
 );
 
+const ReviewIcon = ({ className }: { className?: string }) => (
+  <div className={className}>
+    <img src="/review-icon.svg" alt="Review" className="w-8 h-8" />
+  </div>
+);
+
 const Navigation = () => {
   const navItems = [
     { 
       path: "/app", 
       icon: "/home-icon.svg", 
-      ariaLabel: "Home" 
+      ariaLabel: "Home",
+      Component: HomeIcon
     },
     { 
       path: "/app/characters", 
       icon: "/characters-icon.svg", 
-      ariaLabel: "Characters" 
+      ariaLabel: "Characters",
+      Component: HiraganaIcon
+    },
+    { 
+      path: "/app/reviews", 
+      icon: "/review-icon.svg", 
+      ariaLabel: "Reviews",
+      Component: ReviewIcon
     },
     { 
       path: "/app/profile", 
       icon: "/profile-icon.svg", 
-      ariaLabel: "Profile" 
+      ariaLabel: "Profile",
+      Component: ProfileIcon
     },
   ];
 
@@ -85,13 +101,15 @@ const Navigation = () => {
             aria-label={item.ariaLabel}
           >
             {({ isActive }) => (
-              <img 
-                src={item.icon} 
-                alt={item.ariaLabel}
-                className={`w-8 h-8 ${
-                  isActive ? "animate-bounce-light" : ""
-                }`}
-              />
+              item.Component ? (
+                <item.Component className={`w-8 h-8 ${isActive ? "animate-bounce-light" : ""}`} />
+              ) : (
+                <img 
+                  src={item.icon} 
+                  alt={item.ariaLabel}
+                  className={`w-8 h-8 ${isActive ? "animate-bounce-light" : ""}`}
+                />
+              )
             )}
           </NavLink>
         ))}
