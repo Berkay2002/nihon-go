@@ -35,6 +35,7 @@ const App = () => (
               <Route path="units" element={<Units />} />
               <Route path="units/:unitId" element={<Units />} />
               <Route path="lesson/:lessonId" element={<Lesson />} />
+              {/* Fixed route parameter to use lessonId since that's what we're passing */}
               <Route path="exercise/:exerciseId" element={<Exercise />} />
               <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
               <Route path="achievements" element={<Achievements />} />

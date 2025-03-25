@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 const Exercise = () => {
   const navigate = useNavigate();
-  const { lessonId, exerciseId } = useParams<{ lessonId: string; exerciseId: string }>();
+  const { exerciseId } = useParams<{ exerciseId: string }>();
   const [exercises, setExercises] = useState<ExerciseType[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
@@ -22,6 +21,7 @@ const Exercise = () => {
   const { user } = useAuth();
   const { submitExerciseResult } = useUserProgress();
   const [startTime, setStartTime] = useState<Date>(new Date());
+  const lessonId = exerciseId;
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -29,6 +29,7 @@ const Exercise = () => {
       
       try {
         setLoading(true);
+        console.log(`Fetching exercises for lesson ID: ${lessonId}`);
         const exercisesData = await contentService.getExercisesByLesson(lessonId);
         
         if (exercisesData.length === 0) {
@@ -39,7 +40,7 @@ const Exercise = () => {
         
         setExercises(exercisesData);
         setLoading(false);
-        setStartTime(new Date()); // Reset timer when exercises load
+        setStartTime(new Date());
       } catch (error) {
         console.error("Error fetching exercises:", error);
         toast.error("Failed to load exercises");
@@ -70,10 +71,8 @@ const Exercise = () => {
       const newXp = xpEarned + currentExercise.xp_reward;
       setXpEarned(newXp);
       
-      // Calculate time spent on this exercise
       const timeSpent = Math.floor((new Date().getTime() - startTime.getTime()) / 1000);
       
-      // Submit result if user is logged in
       if (user && lessonId) {
         try {
           const result: ExerciseResult = {
@@ -100,9 +99,8 @@ const Exercise = () => {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setSelectedAnswer(null);
       setIsAnswerChecked(false);
-      setStartTime(new Date()); // Reset timer for next exercise
+      setStartTime(new Date());
     } else {
-      // Navigate to lesson complete screen
       navigate(`/app/lesson-complete/${lessonId}`);
     }
   };

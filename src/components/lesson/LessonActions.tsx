@@ -18,6 +18,7 @@ export const LessonActions: React.FC<LessonActionsProps> = ({ lessonId, isGuest 
         description: "In demo mode, lesson progress won't be saved. Sign up to track your progress."
       });
     }
+    // Fix: Using the correct route format with lessonId parameter
     navigate(`/app/exercise/${lessonId}`);
   };
 
