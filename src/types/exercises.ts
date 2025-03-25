@@ -1,7 +1,8 @@
+
 export interface ExerciseType {
   id: string;
   lesson_id: string;
-  type: "multiple_choice" | "translation" | "text_input" | "arrange_sentence" | "matching";
+  type: "multiple_choice" | "translation" | "text_input" | "arrange_sentence" | "matching" | "fill_in_blank";
   question: string;
   options: string[];
   correct_answer: string;
