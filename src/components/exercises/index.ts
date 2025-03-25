@@ -10,3 +10,6 @@ export { NoExercisesFound } from "./NoExercisesFound";
 export { TextInputExercise } from "./TextInputExercise";
 export { TranslationExercise } from "./TranslationExercise";
 export { MatchingExercise } from "./MatchingExercise";
+
+// Add this line to export the FillInBlankExercise when implemented
+// export { FillInBlankExercise } from "./FillInBlankExercise";
