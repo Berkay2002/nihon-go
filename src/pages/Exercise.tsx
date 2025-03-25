@@ -10,9 +10,6 @@ import { toast } from "sonner";
 import { useExerciseSession } from "@/hooks/useExerciseSession";
 import { ExerciseLayout } from "@/components/exercises/ExerciseLayout";
 
-// Completion threshold (percentage of questions needed to be correct)
-const COMPLETION_THRESHOLD = 80; // 80%
-
 const Exercise = () => {
   const navigate = useNavigate();
   const { exerciseId } = useParams<{ exerciseId: string }>();
@@ -41,14 +38,15 @@ const Exercise = () => {
     handleMatchingResult,
     handleCheckAnswer,
     handleNextExercise,
-    matchingResult
+    matchingResult,
+    error
   } = useExerciseSession(lessonId);
 
   if (isLoading) {
     return <LoadingExercise />;
   }
 
-  if (!currentExercise) {
+  if (error || !currentExercise) {
     return <NoExercisesFound lessonId={lessonId || ""} />;
   }
 

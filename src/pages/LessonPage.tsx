@@ -18,29 +18,29 @@ const LessonPage = () => {
 
   // Fetch lesson data
   useEffect(() => {
-    const fetchLessonData = async () => {
-      if (!lessonId) {
-        setError("No lesson ID provided");
-        setLoading(false);
-        return;
-      }
+    if (!lessonId) {
+      setError("No lesson ID provided");
+      setLoading(false);
+      return;
+    }
 
-      console.log(`Fetching lesson with ID: ${lessonId}`);
+    const fetchLessonData = async () => {
       try {
+        console.log(`Fetching lesson with ID: ${lessonId}`);
         setLoading(true);
         setError(null);
 
         const lessonData = await contentService.getLesson(lessonId);
         console.log("Lesson data received:", lessonData);
         setLesson(lessonData);
+        setLoading(false);
       } catch (error) {
         console.error(`Error fetching lesson: ${error}`);
         setError("Failed to load lesson. Please try again later.");
+        setLoading(false);
         toast.error("Could not load lesson", {
           description: "Please refresh or try again later."
         });
-      } finally {
-        setLoading(false);
       }
     };
 

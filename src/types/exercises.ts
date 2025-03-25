@@ -4,7 +4,7 @@ export interface ExerciseType {
   lesson_id: string;
   type: "multiple_choice" | "translation" | "text_input" | "arrange_sentence" | "matching" | "fill_in_blank";
   question: string;
-  options: string[];
+  options: any;
   correct_answer: string;
   japanese?: string | null;
   romaji?: string | null;
@@ -14,6 +14,7 @@ export interface ExerciseType {
   updated_at?: string;
   audio_url?: string;
   image_url?: string;
+  words?: string[]; // For arrange_sentence exercises
   // For matching exercises
   matching_pairs?: Array<{hiragana: string, romaji: string}>;
 }
@@ -23,6 +24,6 @@ export interface ExerciseResult {
   exerciseId: string;
   isCorrect: boolean;
   userAnswer: string;
-  timeSpent: number;
+  timeSpent?: number;
   xpEarned: number;
 }

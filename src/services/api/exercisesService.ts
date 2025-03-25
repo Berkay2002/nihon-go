@@ -34,6 +34,7 @@ const mapToExerciseType = (exercise: Exercise): ExerciseType => {
     japanese: exercise.japanese || "",
     romaji: exercise.romaji || "",
     lesson_id: exercise.lesson_id,
+    order_index: exercise.order_index,
     words: exercise.words || []
   };
   

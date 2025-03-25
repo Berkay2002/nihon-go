@@ -24,6 +24,25 @@ const unitsService = {
     }
     
     return data || [];
+  },
+  
+  getUnit: async (unitId: string): Promise<Unit> => {
+    const { data, error } = await baseService.client
+      .from('units')
+      .select('*')
+      .eq('id', unitId)
+      .maybeSingle();
+    
+    if (error) {
+      console.error(`Error fetching unit ${unitId}:`, error);
+      throw error;
+    }
+    
+    if (!data) {
+      throw new Error(`Unit with ID ${unitId} not found`);
+    }
+    
+    return data;
   }
 };
 

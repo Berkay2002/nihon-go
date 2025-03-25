@@ -10,3 +10,4 @@ export * from './ArrangeSentenceExercise';
 export * from './FillInBlankExercise';
 export * from './TranslationExercise';
 export * from './MatchingExercise';
+export * from './ExerciseLayout';

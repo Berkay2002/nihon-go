@@ -15,30 +15,39 @@ import { Toaster } from 'sonner';
 import Index from './pages/Index';
 import Auth from './pages/Auth';
 import Welcome from './pages/Welcome';
+import NotFound from './pages/NotFound';
+
+// App pages
 import Home from './pages/Home';
+import Profile from './pages/Profile';
 import LessonPage from './pages/LessonPage';
 import Exercise from './pages/Exercise';
 import LessonComplete from './pages/LessonComplete';
+
+// Learning Units
 import Units from './pages/Units';
 import UnitPage from './pages/UnitPage';
-import Achievements from './pages/Achievements';
-import Characters from './pages/Characters';
-import CharacterDetail from './pages/CharacterDetail';
-import Profile from './pages/Profile';
-import NotFound from './pages/NotFound';
+
+// Reviews & Practice
 import Reviews from './pages/Reviews';
 import Practice from './pages/Practice';
+import { ReviewSessionContainer } from './components/review';
+
+// Characters & Achievements
+import Characters from './pages/Characters';
+import CharacterDetail from './pages/CharacterDetail';
+import Achievements from './pages/Achievements';
 
 // Import components
 import Layout from './components/Layout';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import { ReviewSessionContainer } from './components/review';
 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
-      refetchOnWindowFocus: false
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
     }
   }
 });
@@ -68,6 +77,7 @@ const App = () => {
         <ThemeProvider defaultTheme="dark">
           <AuthProvider>
             <Routes>
+              {/* Public Routes */}
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/welcome" element={<Welcome />} />
@@ -75,19 +85,29 @@ const App = () => {
               {/* Protected Routes */}
               <Route element={<ProtectedRoutes />}>
                 <Route path="/app" element={<Layout />}>
+                  {/* Core App Pages */}
                   <Route index element={<Home />} />
+                  <Route path="home" element={<Home />} />
+                  <Route path="profile" element={<Profile />} />
+                  
+                  {/* Learning Content */}
                   <Route path="lesson/:lessonId" element={<LessonPage />} />
                   <Route path="exercise/:exerciseId" element={<Exercise />} />
                   <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
+                  
+                  {/* Units & Courses */}
                   <Route path="units" element={<Units />} />
                   <Route path="unit/:unitId" element={<UnitPage />} />
-                  <Route path="achievements" element={<Achievements />} />
-                  <Route path="characters" element={<Characters />} />
-                  <Route path="characters/:characterId" element={<CharacterDetail />} />
-                  <Route path="profile" element={<Profile />} />
+                  
+                  {/* Review & Practice */}
                   <Route path="reviews" element={<Reviews />} />
                   <Route path="reviews/:type" element={<ReviewSessionContainer />} />
                   <Route path="practice/:type" element={<Practice />} />
+                  
+                  {/* Additional Content */}
+                  <Route path="characters" element={<Characters />} />
+                  <Route path="characters/:characterId" element={<CharacterDetail />} />
+                  <Route path="achievements" element={<Achievements />} />
                 </Route>
               </Route>
               
