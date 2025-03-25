@@ -8,7 +8,7 @@ import {
   LessonScorecard,
   ExerciseResponse
 } from "./userProgress/types";
-import userProgressApi from "./userProgress/userProgressApi";
+import { userProgressApi } from "./userProgress/userProgressApi";
 
 export interface UseUserProgressReturn {
   userProgress: UserProgress[];
@@ -21,7 +21,7 @@ export interface UseUserProgressReturn {
   submitLessonCompletion: (lessonId: string, scorecard: LessonScorecard) => Promise<boolean>;
   // Add missing methods
   getUserStreakData: () => Promise<UserStreak>;
-  updateLessonProgress: (lessonId: string) => Promise<boolean>;
+  updateLessonProgress: (lessonId: string, isCompleted: boolean, accuracy: number, xpEarned: number) => Promise<boolean>;
   updateUserStreak: (xpEarned: number) => Promise<boolean>;
   getLessonScorecard: (lessonId: string) => Promise<LessonScorecard | null>;
 }
@@ -82,18 +82,17 @@ export const useUserProgress = (): UseUserProgressReturn => {
   const submitExerciseResult = async (result: ExerciseResult): Promise<boolean> => {
     if (!user) return false;
     try {
-      // Remove timeSpent if not needed by the API
-      const { timeSpent, ...restResult } = result;
-      const success = await userProgressApi.saveExerciseResult(user.id, {
-        ...restResult,
-        timeSpent: timeSpent || 0 // Ensure it exists but use default if not provided
+      // Ensure timeSpent property exists with a default value if not provided
+      const response = await userProgressApi.saveExerciseResult(user.id, {
+        ...result,
+        timeSpent: result.timeSpent || 0 // Ensure timeSpent property exists
       });
       
-      if (success && result.isCorrect) {
+      if (response.success && result.isCorrect) {
         await updateUserStreak(result.xpEarned);
       }
       
-      return success;
+      return response.success;
     } catch (err) {
       console.error("Error submitting exercise result:", err);
       return false;
@@ -103,8 +102,7 @@ export const useUserProgress = (): UseUserProgressReturn => {
   const submitLessonCompletion = async (lessonId: string, scorecard: LessonScorecard): Promise<boolean> => {
     if (!user) return false;
     try {
-      // Implement lesson completion submission
-      // This would typically update a lesson as completed in the database
+      await userProgressApi.submitLessonCompletion(user.id, lessonId, scorecard);
       return true;
     } catch (err) {
       console.error("Error submitting lesson completion:", err);
@@ -112,10 +110,15 @@ export const useUserProgress = (): UseUserProgressReturn => {
     }
   };
 
-  const updateLessonProgress = async (lessonId: string): Promise<boolean> => {
+  const updateLessonProgress = async (
+    lessonId: string, 
+    isCompleted: boolean, 
+    accuracy: number,
+    xpEarned: number
+  ): Promise<boolean> => {
     if (!user) return false;
     try {
-      // Implementation for updating lesson progress
+      await userProgressApi.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned);
       return true;
     } catch (err) {
       console.error("Error updating lesson progress:", err);
@@ -126,7 +129,7 @@ export const useUserProgress = (): UseUserProgressReturn => {
   const updateUserStreak = async (xpEarned: number): Promise<boolean> => {
     if (!user) return false;
     try {
-      // Implementation for updating user streak
+      await userProgressApi.updateUserStreak(user.id, xpEarned);
       return true;
     } catch (err) {
       console.error("Error updating user streak:", err);
@@ -137,8 +140,7 @@ export const useUserProgress = (): UseUserProgressReturn => {
   const getLessonScorecard = async (lessonId: string): Promise<LessonScorecard | null> => {
     if (!user) return null;
     try {
-      // Implementation for getting lesson scorecard
-      return null;
+      return await userProgressApi.getLessonScorecard(user.id, lessonId);
     } catch (err) {
       console.error("Error getting lesson scorecard:", err);
       return null;

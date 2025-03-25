@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { ExerciseResult } from "@/types/exercises";
@@ -459,3 +458,6 @@ export const userProgressApi = {
     );
   }
 };
+
+// Export the userProgressApi as default as well to maintain backward compatibility
+export default userProgressApi;

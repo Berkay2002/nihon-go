@@ -2,24 +2,19 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trophy, Star, RefreshCw, Check, Flame, X, Zap, BookOpen } from 'lucide-react';
 import { useUserProgress } from '@/services/userProgressService';
-import type { UserProgress, UserStreak, LessonScorecard, ExerciseResponse } from '@/services/userProgress/types';
+import { UserProgress, UserStreak, LessonScorecard } from '@/services/userProgress/types';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { InstallPrompt } from '@/components/install-prompt';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
-// Define a simplified version of ExerciseResponse for use in this component
-interface ExerciseResponse {
-  id: string;
-  user_id: string;
-  lesson_id: string;
+interface LocalExerciseResponse {
   exercise_id: string;
-  exercise_type: string;
+  is_correct: boolean;
   question: string;
   correct_answer: string;
   user_answer: string;
-  is_correct: boolean;
-  created_at: string;
+  exercise_type: string;
 }
 
 export default function LessonComplete() {
@@ -38,7 +33,6 @@ export default function LessonComplete() {
   const [accuracy, setAccuracy] = useState(100);
   const [showScorecard, setShowScorecard] = useState(false);
   
-  // Get performance feedback based on accuracy
   const getPerformanceFeedback = (acc: number) => {
     if (acc >= 100) return { text: "AMAZING", color: "text-green-500" };
     if (acc >= 90) return { text: "GREAT", color: "text-green-500" };
@@ -49,7 +43,6 @@ export default function LessonComplete() {
   
   const performance = getPerformanceFeedback(accuracy);
   
-  // Use useCallback to prevent recreating this function on each render
   const processLessonCompletion = useCallback(async () => {
     if (!lessonId || !user || isProcessed) {
       setIsLoading(false);
@@ -59,69 +52,55 @@ export default function LessonComplete() {
     try {
       setIsLoading(true);
       
-      // Get current streak data
       const currentStreak = await getUserStreakData();
       setStreakData(currentStreak);
       
-      // Check if lesson was already completed
       const userProgress = await getUserProgressData();
       console.log("All user progress:", JSON.stringify(userProgress));
       const existingLesson = userProgress.find(p => p.lesson_id === lessonId);
       console.log("Found lesson data:", JSON.stringify(existingLesson));
       
-      // Get lesson scorecard with exercise results
       const lessonScorecard = await getLessonScorecard(lessonId);
       setScorecard(lessonScorecard);
-      setAccuracy(lessonScorecard.accuracy);
+      setAccuracy(lessonScorecard?.accuracy || 0);
       
       if (existingLesson?.is_completed) {
-        // Lesson was already completed previously
         setIsFirstCompletion(false);
         setLessonData(existingLesson);
-        setNewXpEarned(0); // No new XP for already completed lessons
+        setNewXpEarned(0);
         console.log(`Lesson ${lessonId} was already completed previously. Total XP: ${existingLesson.xp_earned}`);
         setIsLoading(false);
         setIsProcessed(true);
         return;
       }
       
-      // Calculate XP based on lesson complexity (in a real app, this would come from the lesson data)
-      // For now, use a fixed value and calculate based on accuracy
       const baseXP = 10;
-      const calculatedAccuracy = lessonScorecard.accuracy;
+      const calculatedAccuracy = lessonScorecard?.accuracy || 0;
       
-      // Award bonus XP for 100% accuracy
       const accuracyBonus = calculatedAccuracy === 100 ? 5 : 0;
       const totalXpEarned = baseXP + accuracyBonus;
       setNewXpEarned(totalXpEarned);
       
-      // Mark the lesson as completed with calculated accuracy
       await updateLessonProgress(lessonId, true, calculatedAccuracy, totalXpEarned);
       console.log(`Lesson ${lessonId} marked as completed. XP earned: ${totalXpEarned}`);
       
-      // Only update streak for first-time completion
-      const updatedStreak = await updateUserStreak(totalXpEarned);
-      setStreakData(updatedStreak || currentStreak);
+      await updateUserStreak(totalXpEarned);
+      const updatedStreak = await getUserStreakData();
+      setStreakData(updatedStreak);
       
-      // Fetch updated data after marking as complete
       const updatedProgress = await getUserProgressData();
       const updatedLesson = updatedProgress.find(p => p.lesson_id === lessonId);
       setLessonData(updatedLesson || null);
       
-      // Dispatch lesson completed event for the PWA install prompt
       const event = new Event('lessonCompleted');
       window.dispatchEvent(event);
       
-      // Check if we should show the install prompt
       const shouldShowPrompt = localStorage.getItem('showInstallPrompt') === 'true';
       const isMobile = window.innerWidth < 768;
       
       if (shouldShowPrompt && isMobile) {
-        // We delay the prompt to let the user see their accomplishment first
         setTimeout(() => {
           setShowInstallPrompt(true);
-          
-          // Clear the flag so we don't show it again immediately
           localStorage.removeItem('showInstallPrompt');
         }, 1500);
       }
@@ -132,7 +111,6 @@ export default function LessonComplete() {
       console.error('Error marking lesson as completed:', error);
       toast.error('Failed to update your progress');
       
-      // Still show UI with fallback data
       setLessonData({
         id: 'fallback',
         user_id: user.id,
@@ -173,7 +151,6 @@ export default function LessonComplete() {
     setShowScorecard(true);
   };
   
-  // Helper to get exercise icon component
   const getExerciseIcon = (type: string) => {
     switch (type) {
       case 'select':
@@ -208,9 +185,7 @@ export default function LessonComplete() {
   return (
     <div className="min-h-screen bg-slate-900 text-white flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center p-8">
-        {/* Animated characters and effects */}
         <div className="relative w-full max-w-md h-60 mb-6">
-          {/* Firework effects */}
           <div className="absolute top-0 left-1/4 animate-pulse">
             <div className="text-yellow-500 text-4xl">✨</div>
           </div>
@@ -221,7 +196,6 @@ export default function LessonComplete() {
             <div className="text-green-400 text-4xl">✨</div>
           </div>
           
-          {/* Characters */}
           <div className="absolute bottom-0 left-1/2 transform -translate-x-16">
             <div className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
               <span className="text-white text-3xl">🦉</span>
@@ -245,7 +219,6 @@ export default function LessonComplete() {
         </p>
         
         <div className="grid grid-cols-2 gap-4 w-full max-w-md mb-10">
-          {/* XP card */}
           <div className="bg-yellow-900/40 border-2 border-yellow-500 rounded-xl p-4 flex flex-col items-center justify-center">
             <p className="text-xs font-bold text-yellow-500 mb-2">TOTAL XP</p>
             <div className="flex items-center">
@@ -256,7 +229,6 @@ export default function LessonComplete() {
             </div>
           </div>
           
-          {/* Accuracy card */}
           <div className="bg-green-900/40 border-2 border-green-500 rounded-xl p-4 flex flex-col items-center justify-center">
             <p className="text-xs font-bold text-green-500 mb-2">{performance.text}</p>
             <div className="flex items-center">
@@ -283,7 +255,6 @@ export default function LessonComplete() {
         </div>
       </div>
       
-      {/* Scorecard Dialog */}
       <Dialog open={showScorecard} onOpenChange={setShowScorecard}>
         <DialogContent className="bg-slate-800 text-white border-slate-700 max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogTitle className="text-center text-xl">Check out your scorecard!</DialogTitle>
@@ -359,7 +330,6 @@ export default function LessonComplete() {
         </DialogContent>
       </Dialog>
       
-      {/* Show install prompt after achievements are displayed */}
       {showInstallPrompt && (
         <InstallPrompt 
           variant="achievement"

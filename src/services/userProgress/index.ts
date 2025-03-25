@@ -1,3 +1,4 @@
 
 export * from './types';
-export * from './userProgressApi';
+export { userProgressApi } from './userProgressApi';
+export { default as userProgressApi } from './userProgressApi';
