@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import learningAlgorithmService, { ReviewSession } from "@/services/learningAlgorithmService";
+import learningAlgorithmService, { ReviewSession } from "@/services/learning";
 import { ReviewHeader } from "@/components/shared/ReviewHeader";
 import { 
   GuestPrompt,

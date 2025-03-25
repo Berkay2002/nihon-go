@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { ReviewSession } from "@/services/learningAlgorithmService";
+import { ReviewSession } from "@/services/learning";
 import { clearReviewSessionData } from "./ReviewSessionStorage";
 import { useAuth } from "@/hooks/useAuth";
 
