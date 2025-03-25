@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { UserProgress, UserStreak, ExerciseResult } from './types';
 
@@ -203,10 +202,9 @@ export const userProgressApi = {
       throw progressError;
     }
     
-    // Calculate if the lesson is completed
-    const totalExercises = lessonExercises?.length || 0;
-    const completedCount = completedExercises ? 1 : 0; // Simplified for now
-    const isLessonCompleted = completedCount >= totalExercises;
+    // Mark the lesson as completed regardless of accuracy
+    // This ensures that even with partial scores like 9/12, the lesson is still considered completed
+    const isLessonCompleted = true;
     
     // Calculate accuracy (simplified)
     const accuracy = result.isCorrect ? 100 : (lessonProgress?.accuracy || 0);

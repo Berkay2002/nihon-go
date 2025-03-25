@@ -32,7 +32,7 @@ export const Header: React.FC<HeaderProps> = ({
           </Button>
         )}
         <h1 className="text-2xl font-bold text-primary">
-          {title}
+          {title === "Japanese Learning Path" ? "Learning Path" : title}
         </h1>
       </div>
     </header>

@@ -6,13 +6,11 @@ type UserProgressProps = {
     title: string;
     imageSrc: string;
   };
-  hearts: number;
   points: number;
 };
 
 export function UserProgress({
   activeCourse,
-  hearts,
   points
 }: UserProgressProps) {
   const { isDark } = useTheme();
@@ -23,11 +21,11 @@ export function UserProgress({
         <div className={`p-2 rounded-xl ${
           isDark ? "bg-slate-700 shadow-inner" : "bg-slate-100 shadow-sm"
         }`}>
-          <div className="rounded-md w-16 h-16 flex items-center justify-center overflow-hidden">
+          <div className="rounded-md w-16 h-12 flex items-center justify-center overflow-hidden">
             <img
-              src={activeCourse.imageSrc}
-              alt={activeCourse.title}
-              className="w-14 h-14 object-contain"
+              src="/japan-flag.svg"
+              alt="Japan"
+              className="w-16 h-auto object-contain"
             />
           </div>
         </div>
@@ -42,22 +40,10 @@ export function UserProgress({
       </div>
       <div className="flex items-center justify-start gap-x-6">
         <div className="flex items-center gap-x-2">
-          <img
-            src="/heart.svg"
-            alt="Heart"
-            className="h-8 w-8"
-          />
-          <p className="text-rose-500 text-xl font-bold">
-            {hearts}
+          <p className="text-secondary">
+            Total XP:
           </p>
-        </div>
-        <div className="flex items-center gap-x-2">
-          <img
-            src="/points.svg"
-            alt="Points"
-            className="h-8 w-8"
-          />
-          <p className="text-amber-500 text-xl font-bold">
+          <p className="text-blue-500 text-xl font-bold">
             {points}
           </p>
         </div>

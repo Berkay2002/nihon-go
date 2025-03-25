@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -115,19 +114,14 @@ const Exercise = () => {
         .map((answer) => answer.trim().toLowerCase());
       
       // Now check if user's answer matches ANY of the correct answers
-      // or if it's part of one of the answers (for partial matching)
       isCorrect = correctAnswersArray.some(answer => {
         // Check if the user's answer is any of the correct answers
         return answer === userAnswer || 
-               // Check if the user's answer is part of a correct answer (especially for cases like "konnichiwa" in "こんにちは,konnichiwa")
+               // Check if the user's answer is part of a correct answer
                (answer.includes(userAnswer) && userAnswer.length > 3) ||
                // Or if the correct answer is part of the user's answer
                (userAnswer.includes(answer) && answer.length > 3);
       });
-      
-      console.log("User answer:", userAnswer);
-      console.log("Correct answers:", correctAnswersArray);
-      console.log("Is correct:", isCorrect);
     } else if (currentExercise.type === "arrange_sentence") {
       // For arrange sentence exercises
       if (arrangedWords.length === 0) {
@@ -135,12 +129,10 @@ const Exercise = () => {
         return;
       }
       
-      userAnswer = arrangedWords.join("");
-      const correctAnswer = currentExercise.correct_answer.replace(/\s+/g, "");
+      userAnswer = arrangedWords.join(" ");
+      const correctAnswer = currentExercise.correct_answer;
       
-      isCorrect = userAnswer === correctAnswer;
-      console.log("User arranged:", userAnswer);
-      console.log("Correct arrangement:", correctAnswer);
+      isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
     } else {
       // For multiple choice exercises, check the selected answer
       if (selectedAnswer === null) {
@@ -154,7 +146,7 @@ const Exercise = () => {
     
     setIsAnswerChecked(true);
     
-    // Display only ONE toast message for feedback based on correctness
+    // Display feedback toast based on correctness
     if (isCorrect) {
       toast.success("Correct answer!");
       const newXp = xpEarned + currentExercise.xp_reward;
@@ -183,7 +175,7 @@ const Exercise = () => {
     }
   };
 
-  const handleNextExercise = () => {
+  const handleNextExercise = async () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setSelectedAnswer(null);
@@ -193,6 +185,31 @@ const Exercise = () => {
       setArrangedWords([]);
       setAvailableWords([]);
     } else {
+      // Last exercise completed - ensure the lesson is marked as completed
+      if (user && lessonId) {
+        try {
+          // Calculate completion percentage based on XP earned vs total possible XP
+          const totalPossibleXP = exercises.reduce((sum, ex) => sum + ex.xp_reward, 0);
+          const completionPercentage = Math.min(100, Math.floor((xpEarned / totalPossibleXP) * 100));
+          
+          console.log(`Lesson ${lessonId} completed with ${xpEarned}/${totalPossibleXP} XP (${completionPercentage}%)`);
+          
+          // Mark the lesson as completed with the calculated accuracy
+          // We set isCompleted to true regardless of the actual score
+          await submitExerciseResult({
+            lessonId,
+            exerciseId: 'final-exercise',
+            isCorrect: true,
+            userAnswer: 'completed',
+            timeSpent: 0,
+            xpEarned: 0 // Additional XP will be awarded on the completion screen
+          });
+        } catch (error) {
+          console.error("Error updating lesson completion:", error);
+        }
+      }
+      
+      // Navigate to the lesson complete page
       navigate(`/app/lesson-complete/${lessonId}`);
     }
   };
@@ -217,18 +234,18 @@ const Exercise = () => {
   }
 
   if (!currentExercise) {
-    return <NoExercisesFound lessonId={lessonId} />;
+    return <NoExercisesFound lessonId={lessonId || ""} />;
   }
 
   return (
-    <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-      <ExerciseProgress 
-        currentIndex={currentExerciseIndex} 
-        totalExercises={exercises.length} 
-        xpEarned={xpEarned} 
-      />
+    <div className="min-h-screen bg-white dark:bg-slate-900 pb-20">
+      <div className="container max-w-md mx-auto px-4 pt-4">
+        <ExerciseProgress 
+          currentIndex={currentExerciseIndex} 
+          totalExercises={exercises.length} 
+          xpEarned={xpEarned} 
+        />
 
-      <section className="mb-8">
         <ExerciseQuestion
           exercise={currentExercise}
           selectedAnswer={selectedAnswer}
@@ -241,15 +258,15 @@ const Exercise = () => {
           onAddWord={handleAddWord}
           onRemoveWord={handleRemoveWord}
         />
+      </div>
 
-        <ExerciseActions
-          isAnswerChecked={isAnswerChecked}
-          isLastExercise={currentExerciseIndex === exercises.length - 1}
-          isInputValid={isInputValid()}
-          onCheckAnswer={handleCheckAnswer}
-          onNextExercise={handleNextExercise}
-        />
-      </section>
+      <ExerciseActions
+        isAnswerChecked={isAnswerChecked}
+        isLastExercise={currentExerciseIndex === exercises.length - 1}
+        isInputValid={isInputValid()}
+        onCheckAnswer={handleCheckAnswer}
+        onNextExercise={handleNextExercise}
+      />
     </div>
   );
 };

@@ -1,4 +1,3 @@
-
 export interface ExerciseType {
   id: string;
   lesson_id: string;
@@ -12,6 +11,8 @@ export interface ExerciseType {
   order_index: number;
   created_at?: string;
   updated_at?: string;
+  audio_url?: string;
+  image_url?: string;
 }
 
 export interface ExerciseResult {

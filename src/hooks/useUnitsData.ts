@@ -182,7 +182,15 @@ export const useUnitsData = (unitId?: string) => {
             const previousLessonProgress = progressData.find(
               p => p.lesson_id === previousLesson.id
             );
+            
+            // If previous lesson is completed or has any progress at all, unlock this lesson
             isLocked = !(previousLessonProgress?.is_completed || false);
+            
+            // Additional check: if this is the second lesson and the first one has been attempted,
+            // unlock it regardless of completion status
+            if (index === 1 && previousLessonProgress) {
+              isLocked = false;
+            }
           } else {
             isLocked = false; // First lesson is always unlocked
           }

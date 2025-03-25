@@ -1,15 +1,38 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Trophy, Star } from 'lucide-react';
+import { useUserProgress } from '@/services/userProgressService';
+import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 export default function LessonComplete() {
   const { unitId, lessonId } = useParams<{ unitId: string; lessonId: string }>();
   const navigate = useNavigate();
+  const { updateLessonProgress } = useUserProgress();
+  const { user } = useAuth();
   
   // In a real app, we would fetch lesson data from an API
   // For now, we'll use mock data
   const xpEarned = 10;
   const streak = 1; // This would come from user state
+  
+  // Mark lesson as completed when this page loads
+  useEffect(() => {
+    const markLessonCompleted = async () => {
+      if (lessonId && user) {
+        try {
+          // Mark the lesson as completed with 100% accuracy
+          await updateLessonProgress(lessonId, true, 100, xpEarned);
+          console.log(`Lesson ${lessonId} marked as completed`);
+        } catch (error) {
+          console.error('Error marking lesson as completed:', error);
+          toast.error('Failed to update your progress');
+        }
+      }
+    };
+    
+    markLessonCompleted();
+  }, [lessonId, user, updateLessonProgress, xpEarned]);
   
   const handleContinue = () => {
     navigate('/app');
