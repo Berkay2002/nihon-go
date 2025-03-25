@@ -1,7 +1,7 @@
 export interface ExerciseType {
   id: string;
   lesson_id: string;
-  type: string;
+  type: "multiple_choice" | "translation" | "text_input" | "arrange_sentence" | "matching";
   question: string;
   options: string[];
   correct_answer: string;
@@ -13,6 +13,8 @@ export interface ExerciseType {
   updated_at?: string;
   audio_url?: string;
   image_url?: string;
+  // For matching exercises
+  matching_pairs?: Array<{hiragana: string, romaji: string}>;
 }
 
 export interface ExerciseResult {

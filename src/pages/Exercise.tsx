@@ -5,6 +5,7 @@ import contentService from "@/services/contentService";
 import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
 import { ExerciseType } from "@/types/exercises";
+import { normalizeJapaneseText, shuffleArray } from "@/lib/utils";
 import {
   ExerciseProgress,
   ExerciseQuestion,
@@ -12,6 +13,19 @@ import {
   LoadingExercise,
   NoExercisesFound
 } from "@/components/exercises";
+
+// Type for data coming from the API
+interface APIExerciseData {
+  id: string;
+  lesson_id: string;
+  type: string;
+  question: string;
+  options: string[];
+  correct_answer: string;
+  xp_reward: number;
+  order_index: number;
+  [key: string]: unknown;
+}
 
 const Exercise = () => {
   const navigate = useNavigate();
@@ -29,6 +43,24 @@ const Exercise = () => {
   const lessonId = exerciseId;
   const [arrangedWords, setArrangedWords] = useState<string[]>([]);
   const [availableWords, setAvailableWords] = useState<string[]>([]);
+  const [matchingResult, setMatchingResult] = useState<boolean>(false);
+  const [shuffledExercises, setShuffledExercises] = useState<ExerciseType[]>([]);
+
+  // Process and randomize exercise data
+  const processExerciseData = (exercisesData: APIExerciseData[]): ExerciseType[] => {
+    // Create a deep copy to avoid mutating the original data
+    return exercisesData.map(exercise => {
+      // Cast the type to ExerciseType since we've validated it has the required fields
+      const processedExercise = { ...exercise } as unknown as ExerciseType;
+      
+      // For multiple choice and translation exercises, shuffle the options
+      if (["multiple_choice", "translation"].includes(processedExercise.type) && Array.isArray(processedExercise.options)) {
+        processedExercise.options = shuffleArray([...processedExercise.options]);
+      }
+      
+      return processedExercise;
+    });
+  };
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -45,7 +77,9 @@ const Exercise = () => {
           return;
         }
         
-        setExercises(exercisesData);
+        // Process and randomize exercise data
+        const processed = processExerciseData(exercisesData as APIExerciseData[]);
+        setExercises(processed);
         setLoading(false);
         setStartTime(new Date());
       } catch (error) {
@@ -61,7 +95,8 @@ const Exercise = () => {
   // Setup arrange sentence words when exercise changes
   useEffect(() => {
     if (currentExercise && currentExercise.type === "arrange_sentence" && Array.isArray(currentExercise.options)) {
-      setAvailableWords([...currentExercise.options]);
+      // Shuffle the words for arrange sentence exercises
+      setAvailableWords(shuffleArray([...currentExercise.options]));
       setArrangedWords([]);
     }
   }, [currentExerciseIndex, exercises]);
@@ -91,6 +126,10 @@ const Exercise = () => {
     const wordToRemove = arrangedWords[index];
     setArrangedWords(arrangedWords.filter((_, i) => i !== index));
     setAvailableWords([...availableWords, wordToRemove]);
+  };
+
+  const handleMatchingResult = (isCorrect: boolean) => {
+    setMatchingResult(isCorrect);
   };
 
   const handleCheckAnswer = async () => {
@@ -132,7 +171,12 @@ const Exercise = () => {
       userAnswer = arrangedWords.join(" ");
       const correctAnswer = currentExercise.correct_answer;
       
-      isCorrect = userAnswer.toLowerCase() === correctAnswer.toLowerCase();
+      // Use normalizeJapaneseText to make validation more forgiving
+      isCorrect = normalizeJapaneseText(userAnswer) === normalizeJapaneseText(correctAnswer);
+    } else if (currentExercise.type === "matching") {
+      // For matching exercises, the result comes from the matching component
+      isCorrect = matchingResult;
+      userAnswer = "matching_exercise";
     } else {
       // For multiple choice exercises, check the selected answer
       if (selectedAnswer === null) {
@@ -184,6 +228,7 @@ const Exercise = () => {
       setStartTime(new Date());
       setArrangedWords([]);
       setAvailableWords([]);
+      setMatchingResult(false);
     } else {
       // Last exercise completed - ensure the lesson is marked as completed
       if (user && lessonId) {
@@ -224,6 +269,9 @@ const Exercise = () => {
       return textAnswer.trim() !== "";
     } else if (currentExercise.type === "arrange_sentence") {
       return arrangedWords.length > 0;
+    } else if (currentExercise.type === "matching") {
+      // Always allow checking for matching exercises
+      return true;
     }
     
     return false;
@@ -238,7 +286,7 @@ const Exercise = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900 pb-20">
+    <div className="min-h-screen bg-white dark:bg-slate-900 pb-20 md:pb-4">
       <div className="container max-w-md mx-auto px-4 pt-4">
         <ExerciseProgress 
           currentIndex={currentExerciseIndex} 
@@ -257,6 +305,7 @@ const Exercise = () => {
           onTextAnswerChange={handleTextAnswerChange}
           onAddWord={handleAddWord}
           onRemoveWord={handleRemoveWord}
+          onMatchingResult={handleMatchingResult}
         />
       </div>
 

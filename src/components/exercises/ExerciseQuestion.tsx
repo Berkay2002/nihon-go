@@ -1,8 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseType } from "@/types/exercises";
-import { cn } from "@/lib/utils";
+import { cn, normalizeJapaneseText } from "@/lib/utils";
 import { Volume2 } from "lucide-react"; 
+import { MatchingExercise } from "./MatchingExercise";
 
 interface ExerciseQuestionProps {
   exercise: ExerciseType;
@@ -15,6 +16,7 @@ interface ExerciseQuestionProps {
   onTextAnswerChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAddWord: (word: string, index: number) => void;
   onRemoveWord: (index: number) => void;
+  onMatchingResult?: (isCorrect: boolean) => void;
 }
 
 export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
@@ -28,6 +30,7 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
   onTextAnswerChange,
   onAddWord,
   onRemoveWord,
+  onMatchingResult,
 }) => {
   const playAudio = () => {
     if (exercise.audio_url) {
@@ -45,6 +48,7 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
           {exercise.type === "translation" && "Translate this text"}
           {exercise.type === "text_input" && "Type your answer"}
           {exercise.type === "arrange_sentence" && "Arrange the words to form a sentence"}
+          {exercise.type === "matching" && "Match the hiragana with their romaji"}
         </h2>
         
         <div className="flex items-center justify-center mb-6">
@@ -148,7 +152,7 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
             onChange={onTextAnswerChange}
             disabled={isAnswerChecked}
             className={cn(
-              "w-full p-4 rounded-xl border-2 focus:outline-none focus:ring-2 focus:ring-offset-2",
+              "w-full p-4 rounded-xl bg-white dark:bg-slate-900 border-2 focus:outline-none focus:ring-2 focus:ring-offset-2",
               isAnswerChecked && textAnswer.toLowerCase() === exercise.correct_answer?.toLowerCase()
                 ? "border-green-500 bg-green-50 dark:bg-green-900/20 focus:ring-green-500"
                 : isAnswerChecked
@@ -204,13 +208,22 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
             ))}
           </div>
           
-          {isAnswerChecked && arrangedWords.join("") !== exercise.correct_answer?.replace(/\s+/g, "") && (
+          {isAnswerChecked && normalizeJapaneseText(arrangedWords.join("")) !== normalizeJapaneseText(exercise.correct_answer) && (
             <div className="mt-4 p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Correct answer:</p>
               <p className="font-medium">{exercise.correct_answer}</p>
             </div>
           )}
         </div>
+      )}
+
+      {/* Matching Exercise */}
+      {exercise.type === "matching" && (
+        <MatchingExercise 
+          exercise={exercise}
+          isAnswerChecked={isAnswerChecked}
+          onAnswerCheck={onMatchingResult || (() => {})}
+        />
       )}
     </div>
   );

@@ -1,10 +1,10 @@
-
-export * from './MultipleChoiceExercise';
-export * from './TextInputExercise';
-export * from './ArrangeSentenceExercise';
-export * from './TranslationExercise';
-export * from './ExerciseQuestion';
-export * from './ExerciseProgress';
-export * from './ExerciseActions';
-export * from './LoadingExercise';
-export * from './NoExercisesFound';
+export { ArrangeSentenceExercise } from "./ArrangeSentenceExercise";
+export { ExerciseActions } from "./ExerciseActions";
+export { ExerciseProgress } from "./ExerciseProgress";
+export { ExerciseQuestion } from "./ExerciseQuestion";
+export { LoadingExercise } from "./LoadingExercise";
+export { MultipleChoiceExercise } from "./MultipleChoiceExercise";
+export { NoExercisesFound } from "./NoExercisesFound";
+export { TextInputExercise } from "./TextInputExercise";
+export { TranslationExercise } from "./TranslationExercise";
+export { MatchingExercise } from "./MatchingExercise";

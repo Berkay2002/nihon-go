@@ -17,7 +17,7 @@ export const ExerciseActions: React.FC<ExerciseActionsProps> = ({
   onNextExercise,
 }) => {
   return (
-    <div className="fixed bottom-16 left-0 right-0 p-4 bg-white dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700 shadow-lg z-50">
+    <div className="fixed md:static bottom-16 left-0 right-0 p-4 bg-white dark:bg-slate-900 border-t md:border-t-0 md:mt-8 border-slate-200 dark:border-slate-700 shadow-lg md:shadow-none z-50">
       <div className="container max-w-md mx-auto flex justify-center">
         {!isAnswerChecked ? (
           <button

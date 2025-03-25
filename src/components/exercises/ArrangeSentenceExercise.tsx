@@ -1,7 +1,7 @@
-
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { ExerciseType } from "@/types/exercises";
+import { normalizeJapaneseText } from "@/lib/utils";
 
 interface ArrangeSentenceExerciseProps {
   exercise: ExerciseType;
@@ -20,7 +20,7 @@ export const ArrangeSentenceExercise = ({
   onAddWord,
   onRemoveWord,
 }: ArrangeSentenceExerciseProps) => {
-  const isCorrect = arrangedWords.join("") === exercise.correct_answer.replace(/\s+/g, "");
+  const isCorrect = normalizeJapaneseText(arrangedWords.join("")) === normalizeJapaneseText(exercise.correct_answer);
 
   return (
     <div className="space-y-4">
