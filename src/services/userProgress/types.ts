@@ -1,3 +1,4 @@
+
 export interface UserProgress {
   id: string;
   user_id: string;
@@ -50,4 +51,22 @@ export interface LessonScorecard {
   accuracy: number;
   xpEarned: number;
   responses: ExerciseResponse[];
+}
+
+export interface SrsItem {
+  id: string;
+  user_id: string;
+  vocabulary_id: string;
+  interval: number; // in days
+  ease_factor: number;
+  next_review_date: string;
+  last_review_date: string | null;
+  review_count: number;
+  learning_stage: 'new' | 'learning' | 'review' | 'graduated';
+}
+
+export interface ReviewResult {
+  vocabularyId: string;
+  wasCorrect: boolean;
+  difficulty: number; // 1-5 where 5 is most difficult
 }

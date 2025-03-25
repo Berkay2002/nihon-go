@@ -196,6 +196,59 @@ export type Database = {
         }
         Relationships: []
       }
+      srs_items: {
+        Row: {
+          created_at: string
+          ease_factor: number
+          id: string
+          interval: number
+          last_review_date: string | null
+          learning_stage: string
+          next_review_date: string
+          review_count: number
+          review_history: Json
+          updated_at: string
+          user_id: string
+          vocabulary_id: string
+        }
+        Insert: {
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval?: number
+          last_review_date?: string | null
+          learning_stage?: string
+          next_review_date?: string
+          review_count?: number
+          review_history?: Json
+          updated_at?: string
+          user_id: string
+          vocabulary_id: string
+        }
+        Update: {
+          created_at?: string
+          ease_factor?: number
+          id?: string
+          interval?: number
+          last_review_date?: string | null
+          learning_stage?: string
+          next_review_date?: string
+          review_count?: number
+          review_history?: Json
+          updated_at?: string
+          user_id?: string
+          vocabulary_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "srs_items_vocabulary_id_fkey"
+            columns: ["vocabulary_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       units: {
         Row: {
           created_at: string
@@ -364,10 +417,66 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      srs_vocabulary: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          ease_factor: number | null
+          english: string | null
+          example_sentence: string | null
+          hiragana: string | null
+          interval: number | null
+          japanese: string | null
+          last_review_date: string | null
+          learning_stage: string | null
+          lesson_id: string | null
+          next_review_date: string | null
+          review_count: number | null
+          romaji: string | null
+          srs_id: string | null
+          updated_at: string | null
+          user_id: string | null
+          vocabulary_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "srs_items_vocabulary_id_fkey"
+            columns: ["vocabulary_id"]
+            isOneToOne: false
+            referencedRelation: "vocabulary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vocabulary_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_vocabulary_for_user: {
+        Args: {
+          completed_lessons: string[]
+          existing_vocab: string[]
+          item_limit?: number
+        }
+        Returns: {
+          category: string
+          created_at: string
+          difficulty: number
+          english: string
+          example_sentence: string | null
+          hiragana: string
+          id: string
+          japanese: string
+          lesson_id: string | null
+          romaji: string
+          updated_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
