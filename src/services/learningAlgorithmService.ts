@@ -1,6 +1,6 @@
 
 import contentService, { Vocabulary } from './contentService';
-import userProgressApi from './userProgress';
+import { userProgressApi } from './userProgress';
 import { supabase } from "@/integrations/supabase/client";
 
 // Basic implementation of a spaced repetition system
