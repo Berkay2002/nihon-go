@@ -31,21 +31,22 @@ export interface ExerciseResult {
 }
 
 export interface ExerciseResponse {
-  id: string;
-  user_id: string;
-  lesson_id: string;
+  id?: string;
+  user_id?: string;
+  lesson_id?: string;
   exercise_id: string;
   exercise_type: ExerciseType;
   question: string;
   correct_answer: string;
   user_answer: string;
   is_correct: boolean;
-  created_at: string;
+  created_at?: string;
 }
 
-export type ExerciseType = 'select' | 'listen' | 'translate' | 'match' | 'arrange';
+export type ExerciseType = 'multiple_choice' | 'text_input' | 'arrange_sentence' | 'matching' | 'translation' | string;
 
 export interface LessonScorecard {
+  lessonId?: string;
   totalExercises: number;
   correctExercises: number;
   accuracy: number;
