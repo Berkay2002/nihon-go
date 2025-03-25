@@ -71,3 +71,43 @@
     backdrop-filter: blur(10px);
   }
 } 
+
+/* Add to your src/index.css or other global CSS file if not already there */
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes pulse-scale {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.animate-pulse-scale {
+  animation: pulse-scale 2s infinite ease-in-out;
+}
+
+@keyframes bounce-light {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce-light {
+  animation: bounce-light 2s infinite ease-in-out;
+}

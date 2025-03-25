@@ -1,13 +1,38 @@
+// src/pages/Home.tsx
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
 import { LoadingState } from "@/components/home/LoadingState";
 import { ErrorState } from "@/components/home/ErrorState";
-import { HomeContent } from "@/components/home/HomeContent";
+import { LearnPage } from "@/components/home/learn-page";
 import contentService from "@/services/contentService";
-import { UserProgressData } from "@/types/user";
 import { LessonData } from "@/types/lesson";
+
+// Define the shape of units we'll pass to LearnPage
+interface LearningPathUnit {
+  id: string;
+  title: string;
+  description?: string;
+  progress: number;
+  lessons: Array<{
+    id: string;
+    title: string;
+    isCompleted: boolean;
+    isCurrent: boolean;
+    isLocked: boolean;
+    xpReward: number;
+    type?: "standard" | "review" | "boss" | "treasure";
+  }>;
+}
+
+// Define the UserProgress interface for lesson progress
+interface UserProgressLesson {
+  lesson_id: string;
+  is_completed: boolean;
+  completion_percentage?: number;
+  last_attempted_at?: string;
+}
 
 const Home = () => {
   const navigate = useNavigate();
@@ -15,10 +40,12 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [longLoading, setLongLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userProgress, setUserProgress] = useState<UserProgressData>({ units: [] });
+  const [units, setUnits] = useState<LearningPathUnit[]>([]);
   const [recentLessons, setRecentLessons] = useState<LessonData[]>([]);
   const [streak, setStreak] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
+  const [activeLesson, setActiveLesson] = useState<{ id: string; unitId: string } | undefined>();
+  const [activeLessonPercentage, setActiveLessonPercentage] = useState(0);
 
   const { getUserStreakData, getUserProgressData } = useUserProgress();
 
@@ -51,13 +78,13 @@ const Home = () => {
       const streakData = await getUserStreakData();
       
       // Get user progress data for lessons
-      const progressData = await getUserProgressData();
+      const progressData = await getUserProgressData() as UserProgressLesson[];
       
       // Get all units and lessons
       const units = await contentService.getUnits();
       
       // Transform the data into the format needed by our components
-      const transformedUnits = [];
+      const transformedUnits: LearningPathUnit[] = [];
       
       for (const unit of units) {
         const unitLessons = await contentService.getLessonsByUnit(unit.id);
@@ -76,6 +103,13 @@ const Home = () => {
           if (!isCompleted && !foundCurrentLesson) {
             isCurrent = true;
             foundCurrentLesson = true;
+            // Set active lesson for display in the UI
+            setActiveLesson({
+              id: lesson.id,
+              unitId: unit.id
+            });
+            // Use completion_percentage if available
+            setActiveLessonPercentage(progress?.completion_percentage || 0);
           }
           
           // A lesson is locked if:
@@ -91,11 +125,15 @@ const Home = () => {
             completedLessons++;
           }
           
-          // Determine lesson type (standard, review, boss, treasure)
-          let type = "standard";
-          if (index % 5 === 4) type = "boss"; // Every 5th lesson is a boss
-          else if (index % 5 === 3) type = "treasure"; // Every 4th lesson is a treasure chest
-          else if (index % 3 === 2) type = "review"; // Every 3rd lesson is a review
+          // Determine lesson type
+          let type: "standard" | "review" | "boss" | "treasure" = "standard";
+          if (index % 5 === 4) {
+            type = "boss";
+          } else if (index % 5 === 3) {
+            type = "treasure";
+          } else if (index % 3 === 2) {
+            type = "review";
+          }
           
           return {
             id: lesson.id,
@@ -113,6 +151,7 @@ const Home = () => {
         transformedUnits.push({
           id: unit.id,
           title: unit.name,
+          description: unit.description || `Unit ${transformedUnits.length + 1}`,
           progress: unitProgress,
           lessons: transformedLessons
         });
@@ -165,7 +204,7 @@ const Home = () => {
       // Limit to 5 recent lessons
       const limitedRecentLessons = recentLessonsList.slice(0, 5);
       
-      setUserProgress({ units: transformedUnits });
+      setUnits(transformedUnits);
       setRecentLessons(limitedRecentLessons);
       setStreak(streakData.current_streak);
       setTotalXp(streakData.total_xp);
@@ -181,8 +220,8 @@ const Home = () => {
     window.location.reload();
   };
 
-  const handleSelectUnit = (unitId: string) => {
-    navigate(`/units/${unitId}`);
+  const handleGoBack = () => {
+    navigate('/');
   };
 
   const handleSelectLesson = (lessonId: string) => {
@@ -210,12 +249,13 @@ const Home = () => {
   }
 
   return (
-    <HomeContent
-      userProgress={userProgress}
-      recentLessons={recentLessons}
+    <LearnPage
+      units={units}
+      activeLesson={activeLesson}
+      activeLessonPercentage={activeLessonPercentage}
       streak={streak}
       totalXp={totalXp}
-      onSelectUnit={handleSelectUnit}
+      onBack={handleGoBack}
       onSelectLesson={handleSelectLesson}
     />
   );

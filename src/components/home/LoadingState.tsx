@@ -1,9 +1,7 @@
-
 import React from "react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw } from "lucide-react";
-import { HomeHeader } from "./HomeHeader";
+import { GameCharacter } from "./GameCharacter";
 
 interface LoadingStateProps {
   username: string;
@@ -17,42 +15,26 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
   longLoading
 }) => {
   return (
-    <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
-      <HomeHeader username={username} />
+    <div className="flex flex-col items-center justify-center min-h-screen px-4">
+      <GameCharacter state="thinking" className="mb-6" />
       
-      <div className="flex flex-col items-center justify-center py-12">
-        <div className="mb-6">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-nihongo-red"></div>
-        </div>
-        
-        <h2 className="text-xl font-semibold mb-2 text-center">Loading your progress...</h2>
-        <p className="text-muted-foreground text-center mb-6">
-          {longLoading
-            ? "This is taking longer than expected. The server might be busy."
-            : "Please wait while we retrieve your latest data."}
-        </p>
-        
-        {longLoading && (
-          <Card className="border border-orange-200 bg-orange-50 w-full mb-6">
-            <CardContent className="p-4">
-              <p className="text-sm text-orange-700">
-                Connection issue detected. You can try refreshing the page.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-        
-        {longLoading && (
-          <Button
-            variant="outline"
-            className="flex items-center"
-            onClick={retry}
-          >
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Retry Connection
-          </Button>
-        )}
+      <h1 className="text-2xl font-bold mb-2">Welcome back, {username}!</h1>
+      
+      <div className="text-center mb-8">
+        <p className="text-gray-500 mb-2">Loading your learning progress...</p>
+        <Loader2 className="h-8 w-8 animate-spin text-green-500 mx-auto" />
       </div>
+      
+      {longLoading && (
+        <div className="text-center">
+          <p className="text-gray-500 mb-4">
+            This is taking longer than expected. Would you like to try again?
+          </p>
+          <Button onClick={retry} variant="outline">
+            Retry
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

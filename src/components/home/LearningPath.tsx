@@ -1,6 +1,10 @@
+// src/components/LearningPath.tsx
 import React from "react";
+import { Check, Crown, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { CircularProgressbarWithChildren } from "react-circular-progressbar";
+import "react-circular-progressbar/dist/styles.css";
 
 interface Lesson {
   id: string;
@@ -75,10 +79,19 @@ export const LearningPath: React.FC<LearningPathProps> = ({
             </div>
             
             {/* Lessons */}
-            <div className="flex flex-col items-center gap-8">
+            <div className="flex flex-col items-center">
               {unit.lessons.map((lesson, lessonIndex) => {
-                // Alternate left/right for lessons
-                const isLeft = lessonIndex % 2 === 0;
+                // Calculate zigzag pattern
+                const cycleLength = 8;
+                const cycleIndex = lessonIndex % cycleLength;
+                
+                let indentationLevel;
+                if (cycleIndex <= 2) indentationLevel = cycleIndex;
+                else if (cycleIndex <= 4) indentationLevel = 4 - cycleIndex;
+                else if (cycleIndex <= 6) indentationLevel = 4 - cycleIndex;
+                else indentationLevel = cycleIndex - 8;
+                
+                const rightPosition = indentationLevel * 40;
                 
                 // Determine node type (completed, current, locked, treasure)
                 let nodeType = "locked";
@@ -88,48 +101,98 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                 else if (!lesson.isLocked) nodeType = "unlocked";
                 
                 // Determine appearance based on node type
+                const mainColor = getUnitColor(unitIndex).replace('bg-', 'text-').replace(' border-blue-600', '').replace(' border-green-600', '').replace(' border-purple-600', '').replace(' border-orange-600', '').replace(' border-pink-600', '').replace(' border-teal-600', '');
+                
                 const nodeClasses = {
                   completed: "bg-green-500 border-green-600 text-white",
                   current: `${getUnitColor(unitIndex)} text-white animate-pulse-scale`,
-                  unlocked: `bg-white border-gray-300 ${getUnitColor(unitIndex).replace('bg-', 'text-')}`,
+                  unlocked: `bg-white border-gray-300 ${mainColor}`,
                   locked: "bg-gray-200 border-gray-300 text-gray-400",
                   treasure: "bg-yellow-400 border-yellow-500 text-yellow-900 animate-float"
                 };
                 
-                // Icon based on node type
-                const nodeIcon = {
-                  completed: "✓",
-                  current: unitIndex % 2 === 0 ? "→" : "↓",
-                  unlocked: lessonIndex + 1,
-                  locked: "🔒",
-                  treasure: "🎁"
-                };
+                // Icon based on node type and position
+                const isLast = lessonIndex === unit.lessons.length - 1;
+                const Icon = lesson.isCompleted ? Check : (isLast || lesson.type === "boss") ? Crown : Star;
 
                 return (
                   <div 
                     key={lesson.id}
-                    className={`relative flex ${isLeft ? 'justify-end mr-1/2' : 'justify-start ml-1/2'} w-full`}
-                    style={{ 
-                      marginLeft: isLeft ? '0' : '50%',
-                      marginRight: isLeft ? '50%' : '0',
+                    className="relative mb-8"
+                    style={{
+                      right: `${rightPosition}px`,
+                      marginTop: lessonIndex === 0 ? '24px' : '16px'
                     }}
                   >
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <button
-                            onClick={() => !lesson.isLocked && onSelectLesson(lesson.id)}
-                            disabled={lesson.isLocked}
-                            className={cn(
-                              "w-16 h-16 rounded-full border-4 flex items-center justify-center text-xl font-bold shadow-md transition-transform hover:scale-110 learning-path-node",
-                              nodeClasses[nodeType as keyof typeof nodeClasses],
-                              lesson.isLocked ? "cursor-not-allowed" : "cursor-pointer"
-                            )}
-                          >
-                            {nodeIcon[nodeType as keyof typeof nodeIcon]}
-                          </button>
+                          {lesson.isCurrent ? (
+                            <div className="relative h-[102px] w-[102px]">
+                              {/* Current lesson indicator */}
+                              <div className="absolute -top-6 left-2.5 z-10 animate-bounce rounded-xl border-2 bg-white px-3 py-2.5 font-bold uppercase tracking-wide text-green-500">
+                                Start
+                                <div
+                                  className="absolute -bottom-2 left-1/2 h-0 w-0 -translate-x-1/2 transform border-x-8 border-t-8 border-x-transparent border-t-white"
+                                  aria-hidden="true"
+                                />
+                              </div>
+                              
+                              <CircularProgressbarWithChildren
+                                value={unit.progress || 0}
+                                styles={{
+                                  path: {
+                                    stroke: "#4ade80",
+                                  },
+                                  trail: {
+                                    stroke: "#e5e7eb",
+                                  },
+                                }}
+                              >
+                                <button
+                                  onClick={() => !lesson.isLocked && onSelectLesson(lesson.id)}
+                                  disabled={lesson.isLocked}
+                                  className={cn(
+                                    "h-[70px] w-[70px] rounded-full flex items-center justify-center",
+                                    nodeClasses[nodeType as keyof typeof nodeClasses],
+                                    lesson.isLocked ? "cursor-not-allowed" : "cursor-pointer"
+                                  )}
+                                >
+                                  <Icon
+                                    className={cn(
+                                      "h-10 w-10", 
+                                      lesson.isCompleted && "stroke-[3]",
+                                      !lesson.isLocked && !lesson.isCompleted && lesson.type !== "treasure" && "fill-current"
+                                    )}
+                                  />
+                                </button>
+                              </CircularProgressbarWithChildren>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => !lesson.isLocked && onSelectLesson(lesson.id)}
+                              disabled={lesson.isLocked}
+                              className={cn(
+                                "h-[70px] w-[70px] rounded-full border-b-4 flex items-center justify-center learning-path-node",
+                                nodeClasses[nodeType as keyof typeof nodeClasses],
+                                lesson.isLocked ? "cursor-not-allowed" : "cursor-pointer"
+                              )}
+                            >
+                              {lesson.type === "treasure" ? (
+                                <span className="text-2xl">🎁</span>
+                              ) : (
+                                <Icon
+                                  className={cn(
+                                    "h-10 w-10", 
+                                    lesson.isCompleted && "stroke-[3]",
+                                    !lesson.isLocked && !lesson.isCompleted && "fill-current"
+                                  )}
+                                />
+                              )}
+                            </button>
+                          )}
                         </TooltipTrigger>
-                        <TooltipContent side={isLeft ? "left" : "right"}>
+                        <TooltipContent>
                           <div className="p-2">
                             <p className="font-bold">{lesson.title}</p>
                             <p className="text-sm text-gray-500">XP: {lesson.xpReward}</p>
@@ -140,9 +203,11 @@ export const LearningPath: React.FC<LearningPathProps> = ({
                     
                     {/* Line connecting to center path */}
                     <div 
-                      className={`absolute top-1/2 ${isLeft ? 'right-0 left-auto' : 'left-0 right-auto'} bg-gray-200 h-1`}
+                      className="absolute top-1/2 bg-gray-200 h-1"
                       style={{ 
-                        width: '30%',
+                        right: rightPosition < 0 ? 'auto' : '100%',
+                        left: rightPosition < 0 ? '100%' : 'auto',
+                        width: '40px',
                         transform: 'translateY(-50%)',
                       }}
                     />
@@ -182,7 +247,7 @@ const MobileLearningPath: React.FC<LearningPathProps> = ({
             
             {/* Lessons */}
             <div className="relative z-10 flex overflow-x-auto pb-4 pt-2 gap-8 px-4 hide-scrollbar">
-              {unit.lessons.map((lesson) => {
+              {unit.lessons.map((lesson, lessonIndex) => {
                 // Determine node type
                 let nodeType = "locked";
                 if (lesson.isCompleted) nodeType = "completed";
@@ -191,38 +256,79 @@ const MobileLearningPath: React.FC<LearningPathProps> = ({
                 else if (!lesson.isLocked) nodeType = "unlocked";
                 
                 // Determine appearance based on node type
+                const mainColor = getUnitColor(unitIndex).replace('bg-', 'text-').replace(' border-blue-600', '').replace(' border-green-600', '').replace(' border-purple-600', '').replace(' border-orange-600', '').replace(' border-pink-600', '').replace(' border-teal-600', '');
+                
                 const nodeClasses = {
                   completed: "bg-green-500 border-green-600 text-white",
                   current: `${getUnitColor(unitIndex)} text-white animate-pulse-scale`,
-                  unlocked: `bg-white border-gray-300 ${getUnitColor(unitIndex).replace('bg-', 'text-')}`,
+                  unlocked: `bg-white border-gray-300 ${mainColor}`,
                   locked: "bg-gray-200 border-gray-300 text-gray-400",
                   treasure: "bg-yellow-400 border-yellow-500 text-yellow-900 animate-float"
                 };
                 
-                // Icon based on node type
-                const nodeIcon = {
-                  completed: "✓",
-                  current: "→",
-                  unlocked: "•",
-                  locked: "🔒",
-                  treasure: "🎁"
-                };
+                // Icon based on node type and position
+                const isLast = lessonIndex === unit.lessons.length - 1;
+                const Icon = lesson.isCompleted ? Check : (isLast || lesson.type === "boss") ? Crown : Star;
                 
                 return (
                   <TooltipProvider key={lesson.id}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <button
-                          onClick={() => !lesson.isLocked && onSelectLesson(lesson.id)}
-                          disabled={lesson.isLocked}
-                          className={cn(
-                            "min-w-[60px] w-15 h-15 rounded-full border-4 flex flex-shrink-0 items-center justify-center text-xl font-bold shadow-md learning-path-node",
-                            nodeClasses[nodeType as keyof typeof nodeClasses],
-                            lesson.isLocked ? "cursor-not-allowed" : "cursor-pointer"
-                          )}
-                        >
-                          {nodeIcon[nodeType as keyof typeof nodeIcon]}
-                        </button>
+                        {lesson.isCurrent ? (
+                          <div className="relative h-[80px] w-[80px]">
+                            <CircularProgressbarWithChildren
+                              value={unit.progress || 0}
+                              styles={{
+                                path: {
+                                  stroke: "#4ade80",
+                                },
+                                trail: {
+                                  stroke: "#e5e7eb",
+                                },
+                              }}
+                            >
+                              <button
+                                onClick={() => !lesson.isLocked && onSelectLesson(lesson.id)}
+                                disabled={lesson.isLocked}
+                                className={cn(
+                                  "h-[55px] w-[55px] rounded-full flex items-center justify-center",
+                                  nodeClasses[nodeType as keyof typeof nodeClasses],
+                                  lesson.isLocked ? "cursor-not-allowed" : "cursor-pointer"
+                                )}
+                              >
+                                <Icon 
+                                  className={cn(
+                                    "h-8 w-8", 
+                                    lesson.isCompleted && "stroke-[3]",
+                                    !lesson.isLocked && !lesson.isCompleted && lesson.type !== "treasure" && "fill-current"
+                                  )}
+                                />
+                              </button>
+                            </CircularProgressbarWithChildren>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => !lesson.isLocked && onSelectLesson(lesson.id)}
+                            disabled={lesson.isLocked}
+                            className={cn(
+                              "min-w-[60px] w-15 h-15 rounded-full border-b-4 flex flex-shrink-0 items-center justify-center learning-path-node",
+                              nodeClasses[nodeType as keyof typeof nodeClasses],
+                              lesson.isLocked ? "cursor-not-allowed" : "cursor-pointer"
+                            )}
+                          >
+                            {lesson.type === "treasure" ? (
+                              <span className="text-xl">🎁</span>
+                            ) : (
+                              <Icon
+                                className={cn(
+                                  "h-8 w-8", 
+                                  lesson.isCompleted && "stroke-[3]",
+                                  !lesson.isLocked && !lesson.isCompleted && "fill-current"
+                                )}
+                              />
+                            )}
+                          </button>
+                        )}
                       </TooltipTrigger>
                       <TooltipContent side="top">
                         <div className="p-2">
@@ -240,4 +346,4 @@ const MobileLearningPath: React.FC<LearningPathProps> = ({
       ))}
     </div>
   );
-}; 
+};

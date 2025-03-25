@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -12,7 +11,7 @@ import Home from "./pages/Home";
 import Units from "./pages/Units";
 import Lesson from "./pages/Lesson";
 import Exercise from "./pages/Exercise";
-import LessonComplete from "./pages/LessonComplete";
+import LessonComplete from './pages/LessonComplete';
 import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -20,11 +19,10 @@ import { AuthProvider } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 
 const queryClient = new QueryClient();
-
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
+  <ThemeProvider>
+    <TooltipProvider>
+      <QueryClientProvider client={queryClient}>
         <Toaster />
         <Sonner />
         <BrowserRouter>
@@ -46,9 +44,9 @@ const App = () => (
             </Routes>
           </AuthProvider>
         </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+      </QueryClientProvider>
+    </TooltipProvider>
+  </ThemeProvider>
 );
 
 export default App;

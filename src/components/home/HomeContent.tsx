@@ -81,7 +81,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
 
       {/* Quick Actions */}
       {isMobile ? (
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t shadow-lg flex justify-around z-10">
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t shadow-lg flex justify-around z-10 mobile-nav-bar">
           <Button variant="ghost" className="flex flex-col items-center" onClick={() => {}}>
             <span className="text-2xl">🏠</span>
             <span className="text-xs">Home</span>

@@ -3,11 +3,13 @@ import { cn } from "@/lib/utils";
 
 interface GameCharacterProps {
   state?: "idle" | "happy" | "thinking" | "surprised";
+  customText?: string;
   className?: string;
 }
 
 export const GameCharacter: React.FC<GameCharacterProps> = ({ 
   state = "idle",
+  customText,
   className
 }) => {
   // Different character states with different animations
@@ -19,7 +21,7 @@ export const GameCharacter: React.FC<GameCharacterProps> = ({
   };
   
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn("relative flex items-center gap-4", className)}>
       <div className={cn(
         "w-20 h-20 relative",
         stateClasses[state]
@@ -70,6 +72,14 @@ export const GameCharacter: React.FC<GameCharacterProps> = ({
           </div>
         )}
       </div>
+      
+      {/* Speech Bubble */}
+      {customText && (
+        <div className="relative bg-white text-slate-800 p-3 rounded-xl max-w-sm shadow-md">
+          <div className="absolute left-0 top-1/2 transform -translate-x-2 -translate-y-1/2 rotate-45 w-4 h-4 bg-white"></div>
+          <p className="relative z-10 font-medium">{customText}</p>
+        </div>
+      )}
     </div>
   );
 }; 
