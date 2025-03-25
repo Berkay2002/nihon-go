@@ -46,8 +46,8 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Map to match the GrammarPattern interface using the helper function
-    return (data || []).map(pattern => mapToGrammarPattern(pattern as DBGrammarPattern));
+    // Map to GrammarPattern interface with explicit typing
+    return (data || []).map((dbPattern) => mapToGrammarPattern(dbPattern as unknown as DBGrammarPattern));
   },
 
   getGrammarPatternsByLesson: async (lessonId: string): Promise<GrammarPattern[]> => {
@@ -61,8 +61,8 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Map to match the GrammarPattern interface using the helper function
-    return (data || []).map(pattern => mapToGrammarPattern(pattern as DBGrammarPattern));
+    // Map to GrammarPattern interface with explicit typing
+    return (data || []).map((dbPattern) => mapToGrammarPattern(dbPattern as unknown as DBGrammarPattern));
   }
 };
 
