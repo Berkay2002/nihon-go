@@ -49,8 +49,8 @@ export const UnitContent: React.FC<UnitContentProps> = ({
           if (added) addedCount++;
         }
         
-        if (vocabulary.length > 0) {
-          toast.success(`Added ${addedCount} vocabulary items to review system`, {
+        if (vocabulary.length > 0 && addedCount > 0) {
+          toast.success(`Added ${addedCount} new vocabulary items to review system`, {
             duration: 3000,
           });
         }

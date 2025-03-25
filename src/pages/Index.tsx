@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -20,6 +21,8 @@ const Index = () => {
   const [revealAnswer, setRevealAnswer] = useState(false);
   const [reviewComplete, setReviewComplete] = useState(false);
   const [reviewStats, setReviewStats] = useState({ correct: 0, incorrect: 0 });
+  const [userAnswer, setUserAnswer] = useState("");
+  const [answerCorrect, setAnswerCorrect] = useState<boolean | null>(null);
 
   useEffect(() => {
     const loadReviewSession = async () => {
@@ -57,6 +60,22 @@ const Index = () => {
     setRevealAnswer(true);
   };
 
+  const checkAnswer = () => {
+    if (!reviewSession || currentItemIndex >= reviewSession.items.length) return;
+    
+    const currentItem = reviewSession.items[currentItemIndex].item;
+    const isCorrect = userAnswer.trim().toLowerCase() === currentItem.english.trim().toLowerCase();
+    
+    setAnswerCorrect(isCorrect);
+    setRevealAnswer(true);
+    
+    // Update stats
+    setReviewStats({
+      correct: reviewStats.correct + (isCorrect ? 1 : 0),
+      incorrect: reviewStats.incorrect + (isCorrect ? 0 : 1)
+    });
+  };
+
   const handleResponse = async (correct: boolean, difficulty: number) => {
     if (!user || !reviewSession || currentItemIndex >= reviewSession.items.length) return;
     
@@ -70,14 +89,11 @@ const Index = () => {
         difficulty
       );
       
-      setReviewStats({
-        correct: reviewStats.correct + (correct ? 1 : 0),
-        incorrect: reviewStats.incorrect + (correct ? 0 : 1)
-      });
-      
       if (currentItemIndex < reviewSession.items.length - 1) {
         setCurrentItemIndex(currentItemIndex + 1);
         setRevealAnswer(false);
+        setAnswerCorrect(null);
+        setUserAnswer("");
       } else {
         setReviewComplete(true);
         toast.success("Review session completed!", {
@@ -95,6 +111,8 @@ const Index = () => {
     setRevealAnswer(false);
     setReviewComplete(false);
     setReviewStats({ correct: 0, incorrect: 0 });
+    setAnswerCorrect(null);
+    setUserAnswer("");
     
     try {
       setLoading(true);
@@ -121,21 +139,50 @@ const Index = () => {
     return (
       <div className="space-y-6 animate-fade-in">
         <div className="rounded-lg bg-white dark:bg-slate-800 p-6 shadow-sm border border-slate-200 dark:border-slate-700">
-          <h3 className="text-center text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
-            {revealAnswer ? "Answer" : "Remember this word?"}
-          </h3>
-          
           {!revealAnswer ? (
-            <div className="text-center">
-              <p className="text-3xl font-semibold font-japanese mb-2">{vocabItem.japanese}</p>
-              <p className="text-xl text-slate-600 dark:text-slate-300">{vocabItem.hiragana}</p>
+            <div className="text-center space-y-6">
+              <div>
+                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">
+                  Translate to English
+                </h3>
+                <p className="text-3xl font-semibold font-japanese mb-2">{vocabItem.japanese}</p>
+                <p className="text-xl text-slate-600 dark:text-slate-300">{vocabItem.romaji}</p>
+              </div>
+              
+              <div>
+                <input
+                  type="text"
+                  value={userAnswer}
+                  onChange={(e) => setUserAnswer(e.target.value)}
+                  placeholder="Type your answer"
+                  className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-lg"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      checkAnswer();
+                    }
+                  }}
+                />
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
+              <div className={`rounded-lg p-4 ${answerCorrect ? 'bg-green-50 dark:bg-green-900/20' : 'bg-red-50 dark:bg-red-900/20'}`}>
+                <div className="flex items-center">
+                  <div className={`flex-shrink-0 rounded-full p-1 ${answerCorrect ? 'bg-green-100 dark:bg-green-800' : 'bg-red-100 dark:bg-red-800'}`}>
+                    {answerCorrect ? 
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400" /> : 
+                      <X className="h-4 w-4 text-red-600 dark:text-red-400" />}
+                  </div>
+                  <span className="ml-2 font-medium">
+                    {answerCorrect ? 'Correct!' : 'Not quite right'}
+                  </span>
+                </div>
+              </div>
+              
               <div className="text-center mb-4">
                 <p className="text-3xl font-semibold font-japanese mb-1">{vocabItem.japanese}</p>
-                <p className="text-xl text-slate-600 dark:text-slate-300 mb-1">{vocabItem.hiragana}</p>
-                <p className="text-lg text-slate-500 dark:text-slate-400 italic">{vocabItem.romaji}</p>
+                <p className="text-xl text-slate-600 dark:text-slate-300 mb-1">{vocabItem.romaji}</p>
+                <p className="text-lg text-slate-500 dark:text-slate-400">{vocabItem.hiragana}</p>
               </div>
               
               <div className="text-center">
@@ -157,9 +204,9 @@ const Index = () => {
         {!revealAnswer ? (
           <Button 
             className="w-full py-6" 
-            onClick={handleRevealAnswer}
+            onClick={checkAnswer}
           >
-            Reveal Answer
+            Check
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-3">
@@ -169,21 +216,21 @@ const Index = () => {
               onClick={() => handleResponse(false, 4)}
             >
               <X className="mr-2 h-5 w-5" />
-              Didn't Know
+              Hard
             </Button>
             <Button 
               className="py-5 bg-green-600 hover:bg-green-700 text-white"
               onClick={() => handleResponse(true, 2)}
             >
               <Check className="mr-2 h-5 w-5" />
-              Knew It
+              Easy
             </Button>
           </div>
         )}
         
         <div className="flex justify-between items-center text-sm text-slate-500 px-1">
           <div>
-            Item {currentItemIndex + 1} of {reviewSession.items.length}
+            {currentItemIndex + 1} of {reviewSession.items.length}
           </div>
           <div className="flex items-center">
             <div className="flex items-center mr-3">
@@ -334,7 +381,11 @@ const Index = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
-      <ReviewHeader title="Vocabulary Review" />
+      <ReviewHeader 
+        title="Vocabulary Review" 
+        currentIndex={currentItemIndex} 
+        totalItems={reviewSession?.items.length || 0}
+      />
       <div className="flex-1 overflow-auto">
         <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
           {reviewSession?.items.length === 0 ? (
