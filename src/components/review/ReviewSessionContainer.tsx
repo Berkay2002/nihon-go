@@ -10,14 +10,22 @@ import {
   LoadingReviewSession,
   ReviewSessionContent
 } from "@/components/review";
+import { useUserProgress } from "@/services/userProgressService";
 
 // Constants for localStorage keys
 const REVIEW_SESSION_KEY = "review_session";
 const REVIEW_PROGRESS_KEY = "review_progress";
 const REVIEW_STATS_KEY = "review_stats";
 
-export const ReviewSessionContainer: React.FC = () => {
+interface ReviewSessionContainerProps {
+  reviewType?: "vocabulary" | "difficult";
+}
+
+export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({ 
+  reviewType = "vocabulary" 
+}) => {
   const { user } = useAuth();
+  const { getLessonScorecard } = useUserProgress();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reviewSession, setReviewSession] = useState<ReviewSession | null>(null);
@@ -31,9 +39,13 @@ export const ReviewSessionContainer: React.FC = () => {
       if (!user) return false;
       
       try {
-        const savedSession = localStorage.getItem(`${REVIEW_SESSION_KEY}_${user.id}`);
-        const savedProgress = localStorage.getItem(`${REVIEW_PROGRESS_KEY}_${user.id}`);
-        const savedStats = localStorage.getItem(`${REVIEW_STATS_KEY}_${user.id}`);
+        const storageKey = `${REVIEW_SESSION_KEY}_${reviewType}_${user.id}`;
+        const progressKey = `${REVIEW_PROGRESS_KEY}_${reviewType}_${user.id}`;
+        const statsKey = `${REVIEW_STATS_KEY}_${reviewType}_${user.id}`;
+        
+        const savedSession = localStorage.getItem(storageKey);
+        const savedProgress = localStorage.getItem(progressKey);
+        const savedStats = localStorage.getItem(statsKey);
         
         if (savedSession && savedProgress && savedStats) {
           const parsedSession = JSON.parse(savedSession);
@@ -46,7 +58,7 @@ export const ReviewSessionContainer: React.FC = () => {
             setCurrentItemIndex(parsedProgress.currentIndex);
             setReviewComplete(parsedProgress.complete);
             setReviewStats(parsedStats);
-            console.log("Restored review session from localStorage", {
+            console.log(`Restored ${reviewType} review session from localStorage`, {
               currentIndex: parsedProgress.currentIndex,
               complete: parsedProgress.complete,
               stats: parsedStats
@@ -55,10 +67,89 @@ export const ReviewSessionContainer: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error("Error loading saved review session", err);
+        console.error(`Error loading saved ${reviewType} review session`, err);
       }
       
       return false;
+    };
+
+    const loadDifficultExercisesSession = async () => {
+      if (!user) return null;
+      
+      try {
+        // Get user progress data to find completed lessons
+        const { data: progress } = await learningAlgorithmService.client
+          .from('user_progress')
+          .select('lesson_id')
+          .eq('user_id', user.id)
+          .eq('is_completed', true);
+        
+        if (!progress || progress.length === 0) {
+          console.log("No completed lessons found");
+          return null;
+        }
+        
+        // Get all lessons the user has completed
+        const lessonIds = progress.map(p => p.lesson_id);
+        
+        // For each lesson, get the scorecard to find difficult exercises
+        const difficultItems = [];
+        
+        // Process up to 5 most recent lessons for performance
+        const recentLessonIds = lessonIds.slice(0, 5);
+        
+        for (const lessonId of recentLessonIds) {
+          try {
+            const scorecard = await getLessonScorecard(lessonId);
+            
+            // Find exercises where the user made mistakes
+            const difficultExercises = scorecard.responses
+              .filter(response => !response.isCorrect)
+              .map(response => ({
+                item: {
+                  id: response.exerciseId,
+                  japanese: response.exerciseData?.japanese || response.exerciseData?.question || "",
+                  english: response.exerciseData?.correct_answer || "",
+                  romaji: response.exerciseData?.romaji || "",
+                  hiragana: response.exerciseData?.hiragana || "",
+                  category: "difficult-exercise",
+                  difficulty: 4, // Higher difficulty for failed exercises
+                  lessonId: lessonId,
+                  // Include exercise-specific data
+                  exerciseType: response.exerciseData?.type || "multiple_choice",
+                  question: response.exerciseData?.question || "",
+                  options: response.exerciseData?.options || [],
+                  correctAnswer: response.exerciseData?.correct_answer || "",
+                },
+                dueDate: new Date(),
+                difficulty: 4,
+                interval: 1
+              }));
+              
+            difficultItems.push(...difficultExercises);
+          } catch (err) {
+            console.error(`Error getting scorecard for lesson ${lessonId}:`, err);
+          }
+        }
+        
+        // Limit to max 10 difficult items and shuffle them
+        const shuffledItems = difficultItems
+          .sort(() => Math.random() - 0.5)
+          .slice(0, 10);
+          
+        if (shuffledItems.length === 0) {
+          return null;
+        }
+        
+        return {
+          items: shuffledItems,
+          userId: user.id,
+          sessionDate: new Date()
+        };
+      } catch (err) {
+        console.error("Error creating difficult exercises session:", err);
+        return null;
+      }
     };
 
     const loadReviewSession = async () => {
@@ -76,14 +167,26 @@ export const ReviewSessionContainer: React.FC = () => {
         
         // If no saved session, fetch new one
         if (!hasSavedSession) {
-          console.log("Generating review session for user:", user.id);
-          const session = await learningAlgorithmService.generateReviewSession(user.id);
-          console.log("Session generated:", session);
+          console.log(`Generating ${reviewType} session for user:`, user.id);
+          
+          let session = null;
+          
+          if (reviewType === "vocabulary") {
+            session = await learningAlgorithmService.generateReviewSession(user.id);
+          } else if (reviewType === "difficult") {
+            session = await loadDifficultExercisesSession();
+          }
+          
+          console.log(`${reviewType} session generated:`, session);
           setReviewSession(session);
           
           if (!session || session.items.length === 0) {
-            toast.info("No review items available", {
-              description: "Complete more lessons to add vocabulary to your review queue."
+            const message = reviewType === "vocabulary"
+              ? "No review items available. Complete more lessons to add vocabulary to your review queue."
+              : "No difficult exercises found. As you complete more lessons, exercises you find challenging will appear here.";
+              
+            toast.info(`No ${reviewType === "vocabulary" ? "review items" : "difficult exercises"} available`, {
+              description: message
             });
           } else {
             // Save the new session to localStorage
@@ -91,15 +194,15 @@ export const ReviewSessionContainer: React.FC = () => {
           }
         }
       } catch (err) {
-        console.error("Error loading review session:", err);
-        setError("Failed to load review items. Please try again later.");
+        console.error(`Error loading ${reviewType} session:`, err);
+        setError(`Failed to load ${reviewType === "vocabulary" ? "review items" : "difficult exercises"}. Please try again later.`);
       } finally {
         setLoading(false);
       }
     };
 
     loadReviewSession();
-  }, [user]);
+  }, [user, reviewType, getLessonScorecard]);
 
   // Save current session state to localStorage
   const saveSessionToLocalStorage = (
@@ -111,20 +214,24 @@ export const ReviewSessionContainer: React.FC = () => {
     if (!user || !session) return;
     
     try {
-      localStorage.setItem(`${REVIEW_SESSION_KEY}_${user.id}`, JSON.stringify(session));
-      localStorage.setItem(`${REVIEW_PROGRESS_KEY}_${user.id}`, JSON.stringify({
+      const storageKey = `${REVIEW_SESSION_KEY}_${reviewType}_${user.id}`;
+      const progressKey = `${REVIEW_PROGRESS_KEY}_${reviewType}_${user.id}`;
+      const statsKey = `${REVIEW_STATS_KEY}_${reviewType}_${user.id}`;
+      
+      localStorage.setItem(storageKey, JSON.stringify(session));
+      localStorage.setItem(progressKey, JSON.stringify({
         currentIndex: index,
         complete
       }));
-      localStorage.setItem(`${REVIEW_STATS_KEY}_${user.id}`, JSON.stringify(stats));
+      localStorage.setItem(statsKey, JSON.stringify(stats));
       
-      console.log("Saved review session to localStorage", {
+      console.log(`Saved ${reviewType} review session to localStorage`, {
         currentIndex: index,
         complete,
         stats
       });
     } catch (err) {
-      console.error("Error saving review session to localStorage", err);
+      console.error(`Error saving ${reviewType} review session to localStorage`, err);
     }
   };
 
@@ -134,12 +241,15 @@ export const ReviewSessionContainer: React.FC = () => {
     const currentItem = reviewSession.items[currentItemIndex];
     
     try {
-      await learningAlgorithmService.updateReviewItem(
-        user.id,
-        currentItem.item.id,
-        correct,
-        difficulty
-      );
+      // Only update SRS data for vocabulary reviews
+      if (reviewType === "vocabulary") {
+        await learningAlgorithmService.updateReviewItem(
+          user.id,
+          currentItem.item.id,
+          correct,
+          difficulty
+        );
+      }
       
       // Update stats
       const newStats = {
@@ -161,12 +271,12 @@ export const ReviewSessionContainer: React.FC = () => {
         // Save completed state
         saveSessionToLocalStorage(reviewSession, newIndex, true, newStats);
         
-        toast.success("Review session completed!", {
-          description: `You reviewed ${reviewSession.items.length} items.`
+        toast.success(`${reviewType === "vocabulary" ? "Review" : "Practice"} session completed!`, {
+          description: `You ${reviewType === "vocabulary" ? "reviewed" : "practiced"} ${reviewSession.items.length} items.`
         });
       }
     } catch (err) {
-      console.error("Error updating review item:", err);
+      console.error(`Error updating ${reviewType} item:`, err);
       toast.error("Failed to save your progress");
     }
   };
@@ -179,18 +289,31 @@ export const ReviewSessionContainer: React.FC = () => {
     try {
       setLoading(true);
       if (user) {
-        const session = await learningAlgorithmService.generateReviewSession(user.id);
+        let session = null;
+        
+        if (reviewType === "vocabulary") {
+          session = await learningAlgorithmService.generateReviewSession(user.id);
+        } else if (reviewType === "difficult") {
+          // Re-use the function to load difficult exercises
+          const { loadDifficultExercisesSession } = this;
+          session = await loadDifficultExercisesSession();
+        }
+        
         setReviewSession(session);
         
         // Save the new session
         saveSessionToLocalStorage(session, 0, false, { correct: 0, incorrect: 0 });
       }
     } catch (err) {
-      console.error("Error loading review session:", err);
-      setError("Failed to load review items. Please try again later.");
+      console.error(`Error loading ${reviewType} session:`, err);
+      setError(`Failed to load ${reviewType === "vocabulary" ? "review items" : "difficult exercises"}. Please try again later.`);
     } finally {
       setLoading(false);
     }
+  };
+
+  const getTitle = () => {
+    return reviewType === "vocabulary" ? "Vocabulary Review" : "Difficult Exercises";
   };
 
   const renderContent = () => {
@@ -231,7 +354,7 @@ export const ReviewSessionContainer: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
       <ReviewHeader 
-        title="Vocabulary Review" 
+        title={getTitle()} 
         currentIndex={currentItemIndex} 
         totalItems={reviewSession?.items.length || 0}
       />

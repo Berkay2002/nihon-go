@@ -6,6 +6,9 @@ export * from './calculationService';
 export * from './dataService';
 export * from './sessionService';
 
+// Import supabase client for database access
+import { supabase } from "@/integrations/supabase/client";
+
 // For backward compatibility, create and export a default object
 import { calculateNextReviewDate } from './calculationService';
 import { 
@@ -23,7 +26,8 @@ const learningAlgorithmService = {
   updateReviewItem,
   addVocabularyToSrs,
   generateReviewSession,
-  getUserSrsStats
+  getUserSrsStats,
+  client: supabase // Add supabase client for direct access
 };
 
 export default learningAlgorithmService;

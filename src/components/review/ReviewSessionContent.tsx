@@ -2,7 +2,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { ReviewSession } from "@/services/learningAlgorithmService";
+import { ReviewSession } from "@/services/learning/types";
 import { 
   ReviewQuestion, 
   ReviewComplete, 
