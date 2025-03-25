@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import contentService from '../contentService';
 import { ReviewItem } from './types';
@@ -44,26 +43,26 @@ export const getDueReviewItems = async (userId: string, limit: number = 20): Pro
       }));
     }
     
-    console.log("No SRS items found in database, falling back to simplified approach");
-    return getFallbackReviewItems(userId, limit);
+    console.log("No SRS items found in database, falling back to enhanced fallback approach");
+    return getEnhancedFallbackReviewItems(userId, limit);
   } catch (error) {
     console.error('Error getting due review items:', error);
     return [];
   }
 };
 
-// Fallback method when SRS items table doesn't exist or is empty
-const getFallbackReviewItems = async (userId: string, limit: number): Promise<ReviewItem[]> => {
+// Enhanced fallback method with smarter selection algorithm
+const getEnhancedFallbackReviewItems = async (userId: string, limit: number): Promise<ReviewItem[]> => {
   try {
-    // Get user's progress
+    // Get user's progress and learning history
     const { data: progress } = await supabase
       .from('user_progress')
-      .select('*')
-      .eq('user_id', userId);
+      .select('*, lesson_id, last_attempted_at')
+      .eq('user_id', userId)
+      .order('last_attempted_at', { ascending: false });
     
     if (!progress || progress.length === 0) {
       console.log("User hasn't studied any lessons yet");
-      // User hasn't studied anything yet
       return [];
     }
     
@@ -71,77 +70,118 @@ const getFallbackReviewItems = async (userId: string, limit: number): Promise<Re
     const lessonIds = progress.map(p => p.lesson_id);
     console.log("User has studied lessons:", lessonIds);
     
+    // Create a map of lesson completion dates
+    const lessonCompletionDates = new Map();
+    progress.forEach(p => {
+      if (p.lesson_id && p.last_attempted_at) {
+        lessonCompletionDates.set(p.lesson_id, new Date(p.last_attempted_at));
+      }
+    });
+    
     // Get vocabulary from these lessons
     const allVocab = [];
     for (const lessonId of lessonIds) {
       const lessonVocab = await contentService.getVocabularyByLesson(lessonId);
       console.log(`Found ${lessonVocab.length} vocabulary items for lesson ${lessonId}`);
-      allVocab.push(...lessonVocab);
+      
+      // Add completion date to each vocabulary item
+      const vocabWithMetadata = lessonVocab.map(vocab => ({
+        ...vocab,
+        completionDate: lessonCompletionDates.get(lessonId) || new Date(),
+        lessonId
+      }));
+      
+      allVocab.push(...vocabWithMetadata);
     }
     
     // Get unique vocabulary by removing duplicates
     const uniqueVocabMap = new Map();
     allVocab.forEach(vocab => {
-      uniqueVocabMap.set(vocab.id, vocab);
+      if (!uniqueVocabMap.has(vocab.id) || 
+          uniqueVocabMap.get(vocab.id).completionDate < vocab.completionDate) {
+        uniqueVocabMap.set(vocab.id, vocab);
+      }
     });
     const uniqueVocab = Array.from(uniqueVocabMap.values());
     
-    // Check if we have more vocabulary than requested limit
-    let reviewItems;
+    // Calculate days since completion for each vocab item
+    const now = new Date();
+    uniqueVocab.forEach(vocab => {
+      const daysSinceCompletion = Math.max(0, 
+        Math.floor((now.getTime() - vocab.completionDate.getTime()) / (1000 * 60 * 60 * 24))
+      );
+      vocab.daysSinceCompletion = daysSinceCompletion;
+    });
     
-    if (uniqueVocab.length <= limit) {
-      // If we have fewer vocabulary items than the limit, use them all
-      reviewItems = uniqueVocab;
-    } else {
-      // Prioritize by difficulty (higher difficulty first)
-      // But also include some randomization to increase variety
-      const sortedByDifficulty = [...uniqueVocab].sort((a, b) => b.difficulty - a.difficulty);
+    // Calculate retention priority score for each vocabulary item
+    uniqueVocab.forEach(vocab => {
+      // Prioritize recently learned items that haven't been reinforced
+      const recencyScore = Math.max(0, 
+        RETENTION_PRIORITY_DAYS - vocab.daysSinceCompletion
+      ) / RETENTION_PRIORITY_DAYS;
       
-      // Take 70% high difficulty items
-      const highDifficultyCount = Math.floor(limit * 0.7);
-      const highDifficultyItems = sortedByDifficulty.slice(0, highDifficultyCount);
+      // Weight by difficulty (higher difficulty = higher priority)
+      const difficultyWeight = vocab.difficulty / 5;
       
-      // Take 30% random items from the rest
-      const remainingItems = sortedByDifficulty.slice(highDifficultyCount);
-      const randomItems = [];
-      
-      // Fisher-Yates shuffle algorithm for remaining items
-      let remainingPool = [...remainingItems];
-      const randomItemCount = Math.min(limit - highDifficultyItems.length, remainingItems.length);
-      
-      for (let i = 0; i < randomItemCount; i++) {
-        const randomIndex = Math.floor(Math.random() * remainingPool.length);
-        randomItems.push(remainingPool[randomIndex]);
-        remainingPool = remainingPool.filter((_, index) => index !== randomIndex);
+      // Combined priority score
+      vocab.priorityScore = (recencyScore * 0.7) + (difficultyWeight * 0.3);
+    });
+    
+    // Sort by priority score (higher score first)
+    const sortedVocab = [...uniqueVocab].sort((a, b) => b.priorityScore - a.priorityScore);
+    
+    // Add some randomness to prevent always showing the same items
+    // Take top 70% of items by priority score
+    const highPriorityCount = Math.min(Math.ceil(limit * 0.7), sortedVocab.length);
+    const highPriorityItems = sortedVocab.slice(0, highPriorityCount);
+    
+    // Take up to 30% random items from the rest, avoiding duplicates
+    const remainingPool = sortedVocab.slice(highPriorityCount);
+    const randomItemCount = Math.min(limit - highPriorityItems.length, remainingPool.length);
+    
+    // Shuffle algorithm
+    const shuffleArray = (array) => {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
       }
-      
-      reviewItems = [...highDifficultyItems, ...randomItems];
-    }
+      return array;
+    };
+    
+    const randomItems = shuffleArray([...remainingPool]).slice(0, randomItemCount);
+    
+    // Combine high priority and random items
+    const selectedItems = [...highPriorityItems, ...randomItems];
     
     // Create review items from the selected vocabulary
-    const now = new Date();
-    const result: ReviewItem[] = reviewItems
-      .map(item => {
-        // Mock due date and interval based on difficulty
-        const daysAhead = Math.max(1, 6 - item.difficulty);
-        const dueDate = new Date();
-        dueDate.setDate(now.getDate() + daysAhead);
+    const result: ReviewItem[] = selectedItems.map(item => {
+      // Calculate interval based on a combination of difficulty and days since completion
+      const baseDaysAhead = Math.max(1, 6 - item.difficulty);
+      
+      // Items learned more recently should be reviewed more soon
+      const recencyFactor = item.daysSinceCompletion < 7 
+        ? Math.max(0.5, 1 - (item.daysSinceCompletion / 14)) 
+        : 0.5;
         
-        return {
-          item,
-          dueDate,
-          difficulty: item.difficulty,
-          interval: daysAhead
-        };
-      });
+      const daysAhead = Math.max(1, Math.round(baseDaysAhead * recencyFactor));
+      
+      const dueDate = new Date();
+      dueDate.setDate(now.getDate() + daysAhead);
+      
+      return {
+        item: item,
+        dueDate,
+        difficulty: item.difficulty,
+        interval: daysAhead
+      };
+    });
     
-    console.log(`Created ${result.length} mock review items for fallback mechanism`);
+    console.log(`Created ${result.length} enhanced review items with priority scoring`);
     
-    // Shuffle the items to add more randomness to the review order
-    const shuffledItems = result.sort(() => Math.random() - 0.5).slice(0, limit);
-    return shuffledItems;
+    // No need to shuffle again as we've already sorted by priority
+    return result.slice(0, limit);
   } catch (error) {
-    console.error('Error creating fallback review items:', error);
+    console.error('Error creating enhanced fallback review items:', error);
     return [];
   }
 };
