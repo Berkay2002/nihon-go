@@ -1,15 +1,18 @@
 
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Zap, Check, X, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
-import contentService, { Exercise as ExerciseType } from "@/services/contentService";
-import userProgressService, { useUserProgress, ExerciseResult } from "@/services/userProgressService";
+import contentService from "@/services/contentService";
+import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
-import { Input } from "@/components/ui/input";
+import { ExerciseType } from "@/types/exercises";
+import {
+  ExerciseProgress,
+  ExerciseQuestion,
+  ExerciseActions,
+  LoadingExercise,
+  NoExercisesFound
+} from "@/components/exercises";
 
 const Exercise = () => {
   const navigate = useNavigate();
@@ -65,7 +68,6 @@ const Exercise = () => {
   }, [currentExerciseIndex, exercises]);
 
   const currentExercise = exercises[currentExerciseIndex];
-  const progress = exercises.length > 0 ? ((currentExerciseIndex + 1) / exercises.length) * 100 : 0;
   
   const handleSelectAnswer = (answer: string) => {
     if (!isAnswerChecked) {
@@ -162,7 +164,7 @@ const Exercise = () => {
       
       if (user && lessonId) {
         try {
-          const result: ExerciseResult = {
+          const result = {
             lessonId,
             exerciseId: currentExercise.id,
             isCorrect,
@@ -195,239 +197,58 @@ const Exercise = () => {
     }
   };
 
+  // Check if input is valid for the current exercise type
+  const isInputValid = () => {
+    if (!currentExercise) return false;
+    
+    if (currentExercise.type === "multiple_choice" || currentExercise.type === "translation") {
+      return selectedAnswer !== null;
+    } else if (currentExercise.type === "text_input") {
+      return textAnswer.trim() !== "";
+    } else if (currentExercise.type === "arrange_sentence") {
+      return arrangedWords.length > 0;
+    }
+    
+    return false;
+  };
+
   if (loading) {
-    return (
-      <div className="container max-w-md mx-auto px-4 pt-6 flex items-center justify-center h-[80vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-nihongo-red"></div>
-      </div>
-    );
+    return <LoadingExercise />;
   }
 
   if (!currentExercise) {
-    return (
-      <div className="container max-w-md mx-auto px-4 pt-6">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">No exercises found</h1>
-          <Button onClick={() => navigate(`/app/lesson/${lessonId}`)}>
-            Return to Lesson
-          </Button>
-        </div>
-      </div>
-    );
+    return <NoExercisesFound lessonId={lessonId} />;
   }
 
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-      <header className="mb-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center bg-nihongo-red/10 px-3 py-1 rounded-full">
-            <Zap className="w-4 h-4 text-nihongo-red mr-1" />
-            <span className="text-xs font-medium text-nihongo-red">+{xpEarned} XP</span>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            {currentExerciseIndex + 1}/{exercises.length}
-          </div>
-        </div>
-        <Progress value={progress} className="h-2 bg-gray-100" />
-      </header>
+      <ExerciseProgress 
+        currentIndex={currentExerciseIndex} 
+        totalExercises={exercises.length} 
+        xpEarned={xpEarned} 
+      />
 
       <section className="mb-8">
-        <Card className="border border-nihongo-blue/10 shadow-md mb-8">
-          <CardContent className="p-6">
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-2">{currentExercise.question}</h2>
-              {currentExercise.romaji && (
-                <div className="text-sm text-gray-600 mb-4">
-                  <span className="font-medium">{currentExercise.romaji}</span> <span className="text-xs italic">(pronunciation)</span>
-                </div>
-              )}
-            </div>
-            
-            {currentExercise.type === "multiple_choice" && (
-              <div className="space-y-3">
-                {Array.isArray(currentExercise.options) ? (
-                  currentExercise.options.map((option, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className={`w-full justify-start py-6 px-4 h-auto text-left font-normal transition-all ${
-                        selectedAnswer === option
-                          ? isAnswerChecked
-                            ? option === currentExercise.correct_answer
-                              ? "border-nihongo-green bg-nihongo-green/5 hover:bg-nihongo-green/5"
-                              : "border-nihongo-error bg-nihongo-error/5 hover:bg-nihongo-error/5"
-                            : "border-nihongo-blue bg-nihongo-blue/5 hover:bg-nihongo-blue/5"
-                          : "border-gray-200 hover:border-nihongo-blue/50"
-                      }`}
-                      onClick={() => handleSelectAnswer(option)}
-                      disabled={isAnswerChecked && option !== currentExercise.correct_answer && option !== selectedAnswer}
-                    >
-                      <div className="flex items-center w-full justify-between">
-                        <span>{option}</span>
-                        {isAnswerChecked && option === currentExercise.correct_answer && (
-                          <Check className="w-5 h-5 text-nihongo-green" />
-                        )}
-                        {isAnswerChecked && option === selectedAnswer && option !== currentExercise.correct_answer && (
-                          <X className="w-5 h-5 text-nihongo-error" />
-                        )}
-                      </div>
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-red-500">Error: Options are not properly formatted</p>
-                )}
-              </div>
-            )}
+        <ExerciseQuestion
+          exercise={currentExercise}
+          selectedAnswer={selectedAnswer}
+          textAnswer={textAnswer}
+          arrangedWords={arrangedWords}
+          availableWords={availableWords}
+          isAnswerChecked={isAnswerChecked}
+          onSelectAnswer={handleSelectAnswer}
+          onTextAnswerChange={handleTextAnswerChange}
+          onAddWord={handleAddWord}
+          onRemoveWord={handleRemoveWord}
+        />
 
-            {currentExercise.type === "text_input" && (
-              <div className="space-y-4">
-                <div className="mb-2">
-                  <Input
-                    type="text"
-                    placeholder="Type your answer here..."
-                    value={textAnswer}
-                    onChange={handleTextAnswerChange}
-                    disabled={isAnswerChecked}
-                    className={`w-full py-6 px-4 text-lg ${
-                      isAnswerChecked
-                        ? textAnswer && currentExercise.correct_answer.split(',').map(a => a.trim().toLowerCase()).includes(textAnswer.toLowerCase())
-                          ? "border-nihongo-green bg-nihongo-green/5"
-                          : "border-nihongo-error bg-nihongo-error/5"
-                        : ""
-                    }`}
-                  />
-                </div>
-                
-                {isAnswerChecked && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="font-medium text-lg">
-                      {textAnswer && currentExercise.correct_answer.split(',').map(a => a.trim().toLowerCase()).includes(textAnswer.toLowerCase())
-                        ? <span className="flex items-center text-nihongo-green"><Check className="w-5 h-5 mr-2" /> Correct!</span>
-                        : <span className="flex items-center text-nihongo-error"><X className="w-5 h-5 mr-2" /> Incorrect</span>
-                      }
-                    </p>
-                    <p className="mt-2">
-                      Correct answer: <span className="font-medium">{currentExercise.correct_answer}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {currentExercise.type === "arrange_sentence" && (
-              <div className="space-y-4">
-                {/* Area for arranged words */}
-                <div className="min-h-16 p-4 border border-dashed rounded-lg border-gray-300 flex flex-wrap gap-2 mb-4">
-                  {arrangedWords.length > 0 ? (
-                    arrangedWords.map((word, index) => (
-                      <Button
-                        key={`arranged-${index}`}
-                        variant="outline"
-                        className="bg-nihongo-blue/10 hover:bg-nihongo-blue/15"
-                        onClick={() => handleRemoveWord(index)}
-                        disabled={isAnswerChecked}
-                      >
-                        {word}
-                      </Button>
-                    ))
-                  ) : (
-                    <div className="w-full text-center text-muted-foreground py-2">
-                      Tap words below to arrange them here
-                    </div>
-                  )}
-                </div>
-                
-                {/* Available words */}
-                <div className="flex flex-wrap gap-2">
-                  {availableWords.map((word, index) => (
-                    <Button
-                      key={`available-${index}`}
-                      variant="outline"
-                      onClick={() => handleAddWord(word, index)}
-                      disabled={isAnswerChecked}
-                    >
-                      {word}
-                    </Button>
-                  ))}
-                </div>
-                
-                {isAnswerChecked && (
-                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                    <p className="font-medium text-lg">
-                      {arrangedWords.join("") === currentExercise.correct_answer.replace(/\s+/g, "")
-                        ? <span className="flex items-center text-nihongo-green"><Check className="w-5 h-5 mr-2" /> Correct!</span>
-                        : <span className="flex items-center text-nihongo-error"><X className="w-5 h-5 mr-2" /> Incorrect</span>
-                      }
-                    </p>
-                    <p className="mt-2">
-                      Correct answer: <span className="font-medium">{currentExercise.correct_answer}</span>
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {currentExercise.type === "translation" && (
-              <div className="space-y-3">
-                <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                  <p className="text-2xl font-japanese text-center mb-2">{currentExercise.japanese}</p>
-                  <p className="text-sm text-center font-medium">{currentExercise.romaji}</p>
-                  <p className="text-xs text-muted-foreground text-center italic mt-1">pronunciation</p>
-                </div>
-                {Array.isArray(currentExercise.options) ? (
-                  currentExercise.options.map((option, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className={`w-full justify-start py-6 px-4 h-auto text-left font-normal transition-all ${
-                        selectedAnswer === option
-                          ? isAnswerChecked
-                            ? option === currentExercise.correct_answer
-                              ? "border-nihongo-green bg-nihongo-green/5 hover:bg-nihongo-green/5"
-                              : "border-nihongo-error bg-nihongo-error/5 hover:bg-nihongo-error/5"
-                            : "border-nihongo-blue bg-nihongo-blue/5 hover:bg-nihongo-blue/5"
-                          : "border-gray-200 hover:border-nihongo-blue/50"
-                      }`}
-                      onClick={() => handleSelectAnswer(option)}
-                      disabled={isAnswerChecked && option !== currentExercise.correct_answer && option !== selectedAnswer}
-                    >
-                      <div className="flex items-center w-full justify-between">
-                        <span>{option}</span>
-                        {isAnswerChecked && option === currentExercise.correct_answer && (
-                          <Check className="w-5 h-5 text-nihongo-green" />
-                        )}
-                        {isAnswerChecked && option === selectedAnswer && option !== currentExercise.correct_answer && (
-                          <X className="w-5 h-5 text-nihongo-error" />
-                        )}
-                      </div>
-                    </Button>
-                  ))
-                ) : (
-                  <p className="text-red-500">Error: Options are not properly formatted</p>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {!isAnswerChecked ? (
-          <Button 
-            className="w-full bg-nihongo-blue hover:bg-nihongo-blue/90 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-            onClick={handleCheckAnswer}
-            disabled={(currentExercise.type === "multiple_choice" && selectedAnswer === null) || 
-                     (currentExercise.type === "text_input" && !textAnswer.trim()) ||
-                     (currentExercise.type === "arrange_sentence" && arrangedWords.length === 0)}
-          >
-            Check Answer
-          </Button>
-        ) : (
-          <Button 
-            className="w-full bg-nihongo-red hover:bg-nihongo-red/90 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
-            onClick={handleNextExercise}
-          >
-            {currentExerciseIndex < exercises.length - 1 ? "Next Exercise" : "Complete Lesson"}
-          </Button>
-        )}
+        <ExerciseActions
+          isAnswerChecked={isAnswerChecked}
+          isLastExercise={currentExerciseIndex === exercises.length - 1}
+          isInputValid={isInputValid()}
+          onCheckAnswer={handleCheckAnswer}
+          onNextExercise={handleNextExercise}
+        />
       </section>
     </div>
   );
