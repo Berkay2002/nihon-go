@@ -5,7 +5,6 @@ import { HomeHeader } from "./HomeHeader";
 import { StatsSection } from "./StatsSection";
 import { ContinueLearningSection } from "./ContinueLearningSection";
 import { RecentLessonsSection } from "./RecentLessonsSection";
-import { GuestPromotion } from "./GuestPromotion";
 import { GuestMessage } from "@/components/shared/GuestMessage";
 
 interface UserData {
@@ -25,22 +24,18 @@ interface UserData {
 
 interface HomeContentProps {
   username: string;
-  isGuest: boolean;
   userData: UserData;
   navigate: NavigateFunction;
 }
 
 export const HomeContent: React.FC<HomeContentProps> = ({
   username,
-  isGuest,
   userData,
   navigate,
 }) => {
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
-      <HomeHeader username={username} isGuest={isGuest} />
-      
-      {isGuest && <GuestMessage navigate={navigate} />}
+      <HomeHeader username={username} />
       
       <StatsSection 
         streak={userData.streak} 
@@ -58,12 +53,9 @@ export const HomeContent: React.FC<HomeContentProps> = ({
       {userData.recentLessons.length > 0 && (
         <RecentLessonsSection 
           recentLessons={userData.recentLessons} 
-          isGuest={isGuest}
           navigate={navigate} 
         />
       )}
-
-      {isGuest && <GuestPromotion navigate={navigate} />}
     </div>
   );
 };

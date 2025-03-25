@@ -3,25 +3,14 @@ import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { LessonCard, LessonCardSkeleton } from "./LessonCard";
 import { NavigateFunction } from "react-router-dom";
-
-interface Lesson {
-  id: string;
-  unit_id: string;
-  title: string;
-  description: string;
-  order_index: number;
-  estimated_time: string;
-  xp_reward: number;
-  is_completed?: boolean;
-  is_locked?: boolean;
-}
+import { LessonWithProgress } from "@/hooks/useUnitsData";
 
 interface LessonsListProps {
-  lessons: Lesson[];
+  lessons: LessonWithProgress[];
   loading: boolean;
   error: string | null;
   navigate: NavigateFunction;
-  handleLessonClick: (lesson: Lesson) => void;
+  handleLessonClick: (lesson: LessonWithProgress) => void;
 }
 
 export const LessonsList: React.FC<LessonsListProps> = ({

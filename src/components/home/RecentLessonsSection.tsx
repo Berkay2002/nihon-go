@@ -1,7 +1,7 @@
 
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, ArrowRight, LockIcon } from "lucide-react";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 import { NavigateFunction } from "react-router-dom";
 
 interface RecentLesson {
@@ -15,12 +15,11 @@ interface RecentLesson {
 
 interface RecentLessonsSectionProps {
   recentLessons: RecentLesson[];
-  isGuest: boolean;
   navigate: NavigateFunction;
 }
 
 export const RecentLessonsSection: React.FC<RecentLessonsSectionProps> = ({ 
-  recentLessons, isGuest, navigate 
+  recentLessons, navigate 
 }) => {
   return (
     <section>
@@ -52,11 +51,6 @@ export const RecentLessonsSection: React.FC<RecentLessonsSectionProps> = ({
                       <span className="text-xs font-medium text-nihongo-green">
                         {lesson.accuracy}%
                       </span>
-                    </div>
-                  )}
-                  {isGuest && (
-                    <div className="mr-2">
-                      <LockIcon className="w-4 h-4 text-muted-foreground" />
                     </div>
                   )}
                   <ArrowRight className="w-4 h-4 text-muted-foreground" />

@@ -1,4 +1,3 @@
-
 import { UserProgress, UserStreak } from './types';
 
 // Enhanced fake data for guest mode that always returns consistent data with minimal delay

@@ -3,170 +3,164 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
-import { toast } from "@/components/ui/use-toast";
-import { UserStreak } from "@/services/userProgress/types";
-import {
-  LoadingState,
-  ErrorState,
-  HomeContent
-} from "@/components/home";
+import { LoadingState } from "@/components/home/LoadingState";
+import { ErrorState } from "@/components/home/ErrorState";
+import { HomeContent } from "@/components/home/HomeContent";
+import contentService from "@/services/contentService";
 
 const Home = () => {
   const navigate = useNavigate();
-  const { user, isLoading: authLoading, profile } = useAuth();
-  const { getUserStreakData, getUserProgressData } = useUserProgress();
+  const { user, profile } = useAuth();
   const [loading, setLoading] = useState(true);
   const [longLoading, setLongLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userData, setUserData] = useState({
-    streak: 1,
+    streak: 0,
     level: 1,
-    xp: 15,
-    totalXp: 15,
+    xp: 0,
+    totalXp: 0,
     dailyGoal: 50,
     recentLessons: [],
-    nextLesson: {
-      id: "demo-lesson-1",
-      title: "Introduction to Japanese",
-      unitName: "Basics",
-      xp_reward: 10
-    }
+    nextLesson: null
   });
 
-  // Set a loading timeout to show a message first, then fallback to default data
-  useEffect(() => {
-    let shortTimeoutId: number | null = null;
-    let longTimeoutId: number | null = null;
+  const { getUserStreakData, getUserProgressData } = useUserProgress();
 
-    if (loading && !error) {
-      // First timeout - show "taking longer than expected" message after 3 seconds
-      shortTimeoutId = window.setTimeout(() => {
+  useEffect(() => {
+    const longLoadingTimeout = setTimeout(() => {
+      if (loading) {
         setLongLoading(true);
-        toast.info("Loading is taking longer than expected", {
-          description: "Using fallback data to get you started",
-        });
-      }, 3000); 
-      
-      // Second timeout - use fallback data after 6 seconds total
-      longTimeoutId = window.setTimeout(() => {
-        setLoading(false);
-        // We don't set error here anymore, just use fallback data
-        
-        const fallbackData = {
-          streak: 1,
-          level: 1,
-          xp: 15,
-          totalXp: 15,
-          dailyGoal: 50,
-          recentLessons: [],
-          nextLesson: {
-            id: "demo-lesson-1",
-            title: "Introduction to Japanese",
-            unitName: "Basics",
-            xp_reward: 10
-          }
-        };
-        
-        setUserData(fallbackData);
-      }, 6000);
-    }
-    
-    return () => {
-      if (shortTimeoutId) window.clearTimeout(shortTimeoutId);
-      if (longTimeoutId) window.clearTimeout(longTimeoutId);
-    };
-  }, [loading, error]);
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      // Don't fetch if auth is still loading
-      if (authLoading) return;
-      
-      try {
-        setLoading(true);
-        setError(null);
-        
-        // Create safer timeout promises
-        const createTimeoutPromise = (ms: number, name: string) => 
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error(`${name} timeout after ${ms}ms`)), ms)
-          );
-        
-        // Fetch streak and progress data with timeout safety
-        const streakPromise = getUserStreakData();
-        const progressPromise = getUserProgressData();
-        
-        // Use Promise.allSettled to ensure we get a response even if one fails
-        const results = await Promise.allSettled([streakPromise, progressPromise]);
-        
-        // Process the results with proper type checking
-        const streakResult = results[0];
-        const progressResult = results[1];
-        
-        const streakData = 
-          streakResult.status === 'fulfilled' ? streakResult.value : null;
-        
-        const progressData = 
-          progressResult.status === 'fulfilled' ? progressResult.value : [];
-        
-        // Always have data ready to display
-        const processedData = {
-          streak: streakData?.current_streak || 1,
-          level: streakData?.level || 1,
-          xp: streakData?.daily_xp || 15,
-          totalXp: streakData?.total_xp || 15,
-          dailyGoal: streakData?.daily_goal || 50,
-          recentLessons: [], // Would be processed from progressData
-          nextLesson: {
-            id: "demo-lesson-1",
-            title: "Introduction to Japanese",
-            unitName: "Basics",
-            xp_reward: 10
-          }
-        };
-        
-        setUserData(processedData);
-        setLoading(false);
-        setLongLoading(false);
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-        
-        // Use fallback data instead of showing an error
-        const fallbackData = {
-          streak: 1,
-          level: 1,
-          xp: 15,
-          totalXp: 15,
-          dailyGoal: 50,
-          recentLessons: [],
-          nextLesson: {
-            id: "demo-lesson-1",
-            title: "Introduction to Japanese",
-            unitName: "Basics",
-            xp_reward: 10
-          }
-        };
-        
-        setUserData(fallbackData);
-        setLoading(false);
-        setLongLoading(false);
       }
+    }, 3000);
+
+    loadUserData();
+
+    return () => {
+      clearTimeout(longLoadingTimeout);
     };
-    
-    fetchUserData();
-  }, [user, authLoading, getUserStreakData, getUserProgressData]);
+  }, [user]);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      if (!user) {
+        setError("User not authenticated");
+        setLoading(false);
+        return;
+      }
+
+      // Get user streak data
+      const streakData = await getUserStreakData();
+      
+      // Get user progress data for lessons
+      const progressData = await getUserProgressData();
+      
+      // Get all lessons to find completed ones and determine next lesson
+      const units = await contentService.getUnits();
+      const lessons = [];
+      
+      for (const unit of units) {
+        const unitLessons = await contentService.getLessonsByUnit(unit.id);
+        for (const lesson of unitLessons) {
+          lessons.push({
+            ...lesson,
+            unitName: unit.name
+          });
+        }
+      }
+      
+      // Sort lessons by order_index and unit order_index
+      lessons.sort((a, b) => {
+        const unitA = units.find(u => u.id === a.unit_id);
+        const unitB = units.find(u => u.id === b.unit_id);
+        
+        if (unitA.order_index !== unitB.order_index) {
+          return unitA.order_index - unitB.order_index;
+        }
+        
+        return a.order_index - b.order_index;
+      });
+      
+      // Find recent lessons (completed ones)
+      const recentLessons = [];
+      
+      for (const progress of progressData) {
+        const lesson = lessons.find(l => l.id === progress.lesson_id);
+        if (lesson && progress.is_completed) {
+          recentLessons.push({
+            id: lesson.id,
+            title: lesson.title,
+            unitName: lesson.unitName,
+            isCompleted: progress.is_completed,
+            accuracy: progress.accuracy,
+            xpEarned: progress.xp_earned
+          });
+        }
+      }
+      
+      // Sort recent lessons by last attempted date (most recent first)
+      recentLessons.sort((a, b) => {
+        const progressA = progressData.find(p => p.lesson_id === a.id);
+        const progressB = progressData.find(p => p.lesson_id === b.id);
+        
+        return new Date(progressB.last_attempted_at).getTime() - 
+               new Date(progressA.last_attempted_at).getTime();
+      });
+      
+      // Limit to 5 recent lessons
+      const limitedRecentLessons = recentLessons.slice(0, 5);
+      
+      // Find next lesson (first incomplete lesson)
+      let nextLesson = null;
+      
+      for (const lesson of lessons) {
+        const progress = progressData.find(p => p.lesson_id === lesson.id);
+        
+        // If lesson not started or not completed, this is the next lesson
+        if (!progress || !progress.is_completed) {
+          const unit = units.find(u => u.id === lesson.unit_id);
+          
+          nextLesson = {
+            id: lesson.id,
+            title: lesson.title,
+            unitName: unit.name,
+            xp_reward: lesson.xp_reward
+          };
+          
+          break;
+        }
+      }
+      
+      setUserData({
+        streak: streakData.current_streak,
+        level: streakData.level,
+        xp: streakData.daily_xp,
+        totalXp: streakData.total_xp,
+        dailyGoal: streakData.daily_goal,
+        recentLessons: limitedRecentLessons,
+        nextLesson
+      });
+      
+      setLoading(false);
+    } catch (error) {
+      console.error("Error loading user data:", error);
+      setError("Failed to load your progress. Please try again.");
+      setLoading(false);
+    }
+  };
 
   const handleRefresh = () => {
     window.location.reload();
   };
 
-  // Display appropriate component based on state
   if (loading) {
     return (
       <LoadingState
-        username={profile?.username || user?.user_metadata?.username || "Friend"}
+        username={profile?.username || user?.email.split('@')[0] || "User"}
+        retry={loadUserData}
         longLoading={longLoading}
-        handleRefresh={handleRefresh}
       />
     );
   }
@@ -174,7 +168,7 @@ const Home = () => {
   if (error) {
     return (
       <ErrorState
-        username={profile?.username || user?.user_metadata?.username || "Friend"}
+        username={profile?.username || user?.email.split('@')[0] || "User"}
         error={error}
         handleRefresh={handleRefresh}
       />
@@ -183,7 +177,7 @@ const Home = () => {
 
   return (
     <HomeContent
-      username={profile?.username || user?.user_metadata?.username || "Friend"}
+      username={profile?.username || user?.email.split('@')[0] || "User"}
       userData={userData}
       navigate={navigate}
     />

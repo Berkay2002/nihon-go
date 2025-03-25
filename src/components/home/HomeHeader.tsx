@@ -3,18 +3,13 @@ import React from "react";
 
 interface HomeHeaderProps {
   username: string;
-  isGuest: boolean;
 }
 
-export const HomeHeader: React.FC<HomeHeaderProps> = ({ username, isGuest }) => {
+export const HomeHeader: React.FC<HomeHeaderProps> = ({ username }) => {
   return (
     <header className="mb-8">
-      <h1 className="text-2xl font-bold">
-        {isGuest ? 
-          `こんにちは, Guest!` : 
-          `こんにちは, ${username}!`}
-      </h1>
-      <p className="text-muted-foreground">Welcome to your Japanese learning journey</p>
+      <h1 className="text-2xl font-bold mb-1">Hello, {username}!</h1>
+      <p className="text-muted-foreground">Welcome to your learning dashboard</p>
     </header>
   );
 };
