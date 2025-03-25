@@ -3,16 +3,16 @@ import { baseService } from "./baseService";
 
 export interface Vocabulary {
   id: string;
-  lesson_id: string | null;
+  lesson_id: string;
   japanese: string;
-  hiragana: string;
-  romaji: string;
   english: string;
-  example_sentence?: string | null;
+  romaji?: string;
+  hiragana?: string;
   category: string;
   difficulty: number;
   created_at?: string;
   updated_at?: string;
+  example_sentence?: string | null;
 }
 
 const vocabularyService = {
@@ -23,7 +23,7 @@ const vocabularyService = {
       .eq('lesson_id', lessonId);
     
     if (error) {
-      console.error('Error fetching vocabulary:', error);
+      console.error(`Error fetching vocabulary for lesson ${lessonId}:`, error);
       throw error;
     }
     
@@ -31,17 +31,22 @@ const vocabularyService = {
   },
   
   getVocabularyByCategory: async (category: string): Promise<Vocabulary[]> => {
-    const { data, error } = await baseService.client
-      .from('vocabulary')
-      .select('*')
-      .eq('category', category);
-    
-    if (error) {
-      console.error('Error fetching vocabulary by category:', error);
-      throw error;
+    try {
+      const { data, error } = await baseService.client
+        .from('vocabulary')
+        .select('*')
+        .eq('category', category);
+      
+      if (error) {
+        console.error(`Error fetching vocabulary for category ${category}:`, error);
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error(`Error in getVocabularyByCategory for ${category}:`, error);
+      return [];
     }
-    
-    return data || [];
   }
 };
 

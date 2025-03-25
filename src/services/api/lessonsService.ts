@@ -14,11 +14,48 @@ export interface Lesson {
   updated_at?: string;
 }
 
+// Define a DB lesson type to match what comes from the database
+interface DBLesson {
+  id: string;
+  unit_id: string;
+  title: string;
+  description: string;
+  order_index: number;
+  estimated_time: string;
+  xp_reward: number;
+  is_locked?: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 // Cache for lesson data to avoid redundant fetches
 const lessonsCache = new Map<string, {data: Lesson[], timestamp: number}>();
 const CACHE_EXPIRY = 60000; // 1 minute cache expiry
 
 const lessonsService = {
+  getLessons: async (): Promise<Lesson[]> => {
+    try {
+      const { data, error } = await baseService.client
+        .from('lessons')
+        .select('*')
+        .order('order_index');
+      
+      if (error) {
+        console.error('Error fetching lessons:', error);
+        throw error;
+      }
+      
+      // Cast the data to the DBLesson type and then add the is_locked property with a default value
+      return ((data || []) as DBLesson[]).map(lesson => ({
+        ...lesson,
+        is_locked: lesson.is_locked ?? false
+      }));
+    } catch (error) {
+      console.error('Error in getLessons:', error);
+      return [];
+    }
+  },
+  
   getLessonsByUnit: async (unitId: string): Promise<Lesson[]> => {
     try {
       console.log(`Fetching lessons for unit: ${unitId}`);
@@ -48,8 +85,8 @@ const lessonsService = {
           throw error;
         }
         
-        // Make sure every lesson has is_locked property
-        return (data || []).map(lesson => ({
+        // Cast the data to the DBLesson type and then add the is_locked property with a default value
+        return ((data || []) as DBLesson[]).map(lesson => ({
           ...lesson,
           is_locked: lesson.is_locked ?? false
         }));
@@ -75,7 +112,7 @@ const lessonsService = {
     }
   },
   
-  getLesson: async (lessonId: string): Promise<Lesson> => {
+  getLesson: async (lessonId: string): Promise<Lesson | null> => {
     try {
       console.log(`Fetching lesson with ID: ${lessonId}`);
       
@@ -98,21 +135,25 @@ const lessonsService = {
         
         if (!data) {
           console.error(`Lesson not found with ID: ${lessonId}`);
-          throw new Error('Lesson not found');
+          return null;
         }
         
+        // Cast to DBLesson before adding is_locked property
+        const dbLesson = data as DBLesson;
         // Ensure is_locked is set
         return {
-          ...data,
-          is_locked: data.is_locked ?? false
+          ...dbLesson,
+          is_locked: dbLesson.is_locked ?? false
         };
       }, 2); // 2 retries
       
-      console.log(`Successfully fetched lesson: ${data.title}`);
+      if (data) {
+        console.log(`Successfully fetched lesson: ${data.title}`);
+      }
       return data;
     } catch (error) {
       console.error(`Error in getLesson for ID ${lessonId}:`, error);
-      throw error;
+      return null;
     }
   },
   
