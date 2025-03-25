@@ -173,7 +173,7 @@ export const userProgressApi = {
     return data;
   },
   
-  // Submit exercise results
+  // Submit exercise result
   submitExerciseResult: async (
     userId: string,
     result: ExerciseResult
@@ -225,24 +225,31 @@ export const userProgressApi = {
       };
       
       // We'll try this but handle errors quietly if the table doesn't exist
-      const { error } = await supabase.rpc('record_exercise_response', responseData);
-      
-      if (error) {
-        console.warn('Could not record exercise response via RPC:', error);
+      // Using a more generic approach with a fetch call to an RPC endpoint
+      try {
+        const { error } = await supabase.functions.invoke('record-exercise-response', {
+          body: responseData
+        });
         
-        // Fallback to direct insert if available, but suppress errors
+        if (error) {
+          console.warn('Could not record exercise response via function:', error);
+        }
+      } catch (e) {
+        console.warn('Exercise response recording failed via function:', e);
+        
+        // Fallback to direct insert if table exists
         try {
-          const { error: insertError } = await supabase.rpc('add_exercise_response', responseData);
-          if (insertError) {
-            console.warn('Could not add exercise response via fallback RPC:', insertError);
+          const { error } = await supabase.from('exercise_responses').insert(responseData);
+          if (error) {
+            console.warn('Could not add exercise response via direct insert:', error);
           }
-        } catch (e) {
-          console.warn('Exercise response recording failed:', e);
+        } catch (insertError) {
+          console.warn('Exercise response direct insert failed:', insertError);
         }
       }
     } catch (e) {
       // Silently fail if table doesn't exist
-      console.warn('Exercise responses not recorded - function might not exist');
+      console.warn('Exercise responses not recorded - function or table might not exist');
     }
   },
   
@@ -262,20 +269,22 @@ export const userProgressApi = {
         responses: []
       };
       
-      // Try to get detailed exercise responses if the table and/or function exists
+      // Try to get detailed exercise responses if the table exists
       try {
-        // Try with RPC function first (if the function exists)
+        // Try with a custom function call first
         try {
-          const { data, error } = await supabase.rpc('get_lesson_responses', {
-            user_id: userId,
-            lesson_id: lessonId
+          const { data, error } = await supabase.functions.invoke('get-lesson-responses', {
+            body: {
+              userId,
+              lessonId
+            }
           });
           
           if (!error && data && Array.isArray(data)) {
-            // Process successful response from RPC
-            scorecard.responses = data.map(r => ({
-              exercise_id: r.exercise_id,
-              is_correct: r.is_correct,
+            // Process successful response from function
+            scorecard.responses = data.map((r: any) => ({
+              exercise_id: r.exercise_id || '',
+              is_correct: r.is_correct || false,
               question: r.question || '',
               correct_answer: r.correct_answer || '',
               user_answer: r.user_answer || '',
@@ -286,9 +295,35 @@ export const userProgressApi = {
             scorecard.totalExercises = scorecard.responses.length;
             return scorecard;
           }
-        } catch (rpcError) {
-          // RPC function might not exist, continue to fallback
-          console.warn('RPC function get_lesson_responses not available:', rpcError);
+        } catch (functionError) {
+          console.warn('Function get-lesson-responses not available:', functionError);
+        }
+        
+        // Fallback to direct table query if function fails
+        try {
+          const { data, error } = await supabase
+            .from('exercise_responses')
+            .select('*')
+            .eq('user_id', userId)
+            .eq('lesson_id', lessonId);
+          
+          if (!error && data && data.length > 0) {
+            // Map the data to our response format
+            scorecard.responses = data.map(r => ({
+              exercise_id: r.exercise_id || '',
+              is_correct: r.is_correct || false,
+              question: r.question || '',
+              correct_answer: r.correct_answer || '',
+              user_answer: r.user_answer || '',
+              exercise_type: r.exercise_type || 'unknown'
+            }));
+            
+            scorecard.correctExercises = scorecard.responses.filter(r => r.is_correct).length;
+            scorecard.totalExercises = scorecard.responses.length;
+            return scorecard;
+          }
+        } catch (tableError) {
+          console.warn('Could not query exercise_responses table:', tableError);
         }
       } catch (responseError) {
         console.warn('Could not get exercise responses:', responseError);
