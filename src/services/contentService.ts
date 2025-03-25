@@ -121,7 +121,8 @@ const contentService = {
       throw error;
     }
     
-    return (data || []).map(lesson => ({
+    // Cast the data to the DBLesson type and then add the is_locked property with a default value
+    return ((data || []) as DBLesson[]).map(lesson => ({
       ...lesson,
       is_locked: lesson.is_locked ?? false
     }));
@@ -139,7 +140,8 @@ const contentService = {
       throw error;
     }
     
-    return (data || []).map(lesson => ({
+    // Cast the data to the DBLesson type and then add the is_locked property with a default value
+    return ((data || []) as DBLesson[]).map(lesson => ({
       ...lesson,
       is_locked: lesson.is_locked ?? false
     }));
@@ -190,7 +192,7 @@ const contentService = {
     // Map to match the GrammarPattern interface
     return (data || []).map(pattern => ({
       id: pattern.id,
-      lesson_id: pattern.id, // Placeholder, adjust as needed
+      lesson_id: pattern.lesson_id || pattern.id, // Use lesson_id if available, fallback to id
       pattern: pattern.pattern,
       explanation: pattern.explanation,
       example: JSON.stringify(pattern.example_sentences),
@@ -213,7 +215,7 @@ const contentService = {
     // Map to match the GrammarPattern interface
     return (data || []).map(pattern => ({
       id: pattern.id,
-      lesson_id: pattern.id, // Placeholder, adjust as needed
+      lesson_id: pattern.lesson_id || pattern.id, // Use lesson_id if available, fallback to id
       pattern: pattern.pattern,
       explanation: pattern.explanation,
       example: JSON.stringify(pattern.example_sentences),
