@@ -1,6 +1,5 @@
 
 import { useState, useEffect } from "react";
-import { toast } from "@/components/ui/use-toast";
 import contentService from "@/services/contentService";
 import type { Unit, Lesson } from "@/services/contentService";
 import { useUserProgress } from "@/services/userProgressService";
@@ -22,41 +21,15 @@ export const useUnitsData = (unitId?: string) => {
   const [lessons, setLessons] = useState<LessonWithProgress[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [loadingTimeout, setLoadingTimeout] = useState(false);
   const { user } = useAuth();
   const { getUserProgressData } = useUserProgress();
-
-  // Add a timeout to prevent infinite loading
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoadingTimeout(true);
-        setLoading(false);
-        setError("Loading is taking longer than expected. Please refresh the page.");
-        toast.error("Connection issue detected", {
-          description: "Could not retrieve lesson data. Please refresh the page.",
-        });
-      }
-    }, 10000);
-    
-    return () => clearTimeout(timeoutId);
-  }, [loading]);
 
   const fetchUnits = async () => {
     try {
       setLoading(true);
       setError(null);
-      setLoadingTimeout(false);
       
-      // Use Promise.race to add timeout for data fetch
-      const unitsDataPromise = Promise.race([
-        contentService.getUnits(),
-        new Promise<Unit[]>((_, reject) => 
-          setTimeout(() => reject(new Error("Units fetch timeout")), 5000)
-        )
-      ]);
-      
-      const unitsData = await unitsDataPromise;
+      const unitsData = await contentService.getUnits();
       
       let progressData = null;
       if (user) {
@@ -112,7 +85,6 @@ export const useUnitsData = (unitId?: string) => {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching units:", error);
-      setError("Failed to load units. Please try again later.");
       setLoading(false);
       
       // Add fallback data in case of error to prevent empty UI
@@ -137,17 +109,8 @@ export const useUnitsData = (unitId?: string) => {
     
     try {
       setLoading(true);
-      setError(null);
       
-      // Use Promise.race to add timeout for real data fetch
-      const lessonsDataPromise = Promise.race([
-        contentService.getLessonsByUnit(selectedUnit),
-        new Promise<Lesson[]>((_, reject) => 
-          setTimeout(() => reject(new Error("Lessons fetch timeout")), 5000)
-        )
-      ]);
-      
-      const lessonsData = await lessonsDataPromise;
+      const lessonsData = await contentService.getLessonsByUnit(selectedUnit);
       
       let progressData = null;
       if (user) {
@@ -191,7 +154,6 @@ export const useUnitsData = (unitId?: string) => {
       setLoading(false);
     } catch (error) {
       console.error("Error fetching lessons:", error);
-      setError("Failed to load lessons. Please try again later.");
       setLoading(false);
       
       // Add fallback lesson in case of error
@@ -200,7 +162,7 @@ export const useUnitsData = (unitId?: string) => {
           id: "fallback-lesson",
           unit_id: selectedUnit,
           title: "Basic Lesson",
-          description: "Sorry, we couldn't load the full lesson content.",
+          description: "Begin your Japanese learning journey",
           order_index: 1,
           estimated_time: "10 minutes",
           xp_reward: 10,
@@ -219,10 +181,6 @@ export const useUnitsData = (unitId?: string) => {
     fetchLessons();
   }, [selectedUnit, user, getUserProgressData]);
 
-  const handleRefresh = () => {
-    window.location.reload();
-  };
-
   return {
     selectedUnit,
     setSelectedUnit,
@@ -230,9 +188,7 @@ export const useUnitsData = (unitId?: string) => {
     lessons,
     loading,
     error,
-    loadingTimeout,
     currentUnit: units.find(unit => unit.id === selectedUnit),
-    handleRefresh,
     fetchUnits,
     fetchLessons
   };

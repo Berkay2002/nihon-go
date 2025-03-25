@@ -1,44 +1,22 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 
 /**
  * Base service providing the Supabase client for other services
- * with optimized timeout handling for better performance
  */
 export const baseService = {
   client: supabase,
   
   /**
-   * Execute a query with improved timeout handling
+   * Execute a query with improved performance
    * @param queryFn Function that executes the Supabase query
-   * @param timeoutMs Timeout in milliseconds
-   * @param errorMessage Custom error message for timeout
    */
-  async executeWithTimeout(queryFn, timeoutMs = 3500, errorMessage = "Query timeout") {
+  async executeWithTimeout(queryFn, timeoutMs = 30000, errorMessage = "Query timeout") {
     try {
-      // Create a promise that rejects after the timeout
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
-      );
-      
-      // Race between the query and the timeout
-      return await Promise.race([
-        queryFn(),
-        timeoutPromise
-      ]);
+      // Just execute the query normally
+      return await queryFn();
     } catch (error) {
       console.error(`Error in executeWithTimeout: ${error.message}`, error);
-      
-      // Provide user feedback for network issues
-      if (error.message.includes("timeout") || 
-          error.message.includes("network") ||
-          error.message.includes("fetch")) {
-        toast.error("Connection issue", {
-          description: "Having trouble connecting to the server. Using fallback data."
-        });
-      }
-      
       throw error;
     }
   },
@@ -68,11 +46,6 @@ export const baseService = {
       } catch (error) {
         console.log(`Attempt ${attempt} failed, ${attempt < maxRetries ? "retrying..." : "using fallback data."}`, error);
         lastError = error;
-        
-        // Only show toast on first failure
-        if (attempt === 0 && !error.message.includes("timeout")) {
-          toast.info("Trying to retrieve your data...");
-        }
       }
     }
     

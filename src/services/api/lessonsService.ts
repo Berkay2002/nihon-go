@@ -17,15 +17,11 @@ const lessonsService = {
   getLessonsByUnit: async (unitId: string): Promise<Lesson[]> => {
     try {
       console.log(`Fetching lessons for unit: ${unitId}`);
-      const { data, error } = await baseService.executeWithTimeout(
-        () => baseService.client
-          .from('lessons')
-          .select('*')
-          .eq('unit_id', unitId)
-          .order('order_index'),
-        8000, // Increased timeout to 8 seconds
-        "Lessons fetch timeout"
-      );
+      const { data, error } = await baseService.client
+        .from('lessons')
+        .select('*')
+        .eq('unit_id', unitId)
+        .order('order_index');
       
       if (error) {
         console.error('Error fetching lessons:', error);
@@ -46,15 +42,11 @@ const lessonsService = {
   getLesson: async (lessonId: string): Promise<Lesson> => {
     try {
       console.log(`Fetching lesson with ID: ${lessonId}`);
-      const { data, error } = await baseService.executeWithTimeout(
-        () => baseService.client
-          .from('lessons')
-          .select('*')
-          .eq('id', lessonId)
-          .maybeSingle(),
-        8000, // Increased timeout to 8 seconds
-        "Lesson fetch timeout"
-      );
+      const { data, error } = await baseService.client
+        .from('lessons')
+        .select('*')
+        .eq('id', lessonId)
+        .maybeSingle();
       
       if (error) {
         console.error(`Error fetching lesson ${lessonId}:`, error);

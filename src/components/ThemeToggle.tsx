@@ -14,23 +14,27 @@ export function ThemeToggle({
 }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
 
-  const toggleTheme = () => {
-    setTheme(theme === "light" ? "dark" : "light");
-  };
-
   return (
-    <Button 
-      variant={variant} 
-      size={size} 
-      onClick={toggleTheme} 
-      className={`${theme === 'light' ? 'text-nihongo-blue' : 'text-nihongo-gold'}`}
-    >
-      {theme === "light" ? (
+    <div className="flex items-center gap-2">
+      <Button 
+        variant={variant} 
+        size={size} 
+        onClick={() => setTheme("light")} 
+        className={`${theme === 'light' ? 'bg-nihongo-blue/20 text-nihongo-blue' : 'text-gray-400'}`}
+      >
         <Sun className="h-4 w-4 mr-1" />
-      ) : (
+        Light
+      </Button>
+
+      <Button 
+        variant={variant} 
+        size={size} 
+        onClick={() => setTheme("dark")} 
+        className={`${theme === 'dark' ? 'bg-nihongo-gold/20 text-nihongo-gold' : 'text-gray-400'}`}
+      >
         <Moon className="h-4 w-4 mr-1" />
-      )}
-      {theme === "light" ? "Light" : "Dark"}
-    </Button>
+        Dark
+      </Button>
+    </div>
   );
 }
