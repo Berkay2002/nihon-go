@@ -1,12 +1,12 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { User, Book, Flame, Award, Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
+import { User, Book, Flame, Award, Settings, LogOut, Clock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
 import contentService from "@/services/contentService";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
@@ -38,20 +38,16 @@ const Profile = () => {
         return;
       }
 
-      // Get user streak data
       const streakData = await getUserStreakData();
       
-      // Get user progress data for lessons
       const progressData = await getUserProgressData();
       
-      // Calculate words learned by getting unique vocabulary items from completed lessons
       const completedLessonIds = progressData
         .filter(p => p.is_completed)
         .map(p => p.lesson_id);
       
       let wordsLearned = 0;
       
-      // Get vocabulary count for completed lessons
       for (const lessonId of completedLessonIds) {
         try {
           const vocabulary = await contentService.getVocabularyByLesson(lessonId);
@@ -61,13 +57,11 @@ const Profile = () => {
         }
       }
       
-      // Calculate days active based on user creation date
       const creationDate = user.created_at || new Date().toISOString();
       const daysActive = Math.ceil(
         (new Date().getTime() - new Date(creationDate).getTime()) / (1000 * 60 * 60 * 24)
       );
       
-      // Calculate XP to next level (100 XP per level)
       const currentLevelXp = (streakData.level - 1) * 100;
       const xpInCurrentLevel = streakData.total_xp - currentLevelXp;
       const xpToNextLevel = 100;
@@ -86,7 +80,7 @@ const Profile = () => {
         daysActive,
         wordsLearned,
         lessonsCompleted: completedLessonIds.length,
-        achievementsEarned: 0, // No achievements system yet
+        achievementsEarned: 0,
       });
       
       setLoading(false);
@@ -173,20 +167,13 @@ const Profile = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <div className="flex items-center">
               <Settings className="w-5 h-5 text-muted-foreground mr-3" />
               <span>Theme</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="text-nihongo-blue">
-                <Sun className="w-4 h-4 mr-1" />
-                Light
-              </Button>
-              <Button variant="ghost" size="sm" className="text-muted-foreground">
-                <Moon className="w-4 h-4 mr-1" />
-                Dark
-              </Button>
+              <ThemeToggle />
             </div>
           </div>
           
