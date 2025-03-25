@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import contentService from "@/services/contentService";
@@ -46,7 +45,7 @@ export const useExerciseSession = (lessonId: string | undefined) => {
         setIsLoading(true);
         
         const exercisesData = await contentService.getExercisesByLesson(lessonId);
-        console.log(`Fetched ${exercisesData.length} exercises`);
+        console.log(`Fetched ${exercisesData.length} exercises`, exercisesData);
         
         if (exercisesData.length === 0) {
           setError("No exercises found for this lesson.");
@@ -59,7 +58,8 @@ export const useExerciseSession = (lessonId: string | undefined) => {
           if (exercise.type === "arrange_sentence" && exercise.options) {
             return {
               ...exercise,
-              words: Array.isArray(exercise.options) ? exercise.options : exercise.options.words || []
+              words: Array.isArray(exercise.options) ? exercise.options : 
+                     (exercise.options.words || exercise.words || [])
             };
           }
           return exercise;
@@ -191,6 +191,7 @@ export const useExerciseSession = (lessonId: string | undefined) => {
           exerciseId: currentExercise.id,
           isCorrect: isAnswerCorrect(),
           userAnswer: getUserAnswer(),
+          timeSpent: 0,
           xpEarned: isAnswerCorrect() ? (currentExercise.xp_reward || 0) : 0
         });
       } catch (error) {

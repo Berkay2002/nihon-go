@@ -17,6 +17,8 @@ export interface Exercise {
   updated_at?: string;
   words?: string[]; // For arrange_sentence exercises
   matching_pairs?: Array<{hiragana: string, romaji: string}>;
+  audio_url?: string;
+  image_url?: string;
 }
 
 // Cache for exercise data to avoid redundant fetches
@@ -27,6 +29,7 @@ const CACHE_EXPIRY = 60000; // 1 minute cache expiry
 const mapToExerciseType = (exercise: Exercise): ExerciseType => {
   const exerciseType: ExerciseType = {
     id: exercise.id,
+    lesson_id: exercise.lesson_id,
     type: exercise.type,
     question: exercise.question,
     options: exercise.options,
@@ -34,10 +37,11 @@ const mapToExerciseType = (exercise: Exercise): ExerciseType => {
     xp_reward: exercise.xp_reward,
     japanese: exercise.japanese || "",
     romaji: exercise.romaji || "",
-    lesson_id: exercise.lesson_id,
     order_index: exercise.order_index,
     words: exercise.words || [],
-    matching_pairs: exercise.matching_pairs
+    matching_pairs: exercise.matching_pairs,
+    audio_url: exercise.audio_url,
+    image_url: exercise.image_url
   };
   
   return exerciseType;

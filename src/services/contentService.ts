@@ -1,4 +1,6 @@
+
 import { baseService } from "./api/baseService";
+import exercisesService, { Exercise } from "./api/exercisesService";
 
 export interface Vocabulary {
   id: string;
@@ -11,6 +13,7 @@ export interface Vocabulary {
   difficulty: number;
   created_at?: string;
   updated_at?: string;
+  example_sentence?: string | null;
 }
 
 export interface GrammarPattern {
@@ -26,10 +29,35 @@ export interface GrammarPattern {
 export interface Lesson {
   id: string;
   unit_id: string;
+  title: string;
+  description: string;
+  order_index: number;
+  is_locked: boolean;
+  estimated_time: string;
+  xp_reward: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Unit {
+  id: string;
   name: string;
   description: string;
   order_index: number;
   is_locked: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface Hiragana {
+  id: string;
+  character: string;
+  romaji: string;
+  stroke_order: string;
+  group_name: string;
+  example_word: string;
+  example_word_meaning: string;
+  order_index: number;
   created_at?: string;
   updated_at?: string;
 }
@@ -137,7 +165,16 @@ const contentService = {
       throw error;
     }
     
-    return data || [];
+    // Map to match the GrammarPattern interface
+    return data.map(pattern => ({
+      id: pattern.id,
+      lesson_id: pattern.id, // Placeholder, adjust as needed
+      pattern: pattern.pattern,
+      explanation: pattern.explanation,
+      example: JSON.stringify(pattern.example_sentences),
+      created_at: pattern.created_at,
+      updated_at: pattern.updated_at
+    })) || [];
   },
 
   getGrammarPatternsByLesson: async (lessonId: string): Promise<GrammarPattern[]> => {
@@ -151,18 +188,62 @@ const contentService = {
       throw error;
     }
     
+    // Map to match the GrammarPattern interface
+    return data.map(pattern => ({
+      id: pattern.id,
+      lesson_id: pattern.id, // Placeholder, adjust as needed
+      pattern: pattern.pattern,
+      explanation: pattern.explanation,
+      example: JSON.stringify(pattern.example_sentences),
+      created_at: pattern.created_at,
+      updated_at: pattern.updated_at
+    })) || [];
+  },
+
+  // Add method for fetching hiragana
+  getHiragana: async (): Promise<Hiragana[]> => {
+    const { data, error } = await baseService.client
+      .from('hiragana')
+      .select('*')
+      .order('order_index');
+    
+    if (error) {
+      console.error('Error fetching hiragana:', error);
+      throw error;
+    }
+    
     return data || [];
+  },
+
+  // Add method to get exercises by lesson, using exercisesService
+  getExercisesByLesson: async (lessonId: string) => {
+    try {
+      return await exercisesService.getExercisesByLesson(lessonId);
+    } catch (error) {
+      console.error(`Error in contentService.getExercisesByLesson for ${lessonId}:`, error);
+      throw error;
+    }
+  },
+
+  // Add method to get vocabulary by category
+  getVocabularyByCategory: async (category: string): Promise<Vocabulary[]> => {
+    try {
+      const { data, error } = await baseService.client
+        .from('vocabulary')
+        .select('*')
+        .eq('category', category);
+      
+      if (error) {
+        console.error(`Error fetching vocabulary for category ${category}:`, error);
+        throw error;
+      }
+      
+      return data || [];
+    } catch (error) {
+      console.error(`Error in getVocabularyByCategory for ${category}:`, error);
+      return [];
+    }
   }
 };
-
-// Add the following export or implementation to the contentService file
-export const getVocabularyByCategory = async (category: string) => {
-  console.log(`Getting vocabulary by category: ${category}`);
-  // Implement or fix this method based on your API structure
-  return [];
-};
-
-// Add this to the default export
-contentService.getVocabularyByCategory = getVocabularyByCategory;
 
 export default contentService;

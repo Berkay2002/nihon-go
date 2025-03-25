@@ -42,6 +42,13 @@ const Exercise = () => {
     error
   } = useExerciseSession(lessonId);
 
+  console.log("Current exercise state:", {
+    lessonId,
+    hasExercises: exercises.length > 0,
+    currentExercise,
+    error
+  });
+
   if (isLoading) {
     return <LoadingExercise />;
   }

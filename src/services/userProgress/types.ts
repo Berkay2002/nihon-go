@@ -28,7 +28,7 @@ export interface ExerciseResult {
   exerciseId: string;
   isCorrect: boolean;
   userAnswer: string;
-  timeSpent?: number;
+  timeSpent: number; // Added to match what's being sent
   xpEarned: number;
 }
 
