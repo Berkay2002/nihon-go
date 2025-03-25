@@ -1,7 +1,7 @@
 
 import { ReviewSession } from './types';
 import { supabase } from "@/integrations/supabase/client";
-import { getUserProgress } from "@/services/userProgressService";
+import { useUserProgress } from "@/services/userProgressService";
 
 /**
  * Loads difficult exercises based on user's exercise history
@@ -33,8 +33,8 @@ export const loadDifficultExercisesSession = async (userId: string): Promise<Rev
     
     for (const lessonId of recentLessonIds) {
       try {
-        const { getLessonScorecard } = getUserProgress();
-        const scorecard = await getLessonScorecard(lessonId);
+        const userProgress = useUserProgress();
+        const scorecard = await userProgress.getLessonScorecard(lessonId);
         
         // Find exercises where the user made mistakes
         const difficultExercises = scorecard.responses
