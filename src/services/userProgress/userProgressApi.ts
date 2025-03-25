@@ -209,28 +209,40 @@ export const userProgressApi = {
       newXpEarned
     );
     
-    // Try to record the exercise response for analysis
+    // Try to record the exercise response for analysis, using a try-catch to handle cases where 
+    // the table doesn't exist without throwing an error to the user experience
     try {
-      // This will fail if the exercise_responses table doesn't exist
-      const { error } = await supabase
-        .from('exercise_responses')
-        .insert({
-          user_id: userId,
-          lesson_id: result.lessonId,
-          exercise_id: result.exerciseId,
-          is_correct: result.isCorrect,
-          user_answer: result.userAnswer,
-          question: "Question data", // Would normally come from the exercise
-          correct_answer: "Correct answer", // Would normally come from the exercise
-          exercise_type: "multiple_choice" // Default type
-        });
+      // Create dummy data for testing - normally this would come from the exercise itself
+      const responseData = {
+        user_id: userId,
+        lesson_id: result.lessonId,
+        exercise_id: result.exerciseId,
+        is_correct: result.isCorrect,
+        user_answer: result.userAnswer,
+        question: "Example question",
+        correct_answer: "Example answer",
+        exercise_type: "multiple_choice"
+      };
+      
+      // We'll try this but handle errors quietly if the table doesn't exist
+      const { error } = await supabase.rpc('record_exercise_response', responseData);
+      
+      if (error) {
+        console.warn('Could not record exercise response via RPC:', error);
         
-      if (error && error.code !== "42P01") { // 42P01 is PostgreSQL's code for "undefined_table"
-        console.error('Error recording exercise response:', error);
+        // Fallback to direct insert if available, but suppress errors
+        try {
+          const { error: insertError } = await supabase.rpc('add_exercise_response', responseData);
+          if (insertError) {
+            console.warn('Could not add exercise response via fallback RPC:', insertError);
+          }
+        } catch (e) {
+          console.warn('Exercise response recording failed:', e);
+        }
       }
     } catch (e) {
       // Silently fail if table doesn't exist
-      console.warn('Exercise responses not recorded - table might not exist');
+      console.warn('Exercise responses not recorded - function might not exist');
     }
   },
   
@@ -254,9 +266,9 @@ export const userProgressApi = {
       try {
         // Try with RPC function first (if the function exists)
         try {
-          const { data, error } = await supabase.rpc('get_exercise_responses', {
-            p_lesson_id: lessonId,
-            p_user_id: userId
+          const { data, error } = await supabase.rpc('get_lesson_responses', {
+            user_id: userId,
+            lesson_id: lessonId
           });
           
           if (!error && data && Array.isArray(data)) {
@@ -276,36 +288,7 @@ export const userProgressApi = {
           }
         } catch (rpcError) {
           // RPC function might not exist, continue to fallback
-          console.warn('RPC function get_exercise_responses not available:', rpcError);
-        }
-        
-        // Direct query fallback
-        try {
-          // We need to use any here since exercise_responses might not be defined in types
-          // @ts-ignore - Intentional to handle potential missing table
-          const { data, error } = await supabase
-            .from('exercise_responses')
-            .select('*')
-            .eq('user_id', userId)
-            .eq('lesson_id', lessonId);
-            
-          if (!error && data) {
-            scorecard.responses = data.map(r => ({
-              exercise_id: r.exercise_id,
-              is_correct: r.is_correct,
-              question: r.question || '',
-              correct_answer: r.correct_answer || '',
-              user_answer: r.user_answer || '',
-              exercise_type: r.exercise_type || 'unknown'
-            }));
-            
-            scorecard.correctExercises = scorecard.responses.filter(r => r.is_correct).length;
-            scorecard.totalExercises = scorecard.responses.length;
-            return scorecard;
-          }
-        } catch (directQueryError) {
-          // Table might not exist, continue to fallback
-          console.warn('Table exercise_responses not available:', directQueryError);
+          console.warn('RPC function get_lesson_responses not available:', rpcError);
         }
       } catch (responseError) {
         console.warn('Could not get exercise responses:', responseError);

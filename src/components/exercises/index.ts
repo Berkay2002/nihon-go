@@ -1,7 +1,9 @@
+
 export { ArrangeSentenceExercise } from "./ArrangeSentenceExercise";
 export { ExerciseActions } from "./ExerciseActions";
 export { ExerciseProgress } from "./ExerciseProgress";
 export { ExerciseQuestion } from "./ExerciseQuestion";
+export { ExerciseLayout } from "./ExerciseLayout";
 export { LoadingExercise } from "./LoadingExercise";
 export { MultipleChoiceExercise } from "./MultipleChoiceExercise";
 export { NoExercisesFound } from "./NoExercisesFound";
