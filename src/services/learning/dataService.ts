@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import contentService from '../contentService';
 import { ReviewItem } from './types';
@@ -6,7 +7,8 @@ import {
   LEARNING_STAGE_LEARNING, 
   LEARNING_STAGE_REVIEW, 
   LEARNING_STAGE_GRADUATED,
-  DEFAULT_EASE_FACTOR
+  DEFAULT_EASE_FACTOR,
+  RETENTION_PRIORITY_DAYS
 } from './constants';
 import { calculateNextReviewDate } from './calculationService';
 
