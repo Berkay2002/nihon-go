@@ -23,51 +23,33 @@ export const GameCharacter: React.FC<GameCharacterProps> = ({
   return (
     <div className={cn("relative flex items-center gap-4", className)}>
       <div className={cn(
-        "w-20 h-20 relative",
+        "w-24 h-24 relative",
         stateClasses[state]
       )}>
-        {/* Character body (green owl-like character similar to Duolingo) */}
-        <div className="w-full h-full bg-[#8ae600] rounded-full relative overflow-hidden flex items-center justify-center">
-          {/* Eyes */}
-          <div className="flex space-x-2 mt-1">
-            <div className="w-5 h-6 bg-white rounded-full relative flex items-center justify-center">
-              <div className="w-3 h-3 bg-black rounded-full relative">
-                {state === "thinking" && (
-                  <div className="absolute top-0 w-full h-1/2 bg-white rounded-t-full"></div>
-                )}
-              </div>
-            </div>
-            <div className="w-5 h-6 bg-white rounded-full relative flex items-center justify-center">
-              <div className="w-3 h-3 bg-black rounded-full relative">
-                {state === "thinking" && (
-                  <div className="absolute top-0 w-full h-1/2 bg-white rounded-t-full"></div>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Beak/mouth */}
-          <div className={cn(
-            "absolute bottom-3 w-8 h-4 bg-[#f49000] rounded-full",
-            state === "happy" && "animate-pulse"
-          )}></div>
+        {/* Character using Japanese green pheasant SVG */}
+        <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
+          <img 
+            src="/green-pheasant.svg" 
+            alt="Japanese Green Pheasant" 
+            className="w-full h-full object-contain"
+          />
         </div>
         
         {/* Character Expression Bubbles */}
         {state === "happy" && (
-          <div className="absolute -top-4 -right-4 bg-white p-1.5 rounded-full shadow-md animate-bounce-light">
+          <div className="absolute -top-4 -right-4 bg-white p-1.5 rounded-full shadow-md animate-bounce-light z-10">
             <span role="img" aria-label="happy" className="text-lg">🎉</span>
           </div>
         )}
         
         {state === "thinking" && (
-          <div className="absolute -top-4 -right-4 bg-white p-1.5 rounded-full shadow-md">
+          <div className="absolute -top-4 -right-4 bg-white p-1.5 rounded-full shadow-md z-10">
             <span role="img" aria-label="thinking" className="text-lg">🤔</span>
           </div>
         )}
         
         {state === "surprised" && (
-          <div className="absolute -top-4 -right-4 bg-white p-1.5 rounded-full shadow-md animate-pulse">
+          <div className="absolute -top-4 -right-4 bg-white p-1.5 rounded-full shadow-md animate-pulse z-10">
             <span role="img" aria-label="surprised" className="text-lg">😮</span>
           </div>
         )}

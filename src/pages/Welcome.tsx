@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,14 @@ const Welcome = () => {
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-white to-blue-50">
       <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
+        <div className="mb-4">
+          <img 
+            src="/green-pheasant.svg" 
+            alt="Japanese Green Pheasant" 
+            className="w-32 h-32 mx-auto animate-pulse-scale"
+          />
+        </div>
+        
         <h1 className="font-bold text-5xl md:text-6xl mb-2 bg-clip-text text-transparent bg-gradient-to-r from-nihongo-red to-nihongo-blue">
           NihonGo
         </h1>

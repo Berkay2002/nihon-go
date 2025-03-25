@@ -1,5 +1,4 @@
 import React from "react";
-import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GameCharacter } from "./GameCharacter";
 
@@ -22,7 +21,6 @@ export const LoadingState: React.FC<LoadingStateProps> = ({
       
       <div className="text-center mb-8">
         <p className="text-gray-500 mb-2">Loading your learning progress...</p>
-        <Loader2 className="h-8 w-8 animate-spin text-green-500 mx-auto" />
       </div>
       
       {longLoading && (

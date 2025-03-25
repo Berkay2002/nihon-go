@@ -5,22 +5,23 @@
 @tailwind utilities;
 
 :root {
-  /* Default light theme variables */
+  /* Default light theme variables with improved contrast */
   --bg-primary: theme('colors.slate.100');
   --bg-secondary: theme('colors.white');
-  --text-primary: theme('colors.slate.800');
-  --text-secondary: theme('colors.slate.600');
-  --border-color: theme('colors.slate.200');
+  --text-primary: theme('colors.slate.900');
+  --text-secondary: theme('colors.slate.700');
+  --border-color: theme('colors.slate.300');
   --panel-bg: theme('colors.white');
 }
 
 .dark-theme {
+  /* Dark theme variables with improved contrast */
   --bg-primary: theme('colors.slate.900');
   --bg-secondary: theme('colors.slate.800');
-  --text-primary: theme('colors.white');
-  --text-secondary: theme('colors.slate.300');
-  --border-color: theme('colors.slate.700');
-  --panel-bg: theme('colors.slate.800/80');
+  --text-primary: theme('colors.slate.50');
+  --text-secondary: theme('colors.slate.200');
+  --border-color: theme('colors.slate.600');
+  --panel-bg: theme('colors.slate.800/90');
 }
 
 body {
@@ -53,6 +54,7 @@ body {
   }
 
   .dark {
+    /* Improved dark mode contrast */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -64,7 +66,7 @@ body {
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted-foreground: 215 20.2% 75.1%; /* Improved contrast from 65.1% to 75.1% */
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 62.8% 30.6%;
@@ -90,6 +92,11 @@ body {
   .japanese-text {
     @apply font-japanese;
   }
+  
+  /* Improve default link contrast */
+  a {
+    @apply text-blue-700 dark:text-blue-400 hover:underline;
+  }
 }
 
 @layer utilities {
@@ -99,6 +106,15 @@ body {
   
   .text-gradient {
     @apply bg-gradient-to-r from-nihongo-red to-nihongo-blue bg-clip-text text-transparent;
+  }
+  
+  /* High contrast text classes */
+  .text-high-contrast {
+    @apply text-slate-900 dark:text-white;
+  }
+  
+  .text-medium-contrast {
+    @apply text-slate-700 dark:text-slate-200;
   }
 }
 

@@ -16,10 +16,10 @@ export function UserProgress({
   const { isDark } = useTheme();
 
   return (
-    <div className="flex flex-col gap-y-6 w-full border border-border p-5 rounded-xl shadow-md bg-panel-bg">
+    <div className="flex flex-col gap-y-6 w-full border border-border p-5 rounded-xl shadow-md ">
       <div className="flex items-center gap-x-4">
         <div className={`p-2 rounded-xl ${
-          isDark ? "bg-slate-700 shadow-inner" : "bg-slate-100 shadow-sm"
+          isDark ? "bg-slate-700 shadow-inner" : "bg-white shadow-inner"
         }`}>
           <div className="rounded-md w-16 h-12 flex items-center justify-center overflow-hidden">
             <img
@@ -30,7 +30,7 @@ export function UserProgress({
           </div>
         </div>
         <div className="flex flex-col">
-          <p className="text-sm text-secondary">
+          <p className="text-sm text-primary">
             Active Course
           </p>
           <p className="text-xl font-bold text-primary">
@@ -40,7 +40,7 @@ export function UserProgress({
       </div>
       <div className="flex items-center justify-start gap-x-6">
         <div className="flex items-center gap-x-2">
-          <p className="text-secondary">
+          <p className="text-primary">
             Total XP:
           </p>
           <p className="text-blue-500 text-xl font-bold">

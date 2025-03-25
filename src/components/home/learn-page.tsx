@@ -72,9 +72,7 @@ export const LearnPage: React.FC<LearnPageProps> = ({
       <div className="flex flex-col md:flex-row gap-4 md:gap-8 px-4 md:px-10 lg:px-20 py-4 md:py-8 max-w-screen-xl mx-auto">
         {/* Main content - Learning Path */}
         <div className="w-full md:w-2/3 lg:w-3/4 order-2 md:order-1">
-          <FeedWrapper>
-            <Header title="Learning Path" onBack={onBack} />
-            
+          <FeedWrapper>            
             {units.map((unit, index) => (
               <Unit
                 key={unit.id}
