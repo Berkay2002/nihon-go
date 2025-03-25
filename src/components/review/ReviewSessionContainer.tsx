@@ -104,22 +104,22 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
             
             // Find exercises where the user made mistakes
             const difficultExercises = scorecard.responses
-              .filter(response => !response.isCorrect)
+              .filter(response => !response.is_correct)
               .map(response => ({
                 item: {
-                  id: response.exerciseId,
-                  japanese: response.exerciseData?.japanese || response.exerciseData?.question || "",
-                  english: response.exerciseData?.correct_answer || "",
-                  romaji: response.exerciseData?.romaji || "",
-                  hiragana: response.exerciseData?.hiragana || "",
+                  id: response.exercise_id,
+                  japanese: response.question || "",
+                  english: response.correct_answer || "",
+                  romaji: "",
+                  hiragana: "",
                   category: "difficult-exercise",
                   difficulty: 4, // Higher difficulty for failed exercises
                   lessonId: lessonId,
                   // Include exercise-specific data
-                  exerciseType: response.exerciseData?.type || "multiple_choice",
-                  question: response.exerciseData?.question || "",
-                  options: response.exerciseData?.options || [],
-                  correctAnswer: response.exerciseData?.correct_answer || "",
+                  exerciseType: response.exercise_type || "multiple_choice",
+                  question: response.question || "",
+                  options: [],
+                  correctAnswer: response.correct_answer || "",
                 },
                 dueDate: new Date(),
                 difficulty: 4,
@@ -294,9 +294,11 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
         if (reviewType === "vocabulary") {
           session = await learningAlgorithmService.generateReviewSession(user.id);
         } else if (reviewType === "difficult") {
-          // Re-use the function to load difficult exercises
-          const { loadDifficultExercisesSession } = this;
-          session = await loadDifficultExercisesSession();
+          // Re-use the loadDifficultExercisesSession function
+          const loadDifficultSession = async () => {
+            return await loadDifficultExercisesSession();
+          };
+          session = await loadDifficultSession();
         }
         
         setReviewSession(session);

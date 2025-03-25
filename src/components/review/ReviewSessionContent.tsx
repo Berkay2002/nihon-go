@@ -26,6 +26,8 @@ export const ReviewSessionContent: React.FC<ReviewSessionContentProps> = ({
   onRetryReview,
   handleResponse
 }) => {
+  const navigate = useNavigate();
+
   if (!reviewSession) {
     return null;
   }

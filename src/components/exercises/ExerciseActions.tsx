@@ -1,10 +1,13 @@
+
 import React from "react";
 import { cn } from "@/lib/utils";
+import { NextExerciseButton } from "./buttons/NextExerciseButton";
 
 interface ExerciseActionsProps {
   isAnswerChecked: boolean;
   isLastExercise: boolean;
   isInputValid: boolean;
+  isReviewMode?: boolean;
   onCheckAnswer: () => void;
   onNextExercise: () => void;
 }
@@ -13,6 +16,7 @@ export const ExerciseActions: React.FC<ExerciseActionsProps> = ({
   isAnswerChecked,
   isLastExercise,
   isInputValid,
+  isReviewMode = false,
   onCheckAnswer,
   onNextExercise,
 }) => {
@@ -33,12 +37,11 @@ export const ExerciseActions: React.FC<ExerciseActionsProps> = ({
             Check
           </button>
         ) : (
-          <button
-            onClick={onNextExercise}
-            className="w-full px-8 py-4 bg-blue-500 hover:bg-blue-600 text-white text-lg font-bold rounded-xl transition-all duration-200 active:scale-95 shadow-md"
-          >
-            {isLastExercise ? "Complete" : "Continue"}
-          </button>
+          <NextExerciseButton
+            isLastExercise={isLastExercise}
+            isReviewMode={isReviewMode}
+            onNextExercise={onNextExercise}
+          />
         )}
       </div>
     </div>

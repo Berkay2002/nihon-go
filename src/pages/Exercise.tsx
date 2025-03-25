@@ -12,6 +12,7 @@ import {
   LoadingExercise,
   NoExercisesFound
 } from "@/components/exercises";
+import { toast } from "sonner";
 
 // Type for data coming from the API
 interface APIExerciseData {
@@ -26,10 +27,14 @@ interface APIExerciseData {
   [key: string]: unknown;
 }
 
+// Completion threshold (percentage of questions needed to be correct)
+const COMPLETION_THRESHOLD = 80; // 80%
+
 const Exercise = () => {
   const navigate = useNavigate();
   const { exerciseId } = useParams<{ exerciseId: string }>();
   const [exercises, setExercises] = useState<ExerciseType[]>([]);
+  const [incorrectExercises, setIncorrectExercises] = useState<ExerciseType[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [textAnswer, setTextAnswer] = useState<string>("");
@@ -43,7 +48,9 @@ const Exercise = () => {
   const [arrangedWords, setArrangedWords] = useState<string[]>([]);
   const [availableWords, setAvailableWords] = useState<string[]>([]);
   const [matchingResult, setMatchingResult] = useState<boolean>(false);
-  const [shuffledExercises, setShuffledExercises] = useState<ExerciseType[]>([]);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [totalAnswered, setTotalAnswered] = useState(0);
 
   // Process and randomize exercise data
   const processExerciseData = (exercisesData: APIExerciseData[]): ExerciseType[] => {
@@ -96,9 +103,12 @@ const Exercise = () => {
       setAvailableWords(shuffleArray([...currentExercise.options]));
       setArrangedWords([]);
     }
-  }, [currentExerciseIndex, exercises]);
+  }, [currentExerciseIndex, exercises, isReviewMode]);
 
-  const currentExercise = exercises[currentExerciseIndex];
+  // Get the current exercise (either from main exercises or incorrect exercises in review mode)
+  const currentExercise = isReviewMode 
+    ? incorrectExercises[currentExerciseIndex] 
+    : exercises[currentExerciseIndex];
   
   const handleSelectAnswer = (answer: string) => {
     if (!isAnswerChecked) {
@@ -184,6 +194,20 @@ const Exercise = () => {
     
     setIsAnswerChecked(true);
     
+    // Update overall tracking of correct answers
+    setTotalAnswered(prevTotal => prevTotal + 1);
+    if (isCorrect) {
+      setTotalCorrect(prevCorrect => prevCorrect + 1);
+    } else {
+      // If in review mode and answer is still incorrect, keep it for another round
+      if (isReviewMode) {
+        // This incorrect exercise will be kept in the incorrectExercises array
+      } else {
+        // If in normal mode, add to incorrect exercises for review later
+        setIncorrectExercises(prev => [...prev, currentExercise]);
+      }
+    }
+    
     // Display feedback toast based on correctness
     if (isCorrect) {
       const newXp = xpEarned + currentExercise.xp_reward;
@@ -211,43 +235,102 @@ const Exercise = () => {
   };
 
   const handleNextExercise = async () => {
-    if (currentExerciseIndex < exercises.length - 1) {
+    const currentArray = isReviewMode ? incorrectExercises : exercises;
+    const isLastExercise = currentExerciseIndex === currentArray.length - 1;
+    
+    if (!isLastExercise) {
+      // Go to next exercise in the current array (either main or review)
       setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setSelectedAnswer(null);
-      setTextAnswer("");
-      setIsAnswerChecked(false);
-      setStartTime(new Date());
-      setArrangedWords([]);
-      setAvailableWords([]);
-      setMatchingResult(false);
+      resetExerciseState();
+    } else if (isReviewMode) {
+      // If we're in review mode and there are still incorrect answers
+      if (incorrectExercises.length > 0) {
+        // Filter out correctly answered questions
+        const stillIncorrect = incorrectExercises.filter((_, index) => 
+          index !== currentExerciseIndex || !isAnswerChecked);
+        
+        if (stillIncorrect.length > 0) {
+          // If there are still incorrect exercises, reset and continue reviewing
+          setIncorrectExercises(stillIncorrect);
+          setCurrentExerciseIndex(0);
+          resetExerciseState();
+          toast.info("Let's review the remaining questions you got wrong");
+        } else {
+          // All review questions are correct now, proceed to completion
+          completeLesson();
+        }
+      } else {
+        // No more incorrect exercises, proceed to completion
+        completeLesson();
+      }
     } else {
-      // Last exercise completed - ensure the lesson is marked as completed
-      if (user && lessonId) {
-        try {
-          // Calculate completion percentage based on XP earned vs total possible XP
-          const totalPossibleXP = exercises.reduce((sum, ex) => sum + ex.xp_reward, 0);
-          const completionPercentage = Math.min(100, Math.floor((xpEarned / totalPossibleXP) * 100));
-          
-          console.log(`Lesson ${lessonId} completed with ${xpEarned}/${totalPossibleXP} XP (${completionPercentage}%)`);
-          
-          // Mark the lesson as completed with the calculated accuracy
-          // We set isCompleted to true regardless of the actual score
-          await submitExerciseResult({
-            lessonId,
-            exerciseId: 'final-exercise',
-            isCorrect: true,
-            userAnswer: 'completed',
-            timeSpent: 0,
-            xpEarned: 0 // Additional XP will be awarded on the completion screen
+      // Finished normal mode, check if we need to switch to review mode
+      if (incorrectExercises.length > 0) {
+        // Switch to review mode if there are incorrect exercises
+        setIsReviewMode(true);
+        setCurrentExerciseIndex(0);
+        resetExerciseState();
+        toast.info("Let's review the questions you got wrong", {
+          description: "You need to answer all questions correctly to complete the lesson"
+        });
+      } else {
+        // Check if we met the completion threshold
+        const completionPercentage = (totalCorrect / totalAnswered) * 100;
+        
+        if (completionPercentage >= COMPLETION_THRESHOLD) {
+          // Met the threshold, proceed to completion
+          completeLesson();
+        } else {
+          // Didn't meet threshold, inform user and stay on the page
+          toast.error(`You need to score at least ${COMPLETION_THRESHOLD}% to complete the lesson`, {
+            description: "Try again to improve your score"
           });
-        } catch (error) {
-          console.error("Error updating lesson completion:", error);
+          // Reset the state to try the lesson again
+          setCurrentExerciseIndex(0);
+          setIncorrectExercises([]);
+          setTotalCorrect(0);
+          setTotalAnswered(0);
+          resetExerciseState();
         }
       }
-      
-      // Navigate to the lesson complete page
-      navigate(`/app/lesson-complete/${lessonId}`);
     }
+  };
+
+  const resetExerciseState = () => {
+    setSelectedAnswer(null);
+    setTextAnswer("");
+    setIsAnswerChecked(false);
+    setStartTime(new Date());
+    setArrangedWords([]);
+    setAvailableWords([]);
+    setMatchingResult(false);
+  };
+
+  const completeLesson = async () => {
+    // Last exercise completed - ensure the lesson is marked as completed
+    if (user && lessonId) {
+      try {
+        // Calculate completion percentage based on total correct vs total answered
+        const completionPercentage = Math.floor((totalCorrect / Math.max(totalAnswered, 1)) * 100);
+        
+        console.log(`Lesson ${lessonId} completed with ${completionPercentage}% accuracy`);
+        
+        // Mark the lesson as completed with the calculated accuracy
+        await submitExerciseResult({
+          lessonId,
+          exerciseId: 'final-exercise',
+          isCorrect: true,
+          userAnswer: 'completed',
+          timeSpent: 0,
+          xpEarned: 0 // Additional XP will be awarded on the completion screen
+        });
+      } catch (error) {
+        console.error("Error updating lesson completion:", error);
+      }
+    }
+    
+    // Navigate to the lesson complete page
+    navigate(`/app/lesson-complete/${lessonId}`);
   };
 
   // Check if input is valid for the current exercise type
@@ -279,9 +362,15 @@ const Exercise = () => {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 pb-20 md:pb-4">
       <div className="container max-w-md mx-auto px-4 pt-4">
+        {isReviewMode && (
+          <div className="mb-4 bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg text-yellow-800 dark:text-yellow-300">
+            Review Mode: Let's fix the questions you missed
+          </div>
+        )}
+        
         <ExerciseProgress 
           currentIndex={currentExerciseIndex} 
-          totalExercises={exercises.length} 
+          totalExercises={isReviewMode ? incorrectExercises.length : exercises.length} 
           xpEarned={xpEarned} 
         />
 
@@ -302,7 +391,7 @@ const Exercise = () => {
 
       <ExerciseActions
         isAnswerChecked={isAnswerChecked}
-        isLastExercise={currentExerciseIndex === exercises.length - 1}
+        isLastExercise={currentExerciseIndex === (isReviewMode ? incorrectExercises.length - 1 : exercises.length - 1)}
         isInputValid={isInputValid()}
         onCheckAnswer={handleCheckAnswer}
         onNextExercise={handleNextExercise}

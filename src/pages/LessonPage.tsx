@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { HeartIcon, XIcon, CheckIcon, Heart } from 'lucide-react';
+import { toast } from "sonner";
 
 // Types for our lesson content
 interface Option {
@@ -23,6 +24,9 @@ interface Lesson {
   unitId: string;
   questions: Question[];
 }
+
+// Completion threshold
+const COMPLETION_THRESHOLD = 80; // 80%
 
 // Mock lesson data
 const MOCK_LESSONS: Record<string, Lesson> = {
@@ -106,13 +110,19 @@ export default function LessonPage() {
   const [selectedOption, setSelectedOption] = useState<Option | null>(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [progress, setProgress] = useState(0);
+  const [incorrectQuestions, setIncorrectQuestions] = useState<Question[]>([]);
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [totalCorrect, setTotalCorrect] = useState(0);
+  const [totalAnswered, setTotalAnswered] = useState(0);
   
   // Use the lesson ID to find the corresponding unit and lesson
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [questions, setQuestions] = useState<Question[]>([]);
   
   // Add a computed currentQuestion to avoid errors
-  const currentQuestion = questions.length > 0 ? questions[currentQuestionIndex] : null;
+  const currentQuestion = isReviewMode 
+    ? (incorrectQuestions.length > 0 ? incorrectQuestions[currentQuestionIndex] : null)
+    : (questions.length > 0 ? questions[currentQuestionIndex] : null);
   
   useEffect(() => {
     // Find lesson in our mock data based on lessonId
@@ -160,7 +170,15 @@ export default function LessonPage() {
     const correct = selectedOption.isCorrect;
     setIsCorrect(correct);
     
-    if (!correct) {
+    // Update tracking for completion threshold
+    setTotalAnswered(prev => prev + 1);
+    if (correct) {
+      setTotalCorrect(prev => prev + 1);
+    } else {
+      // Record incorrect question for review mode, unless we're already in review mode
+      if (!isReviewMode) {
+        setIncorrectQuestions(prev => [...prev, currentQuestion!]);
+      }
       setHearts(prev => prev - 1);
     }
   };
@@ -172,17 +190,80 @@ export default function LessonPage() {
     
     // If player has no hearts left, navigate to home
     if (hearts <= 0) {
+      toast.error("You've run out of hearts", {
+        description: "Try again when you're ready"
+      });
       navigate('/app');
       return;
     }
     
-    // If there are more questions, go to the next one
-    if (currentQuestionIndex < questions.length - 1) {
+    const currentArray = isReviewMode ? incorrectQuestions : questions;
+    const isLastQuestion = currentQuestionIndex >= currentArray.length - 1;
+    
+    if (!isLastQuestion) {
+      // More questions in the current array (normal or review)
       setCurrentQuestionIndex(prev => prev + 1);
+    } else if (isReviewMode) {
+      // Last question in review mode
+      // Check if all review questions are now answered correctly
+      if (isCorrect) {
+        // If this was the last incorrect question and it's now correct, complete the lesson
+        if (incorrectQuestions.length === 1) {
+          finishLesson();
+        } else {
+          // Remove this question from incorrect questions and reset to first
+          const updatedIncorrect = incorrectQuestions.filter((_, idx) => idx !== currentQuestionIndex);
+          setIncorrectQuestions(updatedIncorrect);
+          setCurrentQuestionIndex(0);
+          
+          if (updatedIncorrect.length === 0) {
+            finishLesson();
+          } else {
+            toast.info(`${updatedIncorrect.length} questions left to review`);
+          }
+        }
+      } else {
+        // Still got it wrong, keep in the incorrect questions array
+        setCurrentQuestionIndex(prev => (prev + 1) % incorrectQuestions.length);
+      }
     } else {
-      // Lesson complete
-      navigate(`/app/lesson-complete/${lessonId}`);
+      // We've finished the main questions, check if we need to enter review mode
+      if (incorrectQuestions.length > 0) {
+        // Enter review mode for incorrect questions
+        setIsReviewMode(true);
+        setCurrentQuestionIndex(0);
+        toast.info("Let's review the questions you got wrong", {
+          description: "You need to answer all questions correctly to complete the lesson"
+        });
+      } else {
+        // No incorrect questions, check if the completion threshold was met
+        const completionPercentage = (totalCorrect / totalAnswered) * 100;
+        
+        if (completionPercentage >= COMPLETION_THRESHOLD) {
+          // Met the threshold, complete the lesson
+          finishLesson();
+        } else {
+          // Did not meet the threshold, inform the user and reset
+          toast.error(`You need to score at least ${COMPLETION_THRESHOLD}% to complete this lesson`, {
+            description: "Let's try again"
+          });
+          
+          // Reset to try again
+          setCurrentQuestionIndex(0);
+          setTotalCorrect(0);
+          setTotalAnswered(0);
+        }
+      }
     }
+  };
+  
+  const finishLesson = () => {
+    // Calculate final accuracy for records
+    const finalAccuracy = Math.round((totalCorrect / Math.max(totalAnswered, 1)) * 100);
+    console.log(`Lesson completed with ${finalAccuracy}% accuracy`);
+    
+    // Lesson complete
+    navigate(`/app/lesson-complete/${lessonId}`);
   };
   
   return (
@@ -213,6 +294,13 @@ export default function LessonPage() {
           style={{ width: `${progress}%` }}
         ></div>
       </div>
+      
+      {/* Review mode indicator */}
+      {isReviewMode && (
+        <div className="bg-yellow-600 px-4 py-2 text-center text-white text-sm">
+          Review Mode: Fix the questions you missed
+        </div>
+      )}
       
       {/* Question */}
       <div className="flex-1 flex flex-col p-6">
@@ -282,4 +370,4 @@ export default function LessonPage() {
       </div>
     </div>
   );
-} 
+}
