@@ -57,7 +57,7 @@ export const signInWithIdentifier = async (identifier: string, password: string)
     return data;
   }
   
-  // If it's a username, try a more direct approach
+  // If it's a username, use a different approach
   try {
     // Check if the username exists
     const { data: profiles, error: profileError } = await baseService.executeWithTimeout(
@@ -73,21 +73,16 @@ export const signInWithIdentifier = async (identifier: string, password: string)
       throw new Error("Username not found");
     }
     
-    // Now get the email for this user id
-    const { data: users, error: usersError } = await supabase
-      .from('profiles')
-      .select('email')
-      .eq('id', profiles.id)
-      .single();
-      
-    if (usersError || !users || !users.email) {
-      // If we can't find the email, ask them to use email instead
+    // Get the user directly from auth
+    const { data: { user }, error: authError } = await supabase.auth.admin.getUserById(profiles.id);
+    
+    if (authError || !user || !user.email) {
       throw new Error("Please use your email to sign in instead of username");
     }
     
     // Sign in with the email we found
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: users.email,
+      email: user.email,
       password,
     });
     

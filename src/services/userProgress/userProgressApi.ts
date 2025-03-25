@@ -1,12 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
-import { 
-  UserProgress, 
-  UserStreak, 
-  ExerciseResult, 
-  LessonScorecard, 
-  ExerciseResponse, 
-  ExerciseType 
-} from './types';
+import { Database } from "@/integrations/supabase/types";
+import { ExerciseResult } from "@/types/exercises";
+import { UserProgress } from "./types";
 
 // Define an interface for the structure of exercise_responses
 interface ExerciseResponseRecord {
@@ -368,6 +363,80 @@ export const userProgressApi = {
         xpEarned: 0,
         responses: []
       };
+    }
+  },
+  
+  // Get user exercise responses
+  getUserExerciseResponses: async (userId: string, lessonId: string) => {
+    try {
+      // First check if the user is authenticated
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.error("No authenticated session found");
+        return { error: "Not authenticated", data: null };
+      }
+      
+      // Use the serverless function URL directly with fetch
+      const apiUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/get-exercise-responses`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        },
+        body: JSON.stringify({ userId, lessonId })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching exercise responses: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return { data, error: null };
+    } catch (error) {
+      console.error("Error in getUserExerciseResponses:", error);
+      return { error: String(error), data: null };
+    }
+  },
+  
+  // Save exercise result
+  saveExerciseResult: async (
+    userId: string,
+    exerciseResult: ExerciseResult
+  ) => {
+    try {
+      // First check if the user is authenticated
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        console.error("No authenticated session found");
+        return { error: "Not authenticated", success: false };
+      }
+      
+      // Use the serverless function URL directly with fetch
+      const apiUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/save-exercise-result`;
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        },
+        body: JSON.stringify({
+          userId,
+          exerciseResult
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error saving exercise result: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return { success: true, data };
+    } catch (error) {
+      console.error("Error in saveExerciseResult:", error);
+      return { error: String(error), success: false };
     }
   }
 };

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -34,14 +34,28 @@ import Layout from './components/Layout';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { ReviewSessionContainer } from './components/review';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false
+    }
+  }
+});
 
 // Protected route component
 const ProtectedRoutes = () => {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
-    return <div>Loading...</div>; // Or a loading spinner
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-900">
+        <div className="animate-pulse text-center">
+          <div className="mb-4 h-12 w-12 mx-auto rounded-full border-4 border-t-transparent border-white animate-spin"></div>
+          <p className="text-white">Loading...</p>
+        </div>
+      </div>
+    );
   }
 
   return user ? <Outlet /> : <Navigate to="/auth" />;
