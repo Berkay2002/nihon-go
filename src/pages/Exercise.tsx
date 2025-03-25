@@ -83,11 +83,24 @@ const Exercise = () => {
       userAnswer = textAnswer.trim().toLowerCase();
       
       // Allow for multiple correct answers (separated by commas in the database)
-      const correctAnswers = (currentExercise.correct_answer || "")
+      const correctAnswersArray = (currentExercise.correct_answer || "")
         .split(",")
         .map((answer) => answer.trim().toLowerCase());
       
-      isCorrect = correctAnswers.includes(userAnswer);
+      // Now check if user's answer matches ANY of the correct answers
+      // or if it's part of one of the answers (for partial matching)
+      isCorrect = correctAnswersArray.some(answer => {
+        // Check if the user's answer is any of the correct answers
+        return answer === userAnswer || 
+               // Check if the user's answer is part of a correct answer (especially for cases like "konnichiwa" in "こんにちは,konnichiwa")
+               (answer.includes(userAnswer) && userAnswer.length > 3) ||
+               // Or if the correct answer is part of the user's answer
+               (userAnswer.includes(answer) && answer.length > 3);
+      });
+      
+      console.log("User answer:", userAnswer);
+      console.log("Correct answers:", correctAnswersArray);
+      console.log("Is correct:", isCorrect);
     } else {
       // For multiple choice exercises, check the selected answer
       if (selectedAnswer === null) {
