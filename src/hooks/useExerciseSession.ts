@@ -131,9 +131,18 @@ export const useExerciseSession = (lessonId: string | undefined) => {
       case "text_input":
         return textAnswer.trim().toLowerCase() === currentExercise.correct_answer.toLowerCase();
       case "arrange_sentence":
-        const correctSentence = currentExercise.correct_answer.toLowerCase().trim();
-        const userSentence = arrangedWords.join(" ").toLowerCase().trim();
-        return userSentence === correctSentence;
+        // Extract just the Japanese characters from each word for comparison
+        const extractJapaneseChars = (word: string): string => {
+          // Extract characters inside parentheses if present
+          const match = word.match(/^(.*?)\s*\(.*?\)$/);
+          return match ? match[1].trim() : word.trim();
+        };
+        
+        // Join arranged words, extracting only Japanese characters if words have romaji in parentheses
+        const userAnswer = arrangedWords.map(extractJapaneseChars).join("");
+        const correctAnswer = normalizeJapaneseText(currentExercise.correct_answer);
+        
+        return normalizeJapaneseText(userAnswer) === correctAnswer;
       case "matching":
         return matchingResult === true;
       case "fill_in_blank":

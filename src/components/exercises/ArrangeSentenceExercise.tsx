@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { ExerciseType } from "@/types/exercises";
@@ -20,7 +21,19 @@ export const ArrangeSentenceExercise = ({
   onAddWord,
   onRemoveWord,
 }: ArrangeSentenceExerciseProps) => {
-  const isCorrect = normalizeJapaneseText(arrangedWords.join("")) === normalizeJapaneseText(exercise.correct_answer);
+  // Extract just the Japanese characters from each word for comparison
+  const extractJapaneseChars = (word: string): string => {
+    // Extract characters inside parentheses if present
+    const match = word.match(/^(.*?)\s*\(.*?\)$/);
+    return match ? match[1].trim() : word.trim();
+  };
+  
+  // Join arranged words, extracting only Japanese characters if words have romaji in parentheses
+  const userAnswer = arrangedWords.map(extractJapaneseChars).join("");
+  const correctAnswer = normalizeJapaneseText(exercise.correct_answer);
+  
+  // Check if the answer is correct
+  const isCorrect = normalizeJapaneseText(userAnswer) === correctAnswer;
 
   return (
     <div className="space-y-4">

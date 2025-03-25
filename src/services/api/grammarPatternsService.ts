@@ -46,8 +46,11 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Map to GrammarPattern interface with explicit typing
-    return (data || []).map((dbPattern) => mapToGrammarPattern(dbPattern as unknown as DBGrammarPattern));
+    // Cast each item to DBGrammarPattern first to resolve the circular reference issue
+    return (data || []).map((item) => {
+      const dbPattern = item as any as DBGrammarPattern;
+      return mapToGrammarPattern(dbPattern);
+    });
   },
 
   getGrammarPatternsByLesson: async (lessonId: string): Promise<GrammarPattern[]> => {
@@ -61,8 +64,11 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Map to GrammarPattern interface with explicit typing
-    return (data || []).map((dbPattern) => mapToGrammarPattern(dbPattern as unknown as DBGrammarPattern));
+    // Cast each item to DBGrammarPattern first to resolve the circular reference issue
+    return (data || []).map((item) => {
+      const dbPattern = item as any as DBGrammarPattern;
+      return mapToGrammarPattern(dbPattern);
+    });
   }
 };
 
