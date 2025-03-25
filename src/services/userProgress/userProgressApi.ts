@@ -238,12 +238,18 @@ export const userProgressApi = {
       
       // Attempt to use a serverless function to record the response
       try {
-        // Using fetch to make a direct API call to avoid TypeScript issues
-        const response = await fetch(`${supabase.functions.url}/record-exercise-response`, {
+        // Using fetch to make a direct API call instead of supabase.functions.invoke
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData.session?.access_token || '';
+        
+        // Get the Supabase project URL from the client
+        const apiUrl = `${supabase.auth.getSession().then(res => res.data.session?.user?.app_metadata?.provider || 'https://iavdoqzfradhdlhsgsms.supabase.co')}/functions/v1/record-exercise-response`;
+        
+        const response = await fetch(apiUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`
+            'Authorization': `Bearer ${accessToken}`
           },
           body: JSON.stringify(responseData)
         });
@@ -281,45 +287,47 @@ export const userProgressApi = {
       
       // Try to get detailed exercise responses
       try {
-        // First try with a fetch request to a serverless function
-        try {
-          const response = await fetch(`${supabase.functions.url}/get-lesson-responses`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabase.auth.session()?.access_token || ''}`
-            },
-            body: JSON.stringify({ userId, lessonId })
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (Array.isArray(data)) {
-              // Process successful response from function
-              scorecard.responses = data.map((r: any) => ({
-                exercise_id: r.exercise_id || '',
-                is_correct: r.is_correct || false,
-                question: r.question || '',
-                correct_answer: r.correct_answer || '',
-                user_answer: r.user_answer || '',
-                exercise_type: r.exercise_type || 'unknown'
-              }));
-              
-              scorecard.correctExercises = scorecard.responses.filter(r => r.is_correct).length;
-              scorecard.totalExercises = scorecard.responses.length;
-              return scorecard;
-            }
-          } else {
-            console.warn('Function get-lesson-responses failed:', await response.text());
-          }
-        } catch (functionError) {
-          console.warn('Function get-lesson-responses not available:', functionError);
-        }
+        // Get auth session for API call
+        const { data: authData } = await supabase.auth.getSession();
+        const accessToken = authData.session?.access_token || '';
         
-        // No direct database query fallback - we'll use the estimated approach below
-      } catch (responseError) {
-        console.warn('Could not get exercise responses:', responseError);
+        // Get the Supabase project URL from the client
+        const apiUrl = `${supabase.auth.getSession().then(res => res.data.session?.user?.app_metadata?.provider || 'https://iavdoqzfradhdlhsgsms.supabase.co')}/functions/v1/get-lesson-responses`;
+        
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({ userId, lessonId })
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            // Process successful response from function
+            scorecard.responses = data.map((r: any) => ({
+              exercise_id: r.exercise_id || '',
+              is_correct: r.is_correct || false,
+              question: r.question || '',
+              correct_answer: r.correct_answer || '',
+              user_answer: r.user_answer || '',
+              exercise_type: r.exercise_type || 'unknown'
+            }));
+            
+            scorecard.correctExercises = scorecard.responses.filter(r => r.is_correct).length;
+            scorecard.totalExercises = scorecard.responses.length;
+            return scorecard;
+          }
+        } else {
+          console.warn('Function get-lesson-responses failed:', await response.text());
+        }
+      } catch (functionError) {
+        console.warn('Function get-lesson-responses not available:', functionError);
       }
+      
+      // No direct database query fallback - we'll use the estimated approach below
       
       // Fallback: Create an estimated scorecard based on accuracy
       const estimatedTotalExercises = 10; // Assume 10 exercises per lesson
