@@ -32,7 +32,7 @@ export interface Lesson {
   title: string;
   description: string;
   order_index: number;
-  is_locked: boolean;
+  is_locked?: boolean; // Changed to optional
   estimated_time: string;
   xp_reward: number;
   created_at?: string;
@@ -126,7 +126,7 @@ const contentService = {
   },
   
   getLesson: async (lessonId: string) => {
-     const { data, error } = await baseService.client
+    const { data, error } = await baseService.client
       .from('lessons')
       .select('*')
       .eq('id', lessonId)
@@ -137,7 +137,8 @@ const contentService = {
       throw error;
     }
     
-    return data;
+    // Ensure is_locked has a default value if not present
+    return data ? {...data, is_locked: data.is_locked ?? false} : null;
   },
 
   getVocabularyByLesson: async (lessonId: string): Promise<Vocabulary[]> => {

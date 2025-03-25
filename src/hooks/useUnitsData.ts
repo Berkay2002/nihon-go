@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import contentService from "@/services/contentService";
@@ -10,7 +11,7 @@ export interface UnitWithProgress extends Unit {
   progress?: number;
 }
 
-export interface LessonWithProgress extends Lesson {
+export interface LessonWithProgress extends Omit<Lesson, 'is_locked'> {
   is_completed?: boolean;
   is_locked?: boolean;
   hasEarnedXP?: boolean; // Flag to indicate if XP has already been earned for this lesson

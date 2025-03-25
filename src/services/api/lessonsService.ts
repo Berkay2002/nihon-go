@@ -1,3 +1,4 @@
+
 import { baseService } from "./baseService";
 
 export interface Lesson {
@@ -8,6 +9,7 @@ export interface Lesson {
   order_index: number;
   estimated_time: string;
   xp_reward: number;
+  is_locked?: boolean;
   created_at?: string;
   updated_at?: string;
 }
@@ -46,7 +48,11 @@ const lessonsService = {
           throw error;
         }
         
-        return data || [];
+        // Make sure every lesson has is_locked property
+        return (data || []).map(lesson => ({
+          ...lesson,
+          is_locked: lesson.is_locked ?? false
+        }));
       }, 3); // 3 retries
       
       console.log(`Successfully fetched ${data?.length || 0} lessons for unit ${unitId}`);
@@ -95,7 +101,11 @@ const lessonsService = {
           throw new Error('Lesson not found');
         }
         
-        return data;
+        // Ensure is_locked is set
+        return {
+          ...data,
+          is_locked: data.is_locked ?? false
+        };
       }, 2); // 2 retries
       
       console.log(`Successfully fetched lesson: ${data.title}`);

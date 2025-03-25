@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -116,7 +117,13 @@ const Lesson = () => {
           throw new Error("Could not load lesson data");
         }
         
-        setLesson(lessonData);
+        // Ensure is_locked is set
+        const updatedLessonData = {
+          ...lessonData,
+          is_locked: lessonData.is_locked ?? false
+        };
+        
+        setLesson(updatedLessonData);
         setVocabulary(vocabData);
       } catch (error) {
         console.error("Error fetching lesson:", error);
@@ -132,6 +139,7 @@ const Lesson = () => {
             order_index: 1,
             estimated_time: "Unknown",
             xp_reward: 10,
+            is_locked: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           });

@@ -31,8 +31,18 @@ const LessonPage = () => {
         setError(null);
 
         const lessonData = await contentService.getLesson(lessonId);
-        console.log("Lesson data received:", lessonData);
-        setLesson(lessonData);
+        
+        // Ensure is_locked is properly set before updating state
+        if (lessonData) {
+          const updatedLessonData = {
+            ...lessonData,
+            is_locked: lessonData.is_locked ?? false
+          };
+          
+          console.log("Lesson data received:", updatedLessonData);
+          setLesson(updatedLessonData);
+        }
+        
         setLoading(false);
       } catch (error) {
         console.error(`Error fetching lesson: ${error}`);
