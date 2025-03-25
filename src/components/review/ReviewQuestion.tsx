@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -34,7 +33,6 @@ export const ReviewQuestion: React.FC<ReviewQuestionProps> = ({
 
   const handleDifficultySelection = async (correct: boolean, difficulty: number) => {
     await onAnswer(correct, difficulty);
-    // Reset state for the next question
     setUserAnswer("");
     setRevealAnswer(false);
     setAnswerCorrect(null);

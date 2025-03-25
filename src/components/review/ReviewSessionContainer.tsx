@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -294,11 +293,7 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
         if (reviewType === "vocabulary") {
           session = await learningAlgorithmService.generateReviewSession(user.id);
         } else if (reviewType === "difficult") {
-          // Re-use the loadDifficultExercisesSession function
-          const loadDifficultSession = async () => {
-            return await loadDifficultExercisesSession();
-          };
-          session = await loadDifficultSession();
+          session = await loadDifficultExercisesSession();
         }
         
         setReviewSession(session);
