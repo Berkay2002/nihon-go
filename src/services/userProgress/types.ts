@@ -1,4 +1,3 @@
-
 export interface UserProgress {
   id: string;
   user_id: string;
@@ -28,4 +27,27 @@ export interface ExerciseResult {
   userAnswer: string;
   timeSpent: number; // in seconds
   xpEarned: number;
+}
+
+export interface ExerciseResponse {
+  id: string;
+  user_id: string;
+  lesson_id: string;
+  exercise_id: string;
+  exercise_type: ExerciseType;
+  question: string;
+  correct_answer: string;
+  user_answer: string;
+  is_correct: boolean;
+  created_at: string;
+}
+
+export type ExerciseType = 'select' | 'listen' | 'translate' | 'match' | 'arrange';
+
+export interface LessonScorecard {
+  totalExercises: number;
+  correctExercises: number;
+  accuracy: number;
+  xpEarned: number;
+  responses: ExerciseResponse[];
 }

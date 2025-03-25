@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { toast } from "sonner";
 import contentService from "@/services/contentService";
 import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,7 +71,6 @@ const Exercise = () => {
         const exercisesData = await contentService.getExercisesByLesson(lessonId);
         
         if (exercisesData.length === 0) {
-          toast.error("No exercises found for this lesson");
           navigate(`/app/lesson/${lessonId}`);
           return;
         }
@@ -84,7 +82,6 @@ const Exercise = () => {
         setStartTime(new Date());
       } catch (error) {
         console.error("Error fetching exercises:", error);
-        toast.error("Failed to load exercises");
         setLoading(false);
       }
     };
@@ -141,7 +138,6 @@ const Exercise = () => {
     if (currentExercise.type === "text_input") {
       // For text input exercises, compare the text answer
       if (!textAnswer.trim()) {
-        toast.error("Please enter your answer");
         return;
       }
       
@@ -164,7 +160,6 @@ const Exercise = () => {
     } else if (currentExercise.type === "arrange_sentence") {
       // For arrange sentence exercises
       if (arrangedWords.length === 0) {
-        toast.error("Please arrange the words");
         return;
       }
       
@@ -180,7 +175,6 @@ const Exercise = () => {
     } else {
       // For multiple choice exercises, check the selected answer
       if (selectedAnswer === null) {
-        toast.error("Please select an answer");
         return;
       }
       
@@ -192,7 +186,6 @@ const Exercise = () => {
     
     // Display feedback toast based on correctness
     if (isCorrect) {
-      toast.success("Correct answer!");
       const newXp = xpEarned + currentExercise.xp_reward;
       setXpEarned(newXp);
       
@@ -214,8 +207,6 @@ const Exercise = () => {
           console.error("Error submitting exercise result:", error);
         }
       }
-    } else {
-      toast.error("Not quite right");
     }
   };
 
