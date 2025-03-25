@@ -23,6 +23,17 @@ interface DBGrammarPattern {
   updated_at?: string;
 }
 
+// Helper function to map DB grammar pattern to GrammarPattern interface
+const mapToGrammarPattern = (pattern: DBGrammarPattern): GrammarPattern => ({
+  id: pattern.id,
+  lesson_id: pattern.lesson_id || pattern.id, // Use lesson_id if available, fallback to id
+  pattern: pattern.pattern,
+  explanation: pattern.explanation,
+  example: JSON.stringify(pattern.example_sentences),
+  created_at: pattern.created_at,
+  updated_at: pattern.updated_at
+});
+
 const grammarPatternsService = {
   getGrammarPatterns: async (): Promise<GrammarPattern[]> => {
     const { data, error } = await baseService.client
@@ -35,16 +46,8 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Map to match the GrammarPattern interface
-    return (data || []).map((pattern: DBGrammarPattern) => ({
-      id: pattern.id,
-      lesson_id: pattern.lesson_id || pattern.id, // Use lesson_id if available, fallback to id
-      pattern: pattern.pattern,
-      explanation: pattern.explanation,
-      example: JSON.stringify(pattern.example_sentences),
-      created_at: pattern.created_at,
-      updated_at: pattern.updated_at
-    }));
+    // Map to match the GrammarPattern interface using the helper function
+    return (data || []).map(pattern => mapToGrammarPattern(pattern as DBGrammarPattern));
   },
 
   getGrammarPatternsByLesson: async (lessonId: string): Promise<GrammarPattern[]> => {
@@ -58,16 +61,8 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Map to match the GrammarPattern interface
-    return (data || []).map((pattern: DBGrammarPattern) => ({
-      id: pattern.id,
-      lesson_id: pattern.lesson_id || pattern.id, // Use lesson_id if available, fallback to id
-      pattern: pattern.pattern,
-      explanation: pattern.explanation,
-      example: JSON.stringify(pattern.example_sentences),
-      created_at: pattern.created_at,
-      updated_at: pattern.updated_at
-    }));
+    // Map to match the GrammarPattern interface using the helper function
+    return (data || []).map(pattern => mapToGrammarPattern(pattern as DBGrammarPattern));
   }
 };
 
