@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import {
   BrowserRouter as Router,
@@ -5,7 +6,7 @@ import {
   Route,
   Navigate,
 } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from "@/lib/theme-provider"
 import { Toaster } from 'sonner';
 
@@ -49,7 +50,7 @@ const App = () => {
   return (
     <Router>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
+        <ThemeProvider defaultTheme="dark">
           <AuthProvider>
             <Routes>
               <Route path="/" element={<Index />} />
