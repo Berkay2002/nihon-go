@@ -28,6 +28,7 @@ export interface ExerciseResult {
   exerciseId: string;
   isCorrect: boolean;
   userAnswer: string;
+  timeSpent?: number;
   xpEarned: number;
 }
 

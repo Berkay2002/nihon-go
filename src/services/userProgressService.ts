@@ -51,6 +51,9 @@ export const useUserProgress = () => {
       setLoading(false);
     }
   }, [user]);
+  
+  // Added alias for compatibility
+  const getUserStreakData = getUserStreak;
 
   const submitExerciseResult = useCallback(async (
     result: ExerciseResult
@@ -61,13 +64,7 @@ export const useUserProgress = () => {
     }
 
     try {
-      // Add a default timeSpent value for compatibility with the types
-      const resultWithTimeSpent = {
-        ...result,
-        timeSpent: result.timeSpent || 0 
-      };
-      
-      await userProgressApi.submitExerciseResult(user.id, resultWithTimeSpent);
+      await userProgressApi.submitExerciseResult(user.id, result);
     } catch (err) {
       console.error('Error submitting exercise result:', err);
       toast.error('Failed to save your progress');
@@ -94,6 +91,74 @@ export const useUserProgress = () => {
       toast.error('Failed to save your lesson completion');
     }
   }, [user, getUserProgressData, getUserStreak]);
+  
+  // Add missing methods for compatibility with existing code
+  const updateLessonProgress = useCallback(async (
+    lessonId: string,
+    isCompleted: boolean,
+    accuracy: number,
+    xpEarned: number
+  ): Promise<void> => {
+    if (!user) {
+      console.warn('Cannot update lesson progress: User not authenticated');
+      return;
+    }
+
+    try {
+      await userProgressApi.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned);
+    } catch (err) {
+      console.error('Error updating lesson progress:', err);
+      toast.error('Failed to update your progress');
+    }
+  }, [user]);
+  
+  const updateUserStreak = useCallback(async (
+    xpEarned: number,
+    extendStreak: boolean = true
+  ): Promise<UserStreak | null> => {
+    if (!user) {
+      console.warn('Cannot update user streak: User not authenticated');
+      return null;
+    }
+
+    try {
+      return await userProgressApi.updateUserStreak(user.id, xpEarned, extendStreak);
+    } catch (err) {
+      console.error('Error updating user streak:', err);
+      toast.error('Failed to update your streak');
+      return null;
+    }
+  }, [user]);
+  
+  const getLessonScorecard = useCallback(async (
+    lessonId: string
+  ): Promise<LessonScorecard> => {
+    if (!user) {
+      console.warn('Cannot get lesson scorecard: User not authenticated');
+      return {
+        lessonId,
+        totalExercises: 0,
+        correctExercises: 0,
+        accuracy: 0,
+        xpEarned: 0,
+        responses: []
+      };
+    }
+
+    try {
+      return await userProgressApi.getLessonScorecard(user.id, lessonId);
+    } catch (err) {
+      console.error('Error getting lesson scorecard:', err);
+      return {
+        lessonId,
+        totalExercises: 0,
+        correctExercises: 0,
+        accuracy: 0,
+        xpEarned: 0,
+        responses: []
+      };
+    }
+  }, [user]);
 
   return {
     userProgress,
@@ -102,7 +167,11 @@ export const useUserProgress = () => {
     error,
     getUserProgressData,
     getUserStreak,
+    getUserStreakData,
     submitExerciseResult,
-    submitLessonCompletion
+    submitLessonCompletion,
+    updateLessonProgress,
+    updateUserStreak,
+    getLessonScorecard
   };
 };

@@ -238,7 +238,7 @@ export const userProgressApi = {
         const accessToken = data.session?.access_token || '';
         
         // Get the Supabase project URL from the environment
-        const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+        const projectUrl = process.env.VITE_SUPABASE_URL || '';
         const apiUrl = `${projectUrl}/functions/v1/record-exercise-response`;
         
         const response = await fetch(apiUrl, {
@@ -288,7 +288,7 @@ export const userProgressApi = {
         const accessToken = data.session?.access_token || '';
         
         // Get the Supabase project URL from the environment
-        const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+        const projectUrl = process.env.VITE_SUPABASE_URL || '';
         const apiUrl = `${projectUrl}/functions/v1/get-lesson-responses`;
         
         const response = await fetch(apiUrl, {
@@ -378,7 +378,7 @@ export const userProgressApi = {
       }
       
       // Use the serverless function URL directly with fetch
-      const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+      const projectUrl = process.env.VITE_SUPABASE_URL || '';
       const apiUrl = `${projectUrl}/functions/v1/get-exercise-responses`;
       
       const response = await fetch(apiUrl, {
@@ -416,7 +416,7 @@ export const userProgressApi = {
       }
       
       // Use the serverless function URL directly with fetch
-      const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+      const projectUrl = process.env.VITE_SUPABASE_URL || '';
       const apiUrl = `${projectUrl}/functions/v1/save-exercise-result`;
       
       const response = await fetch(apiUrl, {
@@ -441,5 +441,21 @@ export const userProgressApi = {
       console.error("Error in saveExerciseResult:", error);
       return { error: String(error), success: false };
     }
+  },
+  
+  // Add this method for compatibility
+  submitLessonCompletion: async (
+    userId: string,
+    lessonId: string,
+    scorecard: LessonScorecard
+  ): Promise<void> => {
+    // Update lesson progress with scorecard data
+    await userProgressApi.updateLessonProgress(
+      userId,
+      lessonId,
+      true,
+      scorecard.accuracy,
+      scorecard.xpEarned
+    );
   }
 };

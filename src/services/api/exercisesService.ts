@@ -5,7 +5,7 @@ import { ExerciseType } from "@/types/exercises";
 export interface Exercise {
   id: string;
   lesson_id: string;
-  type: string;
+  type: "multiple_choice" | "translation" | "text_input" | "arrange_sentence" | "matching" | "fill_in_blank";
   question: string;
   options: any;
   correct_answer: string;
@@ -16,6 +16,7 @@ export interface Exercise {
   created_at?: string;
   updated_at?: string;
   words?: string[]; // For arrange_sentence exercises
+  matching_pairs?: Array<{hiragana: string, romaji: string}>;
 }
 
 // Cache for exercise data to avoid redundant fetches
@@ -26,7 +27,7 @@ const CACHE_EXPIRY = 60000; // 1 minute cache expiry
 const mapToExerciseType = (exercise: Exercise): ExerciseType => {
   const exerciseType: ExerciseType = {
     id: exercise.id,
-    type: exercise.type as any, // Type assertion to match ExerciseType
+    type: exercise.type,
     question: exercise.question,
     options: exercise.options,
     correct_answer: exercise.correct_answer,
@@ -35,7 +36,8 @@ const mapToExerciseType = (exercise: Exercise): ExerciseType => {
     romaji: exercise.romaji || "",
     lesson_id: exercise.lesson_id,
     order_index: exercise.order_index,
-    words: exercise.words || []
+    words: exercise.words || [],
+    matching_pairs: exercise.matching_pairs
   };
   
   return exerciseType;

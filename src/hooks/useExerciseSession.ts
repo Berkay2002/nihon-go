@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import contentService from "@/services/contentService";
@@ -54,13 +55,17 @@ export const useExerciseSession = (lessonId: string | undefined) => {
         }
         
         // Initialize available words for arrange sentence exercises
-        exercisesData.forEach(exercise => {
+        const processedExercises = exercisesData.map(exercise => {
           if (exercise.type === "arrange_sentence" && exercise.options) {
-            exercise.words = Array.isArray(exercise.options) ? exercise.options : exercise.options.words || [];
+            return {
+              ...exercise,
+              words: Array.isArray(exercise.options) ? exercise.options : exercise.options.words || []
+            };
           }
+          return exercise;
         });
         
-        setExercises(exercisesData);
+        setExercises(processedExercises);
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching exercises:", error);
@@ -131,6 +136,8 @@ export const useExerciseSession = (lessonId: string | undefined) => {
         return userSentence === correctSentence;
       case "matching":
         return matchingResult === true;
+      case "fill_in_blank":
+        return textAnswer.trim().toLowerCase() === currentExercise.correct_answer.toLowerCase();
       default:
         return false;
     }
@@ -145,6 +152,7 @@ export const useExerciseSession = (lessonId: string | undefined) => {
       case "translation":
         return selectedAnswer || "";
       case "text_input":
+      case "fill_in_blank":
         return textAnswer;
       case "arrange_sentence":
         return arrangedWords.join(" ");
