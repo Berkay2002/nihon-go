@@ -1,3 +1,4 @@
+
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -16,6 +17,7 @@ import Profile from "./pages/Profile";
 import Characters from "./pages/Characters";
 import CharacterDetail from "./pages/CharacterDetail";
 import Auth from "./pages/Auth";
+import Reviews from "./pages/Reviews";
 import { AuthProvider } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
 import { useEffect } from "react";
@@ -196,7 +198,7 @@ const App = () => {
                   <Route path="characters" element={<Characters />} />
                   <Route path="characters/:id" element={<CharacterDetail />} />
                   <Route path="profile" element={<Profile />} />
-                  <Route path="reviews" element={<Index />} />
+                  <Route path="reviews" element={<Reviews />} />
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
