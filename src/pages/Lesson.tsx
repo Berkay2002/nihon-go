@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
@@ -8,8 +7,7 @@ import {
   LessonHeader, 
   LessonOverview, 
   VocabularySection,
-  LessonActions,
-  DemoMessage
+  LessonActions
 } from "@/components/lesson";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,7 +23,6 @@ const Lesson = () => {
   const [loading, setLoading] = useState(true);
   const [longLoading, setLongLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { isGuest } = useAuth();
 
   // Add a better timeout mechanism with two stages
   useEffect(() => {
@@ -120,13 +117,7 @@ const Lesson = () => {
         }
         
         setLesson(lessonData);
-        
-        // If in guest mode, limit vocabulary items
-        if (isGuest) {
-          setVocabulary(vocabData.slice(0, 3)); // Only show first 3 vocabulary items in demo mode
-        } else {
-          setVocabulary(vocabData);
-        }
+        setVocabulary(vocabData);
       } catch (error) {
         console.error("Error fetching lesson:", error);
         setError("Failed to load lesson data. Please try refreshing the page.");
@@ -153,7 +144,7 @@ const Lesson = () => {
     };
     
     fetchLessonData();
-  }, [lessonId, isGuest]);
+  }, [lessonId]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -221,10 +212,9 @@ const Lesson = () => {
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <LessonHeader lesson={lesson} />
-      <DemoMessage isGuest={isGuest} />
       <LessonOverview lesson={lesson} />
-      <VocabularySection vocabulary={vocabulary} isGuest={isGuest} />
-      <LessonActions lessonId={lessonId || ""} isGuest={isGuest} />
+      <VocabularySection vocabulary={vocabulary} />
+      <LessonActions lessonId={lessonId || ""} />
     </div>
   );
 };

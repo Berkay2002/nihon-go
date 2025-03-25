@@ -1,15 +1,12 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Lock } from "lucide-react";
 import { Vocabulary } from "@/services/contentService";
 
 interface VocabularySectionProps {
   vocabulary: Vocabulary[];
-  isGuest: boolean;
 }
 
-export const VocabularySection: React.FC<VocabularySectionProps> = ({ vocabulary, isGuest }) => {
+export const VocabularySection: React.FC<VocabularySectionProps> = ({ vocabulary }) => {
   if (vocabulary.length === 0) {
     return null;
   }
@@ -36,15 +33,6 @@ export const VocabularySection: React.FC<VocabularySectionProps> = ({ vocabulary
           </Card>
         ))}
       </div>
-      
-      {isGuest && vocabulary.length === 3 && (
-        <div className="mt-4 p-4 bg-gray-50 rounded-md border border-gray-200 text-center">
-          <Lock className="inline-block w-5 h-5 text-muted-foreground mb-2" />
-          <p className="text-sm text-muted-foreground">
-            Sign up to access all vocabulary items
-          </p>
-        </div>
-      )}
     </section>
   );
 };

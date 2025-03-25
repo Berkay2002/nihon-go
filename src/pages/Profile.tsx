@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -8,11 +7,13 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
 import contentService from "@/services/contentService";
 import { useTheme } from "@/components/theme/ThemeProvider";
+import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState({
     level: 1,
@@ -102,6 +103,10 @@ const Profile = () => {
     setTheme(newTheme);
   };
 
+  const navigateToAchievements = () => {
+    navigate('/app/achievements');
+  };
+
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <header className="mb-8">
@@ -138,7 +143,19 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        <h2 className="text-xl font-bold mb-4">Learning Stats</h2>
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Learning Stats</h2>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="text-nihongo-blue hover:text-nihongo-red flex items-center gap-1"
+            onClick={navigateToAchievements}
+          >
+            <Award className="w-4 h-4" />
+            <span className="text-xs">See All Trophies</span>
+          </Button>
+        </div>
+        
         <div className="grid grid-cols-2 gap-4 mb-6">
           <Card className="border border-nihongo-red/10 shadow-sm">
             <CardContent className="p-4 flex flex-col items-center justify-center">
@@ -149,7 +166,10 @@ const Profile = () => {
               <span className="text-xs text-muted-foreground">Current Streak</span>
             </CardContent>
           </Card>
-          <Card className="border border-nihongo-gold/10 shadow-sm">
+          <Card 
+            className="border border-nihongo-gold/10 shadow-sm cursor-pointer hover:border-nihongo-gold transition-colors"
+            onClick={navigateToAchievements}
+          >
             <CardContent className="p-4 flex flex-col items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-nihongo-gold/10 flex items-center justify-center mb-2">
                 <Award className="w-5 h-5 text-nihongo-gold" />

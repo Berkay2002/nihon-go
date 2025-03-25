@@ -13,6 +13,7 @@ export interface UnitWithProgress extends Unit {
 export interface LessonWithProgress extends Lesson {
   is_completed?: boolean;
   is_locked?: boolean;
+  hasEarnedXP?: boolean; // Flag to indicate if XP has already been earned for this lesson
 }
 
 export const useUnitsData = (unitId?: string) => {
@@ -76,30 +77,30 @@ export const useUnitsData = (unitId?: string) => {
         }
       }
       
-      const unitsWithProgress = unitsData.map((unit) => {
+      // Process units with proper async/await
+      const unitsWithProgressPromises = unitsData.map(async (unit) => {
         let progress = 0;
         
         if (user && progressData) {
-          // Calculate actual progress based on completed lessons for this unit
-          // First get all lessons for this unit
-          contentService.getLessonsByUnit(unit.id)
-            .then(unitLessons => {
-              if (unitLessons.length > 0) {
-                // Get completed lessons for this unit
-                const lessonIds = unitLessons.map(lesson => lesson.id);
-                const completedLessons = progressData.filter(
-                  p => lessonIds.includes(p.lesson_id) && p.is_completed
-                );
-                
-                // Calculate percentage
-                if (lessonIds.length > 0) {
-                  progress = Math.floor((completedLessons.length / lessonIds.length) * 100);
-                }
+          try {
+            // Calculate actual progress based on completed lessons for this unit
+            const unitLessons = await contentService.getLessonsByUnit(unit.id);
+            
+            if (unitLessons.length > 0) {
+              // Get completed lessons for this unit
+              const lessonIds = unitLessons.map(lesson => lesson.id);
+              const completedLessons = progressData.filter(
+                p => lessonIds.includes(p.lesson_id) && p.is_completed
+              );
+              
+              // Calculate percentage
+              if (lessonIds.length > 0) {
+                progress = Math.floor((completedLessons.length / lessonIds.length) * 100);
               }
-            })
-            .catch(err => {
-              console.error("Error getting lessons for progress calculation:", err);
-            });
+            }
+          } catch (err) {
+            console.error("Error getting lessons for progress calculation:", err);
+          }
         }
         
         return {
@@ -109,6 +110,8 @@ export const useUnitsData = (unitId?: string) => {
         };
       });
       
+      // Wait for all units to be processed with their progress data
+      const unitsWithProgress = await Promise.all(unitsWithProgressPromises);
       setUnits(unitsWithProgress);
       
       if (!selectedUnit && unitsWithProgress.length > 0) {
@@ -170,11 +173,16 @@ export const useUnitsData = (unitId?: string) => {
       const lessonsWithProgress = lessonsData.map((lesson, index) => {
         let isCompleted = false;
         let isLocked = index > 0; // Only first lesson is unlocked by default
+        let hasEarnedXP = false; // Default to not earned
         
         if (user && progressData) {
           // Get completion status from user progress data
           const lessonProgress = progressData.find(p => p.lesson_id === lesson.id);
           isCompleted = lessonProgress?.is_completed || false;
+          
+          // Set hasEarnedXP based on completion status
+          // If a lesson is completed, XP has been earned
+          hasEarnedXP = isCompleted;
           
           // Unlock the next lesson if the previous one is completed
           if (index > 0) {
@@ -199,7 +207,8 @@ export const useUnitsData = (unitId?: string) => {
         return {
           ...lesson,
           is_completed: isCompleted,
-          is_locked: isLocked
+          is_locked: isLocked,
+          hasEarnedXP
         };
       });
       

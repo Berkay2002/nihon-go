@@ -1,17 +1,14 @@
-
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 interface StartLessonButtonProps {
   lessonId: string;
-  isGuest: boolean;
   onStart?: () => void;
 }
 
 export const StartLessonButton: React.FC<StartLessonButtonProps> = ({ 
   lessonId, 
-  isGuest,
   onStart 
 }) => {
   const navigate = useNavigate();

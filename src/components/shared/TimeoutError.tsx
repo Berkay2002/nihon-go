@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,16 +7,12 @@ interface TimeoutErrorProps {
   onRefresh: () => void;
   title?: string;
   description?: string;
-  showGuestOption?: boolean;
-  onContinueAsGuest?: () => void;
 }
 
 export const TimeoutError: React.FC<TimeoutErrorProps> = ({ 
   onRefresh, 
   title = "Connection Issue",
-  description = "We're having trouble connecting to the server. This might be due to network issues.",
-  showGuestOption = false,
-  onContinueAsGuest
+  description = "We're having trouble connecting to the server. This might be due to network issues."
 }) => {
   return (
     <Card className="my-8 border-red-200">
@@ -35,16 +30,6 @@ export const TimeoutError: React.FC<TimeoutErrorProps> = ({
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh Page
           </Button>
-          
-          {showGuestOption && onContinueAsGuest && (
-            <Button 
-              onClick={onContinueAsGuest}
-              variant="outline" 
-              className="w-full"
-            >
-              Continue as Guest
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

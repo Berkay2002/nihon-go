@@ -172,11 +172,18 @@ export const userProgressApi = {
     userId: string,
     result: ExerciseResult
   ): Promise<void> => {
-    // First update the user streak with the XP earned
-    await userProgressApi.updateUserStreak(userId, result.xpEarned);
-    
     // Get the current lesson progress
     const lessonProgress = await userProgressApi.getLessonProgress(userId, result.lessonId);
+    
+    // Only award XP and update streak if this is a first-time completion or not yet completed
+    const shouldAwardXP = !lessonProgress?.is_completed;
+    
+    if (shouldAwardXP && result.xpEarned > 0) {
+      // First update the user streak with the XP earned
+      await userProgressApi.updateUserStreak(userId, result.xpEarned);
+    } else if (lessonProgress?.is_completed) {
+      console.log(`Exercise for already completed lesson. No additional XP awarded.`);
+    }
     
     // Get all exercises for this lesson to calculate completion
     const { data: lessonExercises, error: exercisesError } = await supabase
@@ -209,13 +216,16 @@ export const userProgressApi = {
     // Calculate accuracy (simplified)
     const accuracy = result.isCorrect ? 100 : (lessonProgress?.accuracy || 0);
     
+    // If lesson was already completed, don't add new XP
+    const newXpEarned = shouldAwardXP ? result.xpEarned + (lessonProgress?.xp_earned || 0) : (lessonProgress?.xp_earned || 0);
+    
     // Update the lesson progress
     await userProgressApi.updateLessonProgress(
       userId,
       result.lessonId,
       isLessonCompleted,
       accuracy,
-      result.xpEarned + (lessonProgress?.xp_earned || 0)
+      newXpEarned
     );
   },
 };

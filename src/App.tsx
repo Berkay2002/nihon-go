@@ -1,4 +1,3 @@
-import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,6 +13,8 @@ import Exercise from "./pages/Exercise";
 import LessonComplete from './pages/LessonComplete';
 import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
+import Characters from "./pages/Characters";
+import CharacterDetail from "./pages/CharacterDetail";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
@@ -24,11 +25,10 @@ const App = () => (
   <ThemeProvider>
     <TooltipProvider>
       <QueryClientProvider client={queryClient}>
-        <Toaster />
         <Sonner />
+        <InstallPrompt />
         <BrowserRouter>
           <AuthProvider>
-            <InstallPrompt />
             <Routes>
               <Route path="/" element={<Welcome />} />
               <Route path="/auth" element={<Auth />} />
@@ -40,6 +40,8 @@ const App = () => (
                 <Route path="exercise/:exerciseId" element={<Exercise />} />
                 <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
                 <Route path="achievements" element={<Achievements />} />
+                <Route path="characters" element={<Characters />} />
+                <Route path="characters/:id" element={<CharacterDetail />} />
                 <Route path="profile" element={<Profile />} />
               </Route>
               <Route path="*" element={<NotFound />} />

@@ -68,10 +68,9 @@ export const LearnPage: React.FC<LearnPageProps> = ({
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-bg-primary to-bg-secondary">
-      <ThemeToggle />
       <div className="flex flex-col md:flex-row gap-4 md:gap-8 px-4 md:px-10 lg:px-20 py-4 md:py-8 max-w-screen-xl mx-auto">
         {/* Main content - Learning Path */}
-        <div className="w-full md:w-2/3 lg:w-3/4 order-2 md:order-1">
+        <div className="w-full order-2 md:order-1">
           <FeedWrapper>            
             {units.map((unit, index) => (
               <Unit
@@ -102,12 +101,12 @@ export const LearnPage: React.FC<LearnPageProps> = ({
         </div>
         
         {/* Sidebar */}
-        <div className="w-full md:w-1/3 lg:w-1/4 order-1 md:order-2 mb-4 md:mb-0">
+        {/*<div className="w-full md:w-1/3 lg:w-1/4 order-1 md:order-2 mb-4 md:mb-0">
           <StickyWrapper>
-            <UserProgress
+            {/* <UserProgress
               activeCourse={activeCourse}
               points={totalXp}
-            />
+            />*/}
             
             {/* Comment out the DailyStreak component for now */}
             {/* 
@@ -117,9 +116,10 @@ export const LearnPage: React.FC<LearnPageProps> = ({
             {/* Comment out the Quests component for now */}
             {/*
             <Quests points={totalXp} />
-            */}
+            
           </StickyWrapper>
-        </div>
+        </div>*/}
+        
       </div>
     </div>
   );

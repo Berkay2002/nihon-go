@@ -88,11 +88,11 @@ const Layout = () => {
 
   // If authenticated, show the app
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <main className="flex-1 pb-16">
+    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+      <Navigation />
+      <main className="flex-1 pb-16 md:pb-0 md:pl-20">
         <Outlet />
       </main>
-      <Navigation />
     </div>
   );
 };

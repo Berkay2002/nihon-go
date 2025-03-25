@@ -138,7 +138,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         profile,
         isLoading: isLoading && !initComplete, // Only show loading if not initialized
         isAuthenticated: !!session,
-        isGuest: false,
         signUp,
         signIn,
         signOut,

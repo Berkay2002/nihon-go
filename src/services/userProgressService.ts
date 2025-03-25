@@ -1,30 +1,18 @@
-
 import { useAuth } from "@/hooks/useAuth";
 import { 
   UserProgress, 
   ExerciseResult, 
   UserStreak,
-  userProgressApi, 
-  guestProgressService 
+  userProgressApi 
 } from "./userProgress";
 import { baseService } from "@/services/api/baseService";
 
 // Hook for accessing progress in components
 export const useUserProgress = () => {
-  const { user, isLoading, isGuest } = useAuth();
+  const { user, isLoading } = useAuth();
   
   const getUserProgressData = async () => {
     if (isLoading) return [];
-    
-    if (isGuest) {
-      try {
-        // Return mock data for guest users with no artificial delay
-        return await guestProgressService.getUserProgress();
-      } catch (error) {
-        console.error('Error in guest getUserProgressData:', error);
-        return [];
-      }
-    }
     
     if (!user) return [];
     
@@ -46,17 +34,6 @@ export const useUserProgress = () => {
   
   const getUserStreakData = async () => {
     if (isLoading) return getDefaultStreak();
-    
-    if (isGuest) {
-      try {
-        // Return mock streak data for guest users with no artificial delay
-        return await guestProgressService.getUserStreak();
-      } catch (error) {
-        console.error('Error in guest getUserStreakData:', error);
-        // Return fallback streak data
-        return getDefaultStreak('guest');
-      }
-    }
     
     if (!user) return getDefaultStreak();
     
@@ -99,9 +76,6 @@ export const useUserProgress = () => {
     };
   };
   
-  // Choose between real or mock services based on guest mode
-  const service = isGuest ? guestProgressService : userProgressApi;
-  
   // Safe update functions with error handling
   const safeUpdateLessonProgress = async (
     lessonId: string, 
@@ -110,10 +84,21 @@ export const useUserProgress = () => {
     xpEarned: number
   ) => {
     try {
-      if (user && !isGuest) {
-        await service.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned);
-      } else if (isGuest) {
-        await service.updateLessonProgress('guest', lessonId, isCompleted, accuracy, xpEarned);
+      if (user) {
+        // Check if lesson is already completed before awarding XP
+        const existingProgress = await userProgressApi.getLessonProgress(user.id, lessonId);
+        
+        if (existingProgress?.is_completed) {
+          // Lesson already completed - don't award additional XP
+          console.log(`Lesson ${lessonId} already completed. No additional XP awarded.`);
+          // Still update accuracy if it improved, but with 0 XP
+          await userProgressApi.updateLessonProgress(user.id, lessonId, true, 
+            Math.max(existingProgress.accuracy, accuracy), existingProgress.xp_earned);
+          return;
+        }
+        
+        // Lesson not completed yet - award XP
+        await userProgressApi.updateLessonProgress(user.id, lessonId, isCompleted, accuracy, xpEarned);
       }
     } catch (error) {
       console.error('Error updating lesson progress:', error);
@@ -123,10 +108,8 @@ export const useUserProgress = () => {
   
   const safeSubmitExerciseResult = async (result: ExerciseResult) => {
     try {
-      if (user && !isGuest) {
-        await service.submitExerciseResult(user.id, result);
-      } else if (isGuest) {
-        await service.submitExerciseResult('guest', result);
+      if (user) {
+        await userProgressApi.submitExerciseResult(user.id, result);
       }
     } catch (error) {
       console.error('Error submitting exercise result:', error);
@@ -136,10 +119,8 @@ export const useUserProgress = () => {
   
   const safeUpdateUserStreak = async (dailyXpToAdd: number, extendStreak: boolean = true) => {
     try {
-      if (user && !isGuest) {
-        return await service.updateUserStreak(user.id, dailyXpToAdd, extendStreak);
-      } else if (isGuest) {
-        return await service.updateUserStreak('guest', dailyXpToAdd, extendStreak);
+      if (user) {
+        return await userProgressApi.updateUserStreak(user.id, dailyXpToAdd, extendStreak);
       }
       return getDefaultStreak();
     } catch (error) {

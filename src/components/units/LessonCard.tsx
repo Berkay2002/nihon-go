@@ -1,7 +1,6 @@
-
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Book, Check, Lock, ChevronRight } from "lucide-react";
+import { Book, Check, Lock, ChevronRight, Zap, XCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface Lesson {
@@ -14,6 +13,7 @@ interface Lesson {
   xp_reward: number;
   is_completed?: boolean;
   is_locked?: boolean;
+  hasEarnedXP?: boolean;
 }
 
 interface LessonCardProps {
@@ -48,11 +48,31 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
             </div>
             <div>
               <h3 className="font-semibold">{lesson.title}</h3>
-              <p className="text-xs text-muted-foreground">
-                {lesson.is_locked ? 
-                  "Complete previous lessons to unlock" : 
-                  `Earn ${lesson.xp_reward} XP`}
-              </p>
+              <div className="flex items-center">
+                {lesson.is_locked ? (
+                  <p className="text-xs text-muted-foreground">
+                    Complete previous lessons to unlock
+                  </p>
+                ) : (
+                  <div className="flex items-center">
+                    {lesson.hasEarnedXP ? (
+                      <div className="flex items-center">
+                        <XCircle className="h-3 w-3 text-gray-400 mr-1" />
+                        <p className="text-xs text-gray-400">
+                          XP already earned
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center">
+                        <Zap className="h-3 w-3 text-nihongo-blue mr-1" />
+                        <p className="text-xs text-nihongo-blue font-medium">
+                          Earn {lesson.xp_reward} XP
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           <ChevronRight className="w-5 h-5 text-muted-foreground" />
