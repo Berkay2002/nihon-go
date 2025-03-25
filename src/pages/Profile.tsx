@@ -169,8 +169,8 @@ const Profile = () => {
           </Card>
           <Card className="border border-gray-200 shadow-sm">
             <CardContent className="p-4 flex flex-col items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
-                <Clock className="w-5 h-5 text-gray-600" />
+              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-2">
+                <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
               </div>
               <span className="text-2xl font-bold">{userData.daysActive}</span>
               <span className="text-xs text-muted-foreground">Days Active</span>

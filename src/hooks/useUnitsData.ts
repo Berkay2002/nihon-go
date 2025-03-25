@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { toast } from "@/components/ui/use-toast";
 import contentService from "@/services/contentService";
@@ -28,19 +27,28 @@ export const useUnitsData = (unitId?: string) => {
 
   // Add a timeout to prevent infinite loading
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        setLoadingTimeout(true);
-        setLoading(false);
-        setError("Loading is taking longer than expected. Please refresh the page.");
-        toast.error("Connection issue detected", {
-          description: "Could not retrieve lesson data. Please refresh the page.",
-        });
-      }
-    }, 10000);
+    let timeoutId: NodeJS.Timeout | null = null;
     
-    return () => clearTimeout(timeoutId);
-  }, [loading]);
+    if (loading) {
+      timeoutId = setTimeout(() => {
+        if (loading) {
+          setLoadingTimeout(true);
+          setLoading(false);
+          setError("Loading is taking longer than expected. Please refresh the page.");
+          // Only show toast once
+          if (!error) {
+            toast.error("Connection issue detected", {
+              description: "Could not retrieve lesson data. Please refresh the page.",
+            });
+          }
+        }
+      }, 15000); // Increased from 10s to 15s
+    }
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [loading, error]);
 
   const fetchUnits = async () => {
     try {
@@ -52,7 +60,7 @@ export const useUnitsData = (unitId?: string) => {
       const unitsDataPromise = Promise.race([
         contentService.getUnits(),
         new Promise<Unit[]>((_, reject) => 
-          setTimeout(() => reject(new Error("Units fetch timeout")), 5000)
+          setTimeout(() => reject(new Error("Units fetch timeout")), 10000) // Increased from 5s to 10s
         )
       ]);
       
@@ -143,7 +151,7 @@ export const useUnitsData = (unitId?: string) => {
       const lessonsDataPromise = Promise.race([
         contentService.getLessonsByUnit(selectedUnit),
         new Promise<Lesson[]>((_, reject) => 
-          setTimeout(() => reject(new Error("Lessons fetch timeout")), 5000)
+          setTimeout(() => reject(new Error("Lessons fetch timeout")), 10000) // Increased from 5s to 10s
         )
       ]);
       
@@ -213,11 +221,13 @@ export const useUnitsData = (unitId?: string) => {
 
   useEffect(() => {
     fetchUnits();
-  }, [unitId, user, getUserProgressData]);
+  }, [unitId, user?.id]);
   
   useEffect(() => {
-    fetchLessons();
-  }, [selectedUnit, user, getUserProgressData]);
+    if (selectedUnit) {
+      fetchLessons();
+    }
+  }, [selectedUnit, user?.id]);
 
   const handleRefresh = () => {
     window.location.reload();

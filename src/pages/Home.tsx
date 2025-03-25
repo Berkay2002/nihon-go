@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -7,6 +6,8 @@ import { LoadingState } from "@/components/home/LoadingState";
 import { ErrorState } from "@/components/home/ErrorState";
 import { HomeContent } from "@/components/home/HomeContent";
 import contentService from "@/services/contentService";
+import { UserProgressData } from "@/types/user";
+import { LessonData } from "@/types/lesson";
 
 const Home = () => {
   const navigate = useNavigate();
@@ -14,15 +15,10 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [longLoading, setLongLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [userData, setUserData] = useState({
-    streak: 0,
-    level: 1,
-    xp: 0,
-    totalXp: 0,
-    dailyGoal: 50,
-    recentLessons: [],
-    nextLesson: null
-  });
+  const [userProgress, setUserProgress] = useState<UserProgressData>({ units: [] });
+  const [recentLessons, setRecentLessons] = useState<LessonData[]>([]);
+  const [streak, setStreak] = useState(0);
+  const [totalXp, setTotalXp] = useState(0);
 
   const { getUserStreakData, getUserProgressData } = useUserProgress();
 
@@ -57,92 +53,122 @@ const Home = () => {
       // Get user progress data for lessons
       const progressData = await getUserProgressData();
       
-      // Get all lessons to find completed ones and determine next lesson
+      // Get all units and lessons
       const units = await contentService.getUnits();
-      const lessons = [];
+      
+      // Transform the data into the format needed by our components
+      const transformedUnits = [];
       
       for (const unit of units) {
         const unitLessons = await contentService.getLessonsByUnit(unit.id);
-        for (const lesson of unitLessons) {
-          lessons.push({
-            ...lesson,
-            unitName: unit.name
-          });
-        }
+        
+        // Calculate unit progress
+        const totalLessons = unitLessons.length;
+        let completedLessons = 0;
+        let foundCurrentLesson = false;
+        
+        const transformedLessons = unitLessons.map((lesson, index) => {
+          const progress = progressData.find(p => p.lesson_id === lesson.id);
+          const isCompleted = progress?.is_completed || false;
+          let isCurrent = false;
+          
+          // The first incomplete lesson should be marked as current
+          if (!isCompleted && !foundCurrentLesson) {
+            isCurrent = true;
+            foundCurrentLesson = true;
+          }
+          
+          // A lesson is locked if:
+          // 1. It's not completed AND
+          // 2. Either it's not the first lesson (index > 0) AND the previous lesson is not completed
+          const isLocked = !isCompleted && index > 0 && 
+            (unitLessons[index - 1] && 
+             !progressData.find(p => 
+               p.lesson_id === unitLessons[index - 1].id && p.is_completed
+             ));
+          
+          if (isCompleted) {
+            completedLessons++;
+          }
+          
+          // Determine lesson type (standard, review, boss, treasure)
+          let type = "standard";
+          if (index % 5 === 4) type = "boss"; // Every 5th lesson is a boss
+          else if (index % 5 === 3) type = "treasure"; // Every 4th lesson is a treasure chest
+          else if (index % 3 === 2) type = "review"; // Every 3rd lesson is a review
+          
+          return {
+            id: lesson.id,
+            title: lesson.title,
+            isCompleted,
+            isCurrent,
+            isLocked,
+            xpReward: lesson.xp_reward || 10,
+            type
+          };
+        });
+        
+        const unitProgress = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
+        
+        transformedUnits.push({
+          id: unit.id,
+          title: unit.name,
+          progress: unitProgress,
+          lessons: transformedLessons
+        });
       }
       
-      // Sort lessons by order_index and unit order_index
-      lessons.sort((a, b) => {
-        const unitA = units.find(u => u.id === a.unit_id);
-        const unitB = units.find(u => u.id === b.unit_id);
-        
-        if (unitA.order_index !== unitB.order_index) {
-          return unitA.order_index - unitB.order_index;
-        }
-        
-        return a.order_index - b.order_index;
+      // Sort units by order_index
+      transformedUnits.sort((a, b) => {
+        const unitA = units.find(u => u.id === a.id);
+        const unitB = units.find(u => u.id === b.id);
+        return unitA.order_index - unitB.order_index;
       });
       
       // Find recent lessons (completed ones)
-      const recentLessons = [];
+      const recentLessonsList = [];
       
       for (const progress of progressData) {
-        const lesson = lessons.find(l => l.id === progress.lesson_id);
-        if (lesson && progress.is_completed) {
-          recentLessons.push({
+        // Find the lesson and its unit
+        let lesson = null;
+        let unit = null;
+        
+        for (const u of units) {
+          const unitLessons = await contentService.getLessonsByUnit(u.id);
+          const foundLesson = unitLessons.find(l => l.id === progress.lesson_id);
+          
+          if (foundLesson) {
+            lesson = foundLesson;
+            unit = u;
+            break;
+          }
+        }
+        
+        if (lesson && unit && progress.is_completed) {
+          recentLessonsList.push({
             id: lesson.id,
             title: lesson.title,
-            unitName: lesson.unitName,
-            isCompleted: progress.is_completed,
-            accuracy: progress.accuracy,
-            xpEarned: progress.xp_earned
+            unitId: unit.id,
+            unitName: unit.name,
+            xpReward: lesson.xp_reward,
+            completedAt: progress.last_attempted_at,
+            isCompleted: true
           });
         }
       }
       
       // Sort recent lessons by last attempted date (most recent first)
-      recentLessons.sort((a, b) => {
-        const progressA = progressData.find(p => p.lesson_id === a.id);
-        const progressB = progressData.find(p => p.lesson_id === b.id);
-        
-        return new Date(progressB.last_attempted_at).getTime() - 
-               new Date(progressA.last_attempted_at).getTime();
+      recentLessonsList.sort((a, b) => {
+        return new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime();
       });
       
       // Limit to 5 recent lessons
-      const limitedRecentLessons = recentLessons.slice(0, 5);
+      const limitedRecentLessons = recentLessonsList.slice(0, 5);
       
-      // Find next lesson (first incomplete lesson)
-      let nextLesson = null;
-      
-      for (const lesson of lessons) {
-        const progress = progressData.find(p => p.lesson_id === lesson.id);
-        
-        // If lesson not started or not completed, this is the next lesson
-        if (!progress || !progress.is_completed) {
-          const unit = units.find(u => u.id === lesson.unit_id);
-          
-          nextLesson = {
-            id: lesson.id,
-            title: lesson.title,
-            unitName: unit.name,
-            xp_reward: lesson.xp_reward
-          };
-          
-          break;
-        }
-      }
-      
-      setUserData({
-        streak: streakData.current_streak,
-        level: streakData.level,
-        xp: streakData.daily_xp,
-        totalXp: streakData.total_xp,
-        dailyGoal: streakData.daily_goal,
-        recentLessons: limitedRecentLessons,
-        nextLesson
-      });
-      
+      setUserProgress({ units: transformedUnits });
+      setRecentLessons(limitedRecentLessons);
+      setStreak(streakData.current_streak);
+      setTotalXp(streakData.total_xp);
       setLoading(false);
     } catch (error) {
       console.error("Error loading user data:", error);
@@ -153,6 +179,14 @@ const Home = () => {
 
   const handleRefresh = () => {
     window.location.reload();
+  };
+
+  const handleSelectUnit = (unitId: string) => {
+    navigate(`/units/${unitId}`);
+  };
+
+  const handleSelectLesson = (lessonId: string) => {
+    navigate(`/lessons/${lessonId}`);
   };
 
   if (loading) {
@@ -177,9 +211,12 @@ const Home = () => {
 
   return (
     <HomeContent
-      username={profile?.username || user?.email.split('@')[0] || "User"}
-      userData={userData}
-      navigate={navigate}
+      userProgress={userProgress}
+      recentLessons={recentLessons}
+      streak={streak}
+      totalXp={totalXp}
+      onSelectUnit={handleSelectUnit}
+      onSelectLesson={handleSelectLesson}
     />
   );
 };
