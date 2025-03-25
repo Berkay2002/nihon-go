@@ -6,9 +6,10 @@ export function Toaster() {
     <SonnerToaster 
       closeButton
       position="top-right"
+      richColors
       toastOptions={{
         className: "border-border rounded-md",
-        // Add any additional styling options here
+        duration: 3000,
       }}
     />
   );

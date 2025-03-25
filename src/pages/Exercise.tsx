@@ -152,6 +152,7 @@ const Exercise = () => {
     
     setIsAnswerChecked(true);
     
+    // Display only ONE toast message for feedback based on correctness
     if (isCorrect) {
       toast.success("Correct answer!");
       const newXp = xpEarned + currentExercise.xp_reward;
