@@ -1,6 +1,6 @@
 
 import contentService, { Vocabulary } from './contentService';
-import userProgressService, { UserProgress } from './userProgressService';
+import userProgressApi from './userProgress';
 import { supabase } from "@/integrations/supabase/client";
 
 // Basic implementation of a spaced repetition system
@@ -114,7 +114,7 @@ const learningAlgorithmService = {
       
       // Fallback: If SRS table doesn't exist or is empty, use the simplified approach
       // Get user's progress
-      const progress = await userProgressService.getUserProgressData();
+      const progress = await userProgressApi.getUserProgress(userId);
       
       if (!progress || progress.length === 0) {
         // User hasn't studied anything yet
