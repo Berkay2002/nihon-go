@@ -4,7 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Zap, Check, X } from "lucide-react";
+import { Zap, Check, X, ArrowUpDown } from "lucide-react";
 import { toast } from "sonner";
 import contentService, { Exercise as ExerciseType } from "@/services/contentService";
 import userProgressService, { useUserProgress, ExerciseResult } from "@/services/userProgressService";
@@ -25,6 +25,8 @@ const Exercise = () => {
   const { submitExerciseResult } = useUserProgress();
   const [startTime, setStartTime] = useState<Date>(new Date());
   const lessonId = exerciseId;
+  const [arrangedWords, setArrangedWords] = useState<string[]>([]);
+  const [availableWords, setAvailableWords] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchExercises = async () => {
@@ -54,6 +56,14 @@ const Exercise = () => {
     fetchExercises();
   }, [lessonId, navigate]);
 
+  // Setup arrange sentence words when exercise changes
+  useEffect(() => {
+    if (currentExercise && currentExercise.type === "arrange_sentence" && Array.isArray(currentExercise.options)) {
+      setAvailableWords([...currentExercise.options]);
+      setArrangedWords([]);
+    }
+  }, [currentExerciseIndex, exercises]);
+
   const currentExercise = exercises[currentExerciseIndex];
   const progress = exercises.length > 0 ? ((currentExerciseIndex + 1) / exercises.length) * 100 : 0;
   
@@ -65,6 +75,21 @@ const Exercise = () => {
 
   const handleTextAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTextAnswer(e.target.value);
+  };
+
+  const handleAddWord = (word: string, index: number) => {
+    if (isAnswerChecked) return;
+    
+    setArrangedWords([...arrangedWords, word]);
+    setAvailableWords(availableWords.filter((_, i) => i !== index));
+  };
+
+  const handleRemoveWord = (index: number) => {
+    if (isAnswerChecked) return;
+    
+    const wordToRemove = arrangedWords[index];
+    setArrangedWords(arrangedWords.filter((_, i) => i !== index));
+    setAvailableWords([...availableWords, wordToRemove]);
   };
 
   const handleCheckAnswer = async () => {
@@ -101,6 +126,19 @@ const Exercise = () => {
       console.log("User answer:", userAnswer);
       console.log("Correct answers:", correctAnswersArray);
       console.log("Is correct:", isCorrect);
+    } else if (currentExercise.type === "arrange_sentence") {
+      // For arrange sentence exercises
+      if (arrangedWords.length === 0) {
+        toast.error("Please arrange the words");
+        return;
+      }
+      
+      userAnswer = arrangedWords.join("");
+      const correctAnswer = currentExercise.correct_answer.replace(/\s+/g, "");
+      
+      isCorrect = userAnswer === correctAnswer;
+      console.log("User arranged:", userAnswer);
+      console.log("Correct arrangement:", correctAnswer);
     } else {
       // For multiple choice exercises, check the selected answer
       if (selectedAnswer === null) {
@@ -149,6 +187,8 @@ const Exercise = () => {
       setTextAnswer("");
       setIsAnswerChecked(false);
       setStartTime(new Date());
+      setArrangedWords([]);
+      setAvailableWords([]);
     } else {
       navigate(`/app/lesson-complete/${lessonId}`);
     }
@@ -273,6 +313,59 @@ const Exercise = () => {
               </div>
             )}
 
+            {currentExercise.type === "arrange_sentence" && (
+              <div className="space-y-4">
+                {/* Area for arranged words */}
+                <div className="min-h-16 p-4 border border-dashed rounded-lg border-gray-300 flex flex-wrap gap-2 mb-4">
+                  {arrangedWords.length > 0 ? (
+                    arrangedWords.map((word, index) => (
+                      <Button
+                        key={`arranged-${index}`}
+                        variant="outline"
+                        className="bg-nihongo-blue/10 hover:bg-nihongo-blue/15"
+                        onClick={() => handleRemoveWord(index)}
+                        disabled={isAnswerChecked}
+                      >
+                        {word}
+                      </Button>
+                    ))
+                  ) : (
+                    <div className="w-full text-center text-muted-foreground py-2">
+                      Tap words below to arrange them here
+                    </div>
+                  )}
+                </div>
+                
+                {/* Available words */}
+                <div className="flex flex-wrap gap-2">
+                  {availableWords.map((word, index) => (
+                    <Button
+                      key={`available-${index}`}
+                      variant="outline"
+                      onClick={() => handleAddWord(word, index)}
+                      disabled={isAnswerChecked}
+                    >
+                      {word}
+                    </Button>
+                  ))}
+                </div>
+                
+                {isAnswerChecked && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p className="font-medium text-lg">
+                      {arrangedWords.join("") === currentExercise.correct_answer.replace(/\s+/g, "")
+                        ? <span className="flex items-center text-nihongo-green"><Check className="w-5 h-5 mr-2" /> Correct!</span>
+                        : <span className="flex items-center text-nihongo-error"><X className="w-5 h-5 mr-2" /> Incorrect</span>
+                      }
+                    </p>
+                    <p className="mt-2">
+                      Correct answer: <span className="font-medium">{currentExercise.correct_answer}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {currentExercise.type === "translation" && (
               <div className="space-y-3">
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -321,7 +414,8 @@ const Exercise = () => {
             className="w-full bg-nihongo-blue hover:bg-nihongo-blue/90 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
             onClick={handleCheckAnswer}
             disabled={(currentExercise.type === "multiple_choice" && selectedAnswer === null) || 
-                     (currentExercise.type === "text_input" && !textAnswer.trim())}
+                     (currentExercise.type === "text_input" && !textAnswer.trim()) ||
+                     (currentExercise.type === "arrange_sentence" && arrangedWords.length === 0)}
           >
             Check Answer
           </Button>
