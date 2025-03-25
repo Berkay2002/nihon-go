@@ -4,6 +4,10 @@ import { NavigateFunction } from "react-router-dom";
 import { UnitInfo } from "./UnitInfo";
 import { LessonsList } from "./LessonsList";
 import { UnitWithProgress, LessonWithProgress } from "@/hooks/useUnitsData";
+import { useAuth } from "@/hooks/useAuth";
+import contentService from "@/services/contentService";
+import learningAlgorithmService from "@/services/learningAlgorithmService";
+import { toast } from "sonner";
 
 interface UnitContentProps {
   currentUnit: UnitWithProgress | undefined;
@@ -20,12 +24,37 @@ export const UnitContent: React.FC<UnitContentProps> = ({
   error,
   navigate
 }) => {
+  const { user } = useAuth();
+  
   if (!currentUnit) return null;
 
-  const handleLessonClick = (lesson: LessonWithProgress) => {
+  const handleLessonClick = async (lesson: LessonWithProgress) => {
     if (lesson.is_locked) {
       return;
     }
+    
+    // If user is authenticated, add the lesson's vocabulary to the SRS system
+    if (user) {
+      try {
+        // Get vocabulary for this lesson
+        const vocabulary = await contentService.getVocabularyByLesson(lesson.id);
+        console.log(`Adding ${vocabulary.length} vocabulary items from lesson ${lesson.id} to SRS`);
+        
+        // Add each vocabulary item to the SRS system
+        for (const vocabItem of vocabulary) {
+          await learningAlgorithmService.addVocabularyToSrs(user.id, vocabItem.id);
+        }
+        
+        if (vocabulary.length > 0) {
+          toast.success(`Added ${vocabulary.length} vocabulary items to review system`, {
+            duration: 3000,
+          });
+        }
+      } catch (error) {
+        console.error("Failed to add vocabulary to SRS:", error);
+      }
+    }
+    
     navigate(`/app/lesson/${lesson.id}`);
   };
 

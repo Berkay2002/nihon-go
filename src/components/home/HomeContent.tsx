@@ -1,9 +1,12 @@
+
 import React from "react";
 import { LearningPath } from "./LearningPath";
 import { GameCharacter } from "./GameCharacter";
 import { UserProgressData } from "@/types/user";
 import { LessonData } from "@/types/lesson";
 import { Button } from "@/components/ui/button";
+import { Book, RotateCcw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 export interface HomeContentProps {
   userProgress: UserProgressData;
@@ -23,6 +26,7 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   onSelectLesson,
 }) => {
   const isMobile = window.innerWidth < 768;
+  const navigate = useNavigate();
 
   // Transform user progress into units/lessons format for LearningPath
   const units = userProgress.units.map(unit => ({
@@ -41,6 +45,10 @@ export const HomeContent: React.FC<HomeContentProps> = ({
   }));
 
   const characterState = streak > 5 ? "happy" : streak > 0 ? "idle" : "thinking";
+
+  const handleReviewClick = () => {
+    navigate("/app");
+  };
 
   return (
     <div className="flex flex-col w-full max-w-7xl mx-auto pb-20">
@@ -68,6 +76,22 @@ export const HomeContent: React.FC<HomeContentProps> = ({
           </div>
         </div>
       </div>
+      
+      {/* Review Button */}
+      <div className="mb-6">
+        <Button 
+          onClick={handleReviewClick} 
+          variant="outline" 
+          size="lg" 
+          className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0"
+        >
+          <RotateCcw className="mr-2 h-5 w-5" />
+          Practice Vocabulary with SRS
+        </Button>
+        <p className="text-xs text-center mt-2 text-gray-500">
+          Use the spaced repetition system to review vocabulary at optimal intervals
+        </p>
+      </div>
 
       {/* Learning Path Section */}
       <div className="flex-1">
@@ -89,6 +113,14 @@ export const HomeContent: React.FC<HomeContentProps> = ({
           <Button variant="ghost" className="flex flex-col items-center" onClick={() => {}}>
             <span className="text-2xl">📚</span>
             <span className="text-xs">Units</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="flex flex-col items-center" 
+            onClick={handleReviewClick}
+          >
+            <span className="text-2xl">🔄</span>
+            <span className="text-xs">Review</span>
           </Button>
           <Button variant="ghost" className="flex flex-col items-center" onClick={() => {}}>
             <span className="text-2xl">👤</span>

@@ -92,6 +92,8 @@ const learningAlgorithmService = {
   // Get vocabulary items that are due for review
   getDueReviewItems: async (userId: string, limit: number = 20): Promise<ReviewItem[]> => {
     try {
+      console.log("getDueReviewItems: Starting to fetch SRS items for user:", userId);
+      
       // Check if SRS items table exists by querying it
       const { data: srsItems, error: srsError } = await supabase
         .from('srs_items')
@@ -101,8 +103,16 @@ const learningAlgorithmService = {
         .order('next_review_date', { ascending: true })
         .limit(limit);
       
+      // Log detailed information about the query results
+      if (srsError) {
+        console.error("SRS items fetch error:", srsError.message, srsError.details, srsError.hint);
+      } else {
+        console.log(`SRS items fetch success. Found ${srsItems?.length || 0} items due for review`);
+      }
+      
       // If the table exists and query succeeded
       if (!srsError && srsItems && srsItems.length > 0) {
+        console.log("Using SRS items from database");
         // Format the items for the review session
         return srsItems.map(item => ({
           item: item.vocabulary,
@@ -112,22 +122,26 @@ const learningAlgorithmService = {
         }));
       }
       
+      console.log("No SRS items found in database, falling back to simplified approach");
       // Fallback: If SRS table doesn't exist or is empty, use the simplified approach
       // Get user's progress
       const progress = await userProgressApi.getUserProgress(userId);
       
       if (!progress || progress.length === 0) {
+        console.log("User hasn't studied any lessons yet");
         // User hasn't studied anything yet
         return [];
       }
       
       // Get lessons the user has studied
       const lessonIds = progress.map(p => p.lesson_id);
+      console.log("User has studied lessons:", lessonIds);
       
       // Get vocabulary from these lessons
       const allVocab: Vocabulary[] = [];
       for (const lessonId of lessonIds) {
         const lessonVocab = await contentService.getVocabularyByLesson(lessonId);
+        console.log(`Found ${lessonVocab.length} vocabulary items for lesson ${lessonId}`);
         allVocab.push(...lessonVocab);
       }
       
@@ -151,6 +165,7 @@ const learningAlgorithmService = {
           };
         });
       
+      console.log(`Created ${reviewItems.length} mock review items for fallback mechanism`);
       return reviewItems;
     } catch (error) {
       console.error('Error getting due review items:', error);
@@ -265,6 +280,7 @@ const learningAlgorithmService = {
   // Add a vocabulary item to the SRS system
   addVocabularyToSrs: async (userId: string, vocabularyId: string): Promise<boolean> => {
     try {
+      console.log(`Attempting to add vocabulary ${vocabularyId} to SRS for user ${userId}`);
       // Check if item already exists
       const { data: existingItem, error: lookupError } = await supabase
         .from('srs_items')
@@ -272,6 +288,12 @@ const learningAlgorithmService = {
         .eq('user_id', userId)
         .eq('vocabulary_id', vocabularyId)
         .maybeSingle();
+      
+      if (lookupError) {
+        console.error("Error checking for existing SRS item:", lookupError);
+      } else {
+        console.log("Existing item check result:", existingItem ? "Found" : "Not found");
+      }
       
       // Only add if the SRS items table exists and the item isn't already in it
       if (!lookupError && !existingItem) {
@@ -290,6 +312,7 @@ const learningAlgorithmService = {
         // Set the initial review date (today for new items)
         const initialReviewDate = new Date();
         
+        console.log(`Adding vocabulary ${vocabularyId} to SRS with initial difficulty ${initialDifficulty}`);
         // Create the SRS item
         const { error: insertError } = await supabase
           .from('srs_items')
@@ -309,6 +332,7 @@ const learningAlgorithmService = {
           return false;
         }
         
+        console.log(`Successfully added vocabulary ${vocabularyId} to SRS`);
         return true;
       }
       
