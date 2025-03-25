@@ -1,7 +1,8 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { Database } from "@/integrations/supabase/types";
 import { ExerciseResult } from "@/types/exercises";
-import { UserProgress } from "./types";
+import { UserProgress, UserStreak, LessonScorecard, ExerciseResponse } from "./types";
 
 // Define an interface for the structure of exercise_responses
 interface ExerciseResponseRecord {
@@ -236,9 +237,9 @@ export const userProgressApi = {
         const { data } = await supabase.auth.getSession();
         const accessToken = data.session?.access_token || '';
         
-        // Get the Supabase project URL from the client
-        const supabaseUrl = supabase.supabaseUrl;
-        const apiUrl = `${supabaseUrl}/functions/v1/record-exercise-response`;
+        // Get the Supabase project URL from the environment
+        const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+        const apiUrl = `${projectUrl}/functions/v1/record-exercise-response`;
         
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -286,9 +287,9 @@ export const userProgressApi = {
         const { data } = await supabase.auth.getSession();
         const accessToken = data.session?.access_token || '';
         
-        // Get the Supabase project URL from the client
-        const supabaseUrl = supabase.supabaseUrl;
-        const apiUrl = `${supabaseUrl}/functions/v1/get-lesson-responses`;
+        // Get the Supabase project URL from the environment
+        const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+        const apiUrl = `${projectUrl}/functions/v1/get-lesson-responses`;
         
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -377,7 +378,8 @@ export const userProgressApi = {
       }
       
       // Use the serverless function URL directly with fetch
-      const apiUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/get-exercise-responses`;
+      const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+      const apiUrl = `${projectUrl}/functions/v1/get-exercise-responses`;
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -414,7 +416,8 @@ export const userProgressApi = {
       }
       
       // Use the serverless function URL directly with fetch
-      const apiUrl = `${process.env.VITE_SUPABASE_URL}/functions/v1/save-exercise-result`;
+      const projectUrl = process.env.VITE_SUPABASE_URL || supabase.authUrl.slice(0, -'/auth/v1'.length);
+      const apiUrl = `${projectUrl}/functions/v1/save-exercise-result`;
       
       const response = await fetch(apiUrl, {
         method: 'POST',
