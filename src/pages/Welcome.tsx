@@ -18,7 +18,7 @@ const Welcome = () => {
       <div className="flex-1 flex flex-col items-center justify-center p-4 text-center">
         <div className="mb-4">
           <img 
-            src="/green-pheasant.svg" 
+            src="/nihon-go-logo-transparent.png" 
             alt="Japanese Green Pheasant" 
             className="w-32 h-32 mx-auto animate-pulse-scale"
           />

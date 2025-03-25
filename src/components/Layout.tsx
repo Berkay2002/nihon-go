@@ -1,54 +1,44 @@
-import { useEffect, useState } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import Navigation from "./Navigation";
-import { Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import seedDataService from "@/services/seedDataService";
-import { TimeoutError } from "./shared/TimeoutError";
-import { toast } from "sonner";
-import { GameCharacter } from "./home/GameCharacter";
+import React, { useState, useEffect } from 'react';
+import { Outlet, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import Navigation from './Navigation';
+import { TimeoutError } from './shared/TimeoutError';
+import { GameCharacter } from './home/GameCharacter';
 
 const Layout = () => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isLoading, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [authTimeout, setAuthTimeout] = useState(false);
   const [seedingAttempted, setSeedingAttempted] = useState(false);
 
+  // Redirect to auth if not authenticated
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       navigate("/auth");
     }
   }, [isAuthenticated, isLoading, navigate]);
 
-  // Set a timeout for auth loading
+  // Set up auth timeout detection
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout | null = null;
-    
-    if (isLoading) {
-      timeoutId = setTimeout(() => {
+    // If auth check takes too long, show timeout UI
+    const timeoutId = setTimeout(() => {
+      if (isLoading) {
         setAuthTimeout(true);
-        toast.info("Authentication timeout", {
-          description: "Having trouble connecting to authentication service. You can refresh or try again later.",
-        });
-      }, 8000); // 8 seconds timeout
-    } else {
-      setAuthTimeout(false);
-    }
-    
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId);
-    };
+      }
+    }, 8000); // 8 seconds is plenty of time for auth to resolve
+
+    return () => clearTimeout(timeoutId);
   }, [isLoading]);
 
-  // Run seed data when the app loads
+  // Track when user becomes authenticated
   useEffect(() => {
     const initializeApp = async () => {
       if (seedingAttempted) return;
       
       try {
-        // Check if seed data is needed and create it
+        // Mark as seeding attempted to prevent multiple attempts
         setSeedingAttempted(true);
-        await seedDataService.seedInitialData();
+        // Database seeding removed
       } catch (error) {
         console.error("Error initializing app data:", error);
       }

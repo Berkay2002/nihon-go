@@ -29,16 +29,7 @@ export const baseService = {
       ]);
     } catch (error) {
       console.error(`Error in executeWithTimeout: ${error.message}`, error);
-      
-      // Provide user feedback for network issues
-      if (error.message.includes("timeout") || 
-          error.message.includes("network") ||
-          error.message.includes("fetch")) {
-        toast.error("Connection issue", {
-          description: "Having trouble connecting to the server. Using fallback data."
-        });
-      }
-      
+            
       throw error;
     }
   },

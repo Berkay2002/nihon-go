@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +5,12 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { fetchUserProfile, signInWithIdentifier, handleSignUp } from "@/lib/auth-utils";
 import { baseService } from "@/services/api/baseService";
+
+// Define a custom error interface
+interface AuthError {
+  message: string;
+  [key: string]: unknown;
+}
 
 export function useAuthService() {
   const [session, setSession] = useState<Session | null>(null);
@@ -61,9 +66,10 @@ export function useAuthService() {
       setAuthLoading(true);
       await handleSignUp(email, password, username);
       navigate("/auth");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as AuthError;
       toast.error("Sign up failed", {
-        description: error.message,
+        description: err.message,
       });
     } finally {
       setAuthLoading(false);
@@ -93,11 +99,12 @@ export function useAuthService() {
       timeoutId = null;
       
       // Don't navigate here - AuthProvider will handle this via listener
-    } catch (error: any) {
-      console.error("Sign in error:", error);
+    } catch (error: unknown) {
+      const err = error as AuthError;
+      console.error("Sign in error:", err);
       
       // Only try again for network-related errors
-      if (error.message.includes("network") || error.message.includes("fetch")) {
+      if (err.message.includes("network") || err.message.includes("fetch")) {
         try {
           // Single retry for network issues only
           await baseService.retryWithBackoff(
@@ -105,17 +112,18 @@ export function useAuthService() {
             1, // Single retry
             150 // Shorter delay
           );
-        } catch (retryError: any) {
-          console.error("Sign in retry failed:", retryError);
+        } catch (retryError: unknown) {
+          const retry = retryError as AuthError;
+          console.error("Sign in retry failed:", retry);
           toast.error("Sign in failed", {
-            description: retryError.message || "Invalid credentials or server error",
+            description: retry.message || "Invalid credentials or server error",
           });
           setAuthLoading(false);
           return;
         }
       } else {
         toast.error("Sign in failed", {
-          description: error.message || "Invalid credentials or server error",
+          description: err.message || "Invalid credentials or server error",
         });
         setAuthLoading(false);
       }
@@ -141,9 +149,10 @@ export function useAuthService() {
       setSession(null);
       setUser(null);
       setProfile(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const err = error as AuthError;
       toast.error("Sign out failed", {
-        description: error.message,
+        description: err.message,
       });
     } finally {
       setAuthLoading(false);

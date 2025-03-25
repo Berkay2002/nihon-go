@@ -26,10 +26,10 @@ export const GameCharacter: React.FC<GameCharacterProps> = ({
         "w-24 h-24 relative",
         stateClasses[state]
       )}>
-        {/* Character using Japanese green pheasant SVG */}
+        {/* Character using Japanese green pheasant */}
         <div className="w-full h-full relative overflow-hidden flex items-center justify-center">
           <img 
-            src="/green-pheasant.svg" 
+            src="/nihon-go-logo-transparent.png" 
             alt="Japanese Green Pheasant" 
             className="w-full h-full object-contain"
           />

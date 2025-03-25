@@ -40,7 +40,7 @@ const Navigation = () => {
     },
     { 
       path: "/app/characters", 
-      icon: "/character-icon.svg", 
+      icon: "/characters-icon.svg", 
       ariaLabel: "Characters" 
     },
     { 

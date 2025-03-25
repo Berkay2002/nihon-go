@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
 import { useAuthService } from "@/hooks/useAuthService";
-import { toast } from "sonner";
 import { baseService } from "@/services/api/baseService";
 import { fetchUserProfile } from "@/lib/auth-utils";
 
@@ -45,14 +44,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
             
             if (event === 'SIGNED_IN') {
-              toast.success("Signed in successfully", {
-                description: "Welcome back!",
-              });
               setAuthError(null);
             } else if (event === 'SIGNED_OUT') {
-              toast.success("Signed out", {
-                description: "You have been signed out.",
-              });
               setProfile(null);
             } else if (event === 'PASSWORD_RECOVERY') {
               console.log("Password recovery event detected");
@@ -80,9 +73,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
       } catch (error) {
         console.error("Failed to initialize auth after retries:", error);
-        toast.error("Authentication service unavailable", {
-          description: "Please try refreshing the page or check your internet connection."
-        });
         setAuthError("Authentication service unavailable. Please refresh the page.");
         setInitComplete(true); // Mark as complete even on error so UI isn't stuck
       }
