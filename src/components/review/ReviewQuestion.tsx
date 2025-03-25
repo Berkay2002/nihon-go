@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Vocabulary } from "@/services/contentService";
-import { ReviewItem } from "@/services/learningAlgorithmService";
+import { ReviewItem } from "@/services/learning";
 
 interface ReviewQuestionProps {
   currentItem: ReviewItem;
@@ -30,6 +30,14 @@ export const ReviewQuestion: React.FC<ReviewQuestionProps> = ({
     const isCorrect = userAnswer.trim().toLowerCase() === vocabItem.english.trim().toLowerCase();
     setAnswerCorrect(isCorrect);
     setRevealAnswer(true);
+  };
+
+  const handleDifficultySelection = async (correct: boolean, difficulty: number) => {
+    await onAnswer(correct, difficulty);
+    // Reset state for the next question
+    setUserAnswer("");
+    setRevealAnswer(false);
+    setAnswerCorrect(null);
   };
 
   return (
@@ -105,18 +113,26 @@ export const ReviewQuestion: React.FC<ReviewQuestionProps> = ({
           Check
         </Button>
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-3 gap-3">
           <Button 
             variant="outline" 
             className="py-5 border-red-300 dark:border-red-700 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-            onClick={() => onAnswer(false, 4)}
+            onClick={() => handleDifficultySelection(false, 5)}
           >
             <X className="mr-2 h-5 w-5" />
             Hard
           </Button>
           <Button 
+            variant="outline" 
+            className="py-5 border-yellow-300 dark:border-yellow-700 text-yellow-700 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20"
+            onClick={() => handleDifficultySelection(answerCorrect || false, 3)}
+          >
+            <span className="mr-2">↔️</span>
+            Medium
+          </Button>
+          <Button 
             className="py-5 bg-green-600 hover:bg-green-700 text-white"
-            onClick={() => onAnswer(true, 2)}
+            onClick={() => handleDifficultySelection(true, 1)}
           >
             <Check className="mr-2 h-5 w-5" />
             Easy

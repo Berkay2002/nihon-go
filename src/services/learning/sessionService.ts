@@ -7,6 +7,8 @@ export const generateReviewSession = async (userId: string, itemCount: number = 
   try {
     const dueItems = await getDueReviewItems(userId, itemCount);
     
+    // If no items are found, return a valid session with empty items array
+    // This allows the UI to show a proper "no items" message
     return {
       items: dueItems,
       userId,

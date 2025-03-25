@@ -79,12 +79,48 @@ const getFallbackReviewItems = async (userId: string, limit: number): Promise<Re
       allVocab.push(...lessonVocab);
     }
     
-    // Simple mock algorithm for review scheduling
-    // Sort by difficulty and limit the number of items
+    // Get unique vocabulary by removing duplicates
+    const uniqueVocabMap = new Map();
+    allVocab.forEach(vocab => {
+      uniqueVocabMap.set(vocab.id, vocab);
+    });
+    const uniqueVocab = Array.from(uniqueVocabMap.values());
+    
+    // Check if we have more vocabulary than requested limit
+    let reviewItems;
+    
+    if (uniqueVocab.length <= limit) {
+      // If we have fewer vocabulary items than the limit, use them all
+      reviewItems = uniqueVocab;
+    } else {
+      // Prioritize by difficulty (higher difficulty first)
+      // But also include some randomization to increase variety
+      const sortedByDifficulty = [...uniqueVocab].sort((a, b) => b.difficulty - a.difficulty);
+      
+      // Take 70% high difficulty items
+      const highDifficultyCount = Math.floor(limit * 0.7);
+      const highDifficultyItems = sortedByDifficulty.slice(0, highDifficultyCount);
+      
+      // Take 30% random items from the rest
+      const remainingItems = sortedByDifficulty.slice(highDifficultyCount);
+      const randomItems = [];
+      
+      // Fisher-Yates shuffle algorithm for remaining items
+      let remainingPool = [...remainingItems];
+      const randomItemCount = Math.min(limit - highDifficultyItems.length, remainingItems.length);
+      
+      for (let i = 0; i < randomItemCount; i++) {
+        const randomIndex = Math.floor(Math.random() * remainingPool.length);
+        randomItems.push(remainingPool[randomIndex]);
+        remainingPool = remainingPool.filter((_, index) => index !== randomIndex);
+      }
+      
+      reviewItems = [...highDifficultyItems, ...randomItems];
+    }
+    
+    // Create review items from the selected vocabulary
     const now = new Date();
-    const reviewItems: ReviewItem[] = allVocab
-      .sort((a, b) => b.difficulty - a.difficulty)
-      .slice(0, limit)
+    const result: ReviewItem[] = reviewItems
       .map(item => {
         // Mock due date and interval based on difficulty
         const daysAhead = Math.max(1, 6 - item.difficulty);
@@ -99,8 +135,11 @@ const getFallbackReviewItems = async (userId: string, limit: number): Promise<Re
         };
       });
     
-    console.log(`Created ${reviewItems.length} mock review items for fallback mechanism`);
-    return reviewItems;
+    console.log(`Created ${result.length} mock review items for fallback mechanism`);
+    
+    // Shuffle the items to add more randomness to the review order
+    const shuffledItems = result.sort(() => Math.random() - 0.5).slice(0, limit);
+    return shuffledItems;
   } catch (error) {
     console.error('Error creating fallback review items:', error);
     return [];
