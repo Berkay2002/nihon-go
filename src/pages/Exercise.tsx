@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import { toast } from "sonner";
 import contentService, { Exercise as ExerciseType } from "@/services/contentService";
 import userProgressService, { useUserProgress, ExerciseResult } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
+import { Input } from "@/components/ui/input";
 
 const Exercise = () => {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ const Exercise = () => {
   const [exercises, setExercises] = useState<ExerciseType[]>([]);
   const [currentExerciseIndex, setCurrentExerciseIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [textAnswer, setTextAnswer] = useState<string>("");
   const [isAnswerChecked, setIsAnswerChecked] = useState(false);
   const [xpEarned, setXpEarned] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -60,10 +63,42 @@ const Exercise = () => {
     }
   };
 
+  const handleTextAnswerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTextAnswer(e.target.value);
+  };
+
   const handleCheckAnswer = async () => {
-    if (selectedAnswer === null || !currentExercise) return;
+    if (!currentExercise) return;
     
-    const isCorrect = selectedAnswer === currentExercise.correct_answer;
+    let isCorrect = false;
+    let userAnswer = "";
+    
+    if (currentExercise.type === "text_input") {
+      // For text input exercises, compare the text answer
+      if (!textAnswer.trim()) {
+        toast.error("Please enter your answer");
+        return;
+      }
+      
+      userAnswer = textAnswer.trim().toLowerCase();
+      
+      // Allow for multiple correct answers (separated by commas in the database)
+      const correctAnswers = (currentExercise.correct_answer || "")
+        .split(",")
+        .map((answer) => answer.trim().toLowerCase());
+      
+      isCorrect = correctAnswers.includes(userAnswer);
+    } else {
+      // For multiple choice exercises, check the selected answer
+      if (selectedAnswer === null) {
+        toast.error("Please select an answer");
+        return;
+      }
+      
+      userAnswer = selectedAnswer;
+      isCorrect = selectedAnswer === currentExercise.correct_answer;
+    }
+    
     setIsAnswerChecked(true);
     
     if (isCorrect) {
@@ -79,7 +114,7 @@ const Exercise = () => {
             lessonId,
             exerciseId: currentExercise.id,
             isCorrect,
-            userAnswer: selectedAnswer,
+            userAnswer,
             timeSpent,
             xpEarned: currentExercise.xp_reward
           };
@@ -98,6 +133,7 @@ const Exercise = () => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(currentExerciseIndex + 1);
       setSelectedAnswer(null);
+      setTextAnswer("");
       setIsAnswerChecked(false);
       setStartTime(new Date());
     } else {
@@ -189,6 +225,41 @@ const Exercise = () => {
               </div>
             )}
 
+            {currentExercise.type === "text_input" && (
+              <div className="space-y-4">
+                <div className="mb-2">
+                  <Input
+                    type="text"
+                    placeholder="Type your answer here..."
+                    value={textAnswer}
+                    onChange={handleTextAnswerChange}
+                    disabled={isAnswerChecked}
+                    className={`w-full py-6 px-4 text-lg ${
+                      isAnswerChecked
+                        ? textAnswer && currentExercise.correct_answer.split(',').map(a => a.trim().toLowerCase()).includes(textAnswer.toLowerCase())
+                          ? "border-nihongo-green bg-nihongo-green/5"
+                          : "border-nihongo-error bg-nihongo-error/5"
+                        : ""
+                    }`}
+                  />
+                </div>
+                
+                {isAnswerChecked && (
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <p className="font-medium text-lg">
+                      {textAnswer && currentExercise.correct_answer.split(',').map(a => a.trim().toLowerCase()).includes(textAnswer.toLowerCase())
+                        ? <span className="flex items-center text-nihongo-green"><Check className="w-5 h-5 mr-2" /> Correct!</span>
+                        : <span className="flex items-center text-nihongo-error"><X className="w-5 h-5 mr-2" /> Incorrect</span>
+                      }
+                    </p>
+                    <p className="mt-2">
+                      Correct answer: <span className="font-medium">{currentExercise.correct_answer}</span>
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {currentExercise.type === "translation" && (
               <div className="space-y-3">
                 <div className="mb-6 p-4 bg-gray-50 rounded-lg">
@@ -236,7 +307,8 @@ const Exercise = () => {
           <Button 
             className="w-full bg-nihongo-blue hover:bg-nihongo-blue/90 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
             onClick={handleCheckAnswer}
-            disabled={selectedAnswer === null}
+            disabled={(currentExercise.type === "multiple_choice" && selectedAnswer === null) || 
+                     (currentExercise.type === "text_input" && !textAnswer.trim())}
           >
             Check Answer
           </Button>
