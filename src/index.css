@@ -89,7 +89,7 @@
 
 @layer utilities {
   .glass-card {
-    @apply bg-white/70 dark:bg-black/30 backdrop-blur-lg border border-white/20 dark:border-white/10 shadow-lg;
+    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-lg;
   }
   
   .text-gradient {

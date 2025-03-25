@@ -1,10 +1,8 @@
 
 import { Home, BookOpen, Trophy, User } from "lucide-react";
 import { NavLink } from "react-router-dom";
-import { useTheme } from "@/providers/ThemeProvider";
 
 const Navigation = () => {
-  const { theme } = useTheme();
   const navItems = [
     { path: "/app", label: "Home", icon: Home },
     { path: "/app/units", label: "Lessons", icon: BookOpen },
@@ -13,7 +11,7 @@ const Navigation = () => {
   ];
 
   return (
-    <nav className={`fixed bottom-0 left-0 w-full ${theme === 'dark' ? 'bg-background border-gray-800' : 'bg-white border-gray-200'} border-t shadow-lg z-50`}>
+    <nav className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 shadow-lg z-50">
       <div className="flex justify-around items-center h-16">
         {navItems.map((item) => (
           <NavLink
@@ -23,9 +21,7 @@ const Navigation = () => {
               `flex flex-col items-center justify-center w-1/4 h-full transition-all duration-200 ${
                 isActive
                   ? "text-nihongo-red font-medium"
-                  : theme === "dark" 
-                    ? "text-gray-400 hover:text-nihongo-gold" 
-                    : "text-gray-500 hover:text-nihongo-blue"
+                  : "text-gray-500 hover:text-nihongo-blue"
               }`
             }
             end={item.path === "/app"}

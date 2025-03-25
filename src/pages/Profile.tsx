@@ -3,17 +3,14 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { User, Book, Flame, Award, Settings, LogOut, Clock } from "lucide-react";
+import { User, Book, Flame, Award, Settings, LogOut, Clock, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
 import contentService from "@/services/contentService";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { useTheme } from "@/providers/ThemeProvider";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
-  const { theme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState({
     level: 1,
@@ -41,16 +38,20 @@ const Profile = () => {
         return;
       }
 
+      // Get user streak data
       const streakData = await getUserStreakData();
       
+      // Get user progress data for lessons
       const progressData = await getUserProgressData();
       
+      // Calculate words learned by getting unique vocabulary items from completed lessons
       const completedLessonIds = progressData
         .filter(p => p.is_completed)
         .map(p => p.lesson_id);
       
       let wordsLearned = 0;
       
+      // Get vocabulary count for completed lessons
       for (const lessonId of completedLessonIds) {
         try {
           const vocabulary = await contentService.getVocabularyByLesson(lessonId);
@@ -60,11 +61,13 @@ const Profile = () => {
         }
       }
       
+      // Calculate days active based on user creation date
       const creationDate = user.created_at || new Date().toISOString();
       const daysActive = Math.ceil(
         (new Date().getTime() - new Date(creationDate).getTime()) / (1000 * 60 * 60 * 24)
       );
       
+      // Calculate XP to next level (100 XP per level)
       const currentLevelXp = (streakData.level - 1) * 100;
       const xpInCurrentLevel = streakData.total_xp - currentLevelXp;
       const xpToNextLevel = 100;
@@ -83,7 +86,7 @@ const Profile = () => {
         daysActive,
         wordsLearned,
         lessonsCompleted: completedLessonIds.length,
-        achievementsEarned: 0,
+        achievementsEarned: 0, // No achievements system yet
       });
       
       setLoading(false);
@@ -120,7 +123,7 @@ const Profile = () => {
             </div>
             <Progress 
               value={(userData.xp / userData.xpToNextLevel) * 100} 
-              className="h-2 mb-2" 
+              className="h-2 mb-2 bg-gray-100" 
               indicatorClassName="bg-gradient-to-r from-nihongo-blue to-nihongo-red" 
             />
             <p className="text-xs text-center text-muted-foreground">
@@ -131,7 +134,7 @@ const Profile = () => {
 
         <h2 className="text-xl font-bold mb-4">Learning Stats</h2>
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <Card className="border border-nihongo-red/10">
+          <Card className="border border-nihongo-red/10 shadow-sm">
             <CardContent className="p-4 flex flex-col items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-nihongo-red/10 flex items-center justify-center mb-2">
                 <Flame className="w-5 h-5 text-nihongo-red" />
@@ -140,7 +143,7 @@ const Profile = () => {
               <span className="text-xs text-muted-foreground">Current Streak</span>
             </CardContent>
           </Card>
-          <Card className="border border-nihongo-gold/10">
+          <Card className="border border-nihongo-gold/10 shadow-sm">
             <CardContent className="p-4 flex flex-col items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-nihongo-gold/10 flex items-center justify-center mb-2">
                 <Award className="w-5 h-5 text-nihongo-gold" />
@@ -149,7 +152,7 @@ const Profile = () => {
               <span className="text-xs text-muted-foreground">Achievements</span>
             </CardContent>
           </Card>
-          <Card className="border border-nihongo-blue/10">
+          <Card className="border border-nihongo-blue/10 shadow-sm">
             <CardContent className="p-4 flex flex-col items-center justify-center">
               <div className="w-10 h-10 rounded-full bg-nihongo-blue/10 flex items-center justify-center mb-2">
                 <Book className="w-5 h-5 text-nihongo-blue" />
@@ -158,10 +161,10 @@ const Profile = () => {
               <span className="text-xs text-muted-foreground">Words Learned</span>
             </CardContent>
           </Card>
-          <Card className="border">
+          <Card className="border border-gray-200 shadow-sm">
             <CardContent className="p-4 flex flex-col items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center mb-2">
-                <Clock className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mb-2">
+                <Clock className="w-5 h-5 text-gray-600" />
               </div>
               <span className="text-2xl font-bold">{userData.daysActive}</span>
               <span className="text-xs text-muted-foreground">Days Active</span>
@@ -170,13 +173,20 @@ const Profile = () => {
         </div>
 
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
+          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
             <div className="flex items-center">
               <Settings className="w-5 h-5 text-muted-foreground mr-3" />
               <span>Theme</span>
             </div>
             <div className="flex items-center space-x-2">
-              <ThemeToggle />
+              <Button variant="ghost" size="sm" className="text-nihongo-blue">
+                <Sun className="w-4 h-4 mr-1" />
+                Light
+              </Button>
+              <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Moon className="w-4 h-4 mr-1" />
+                Dark
+              </Button>
             </div>
           </div>
           

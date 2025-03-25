@@ -17,37 +17,35 @@ import Achievements from "./pages/Achievements";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./hooks/useAuth";
-import { ThemeProvider } from "./providers/ThemeProvider";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <AuthProvider>
-            <Routes>
-              <Route path="/" element={<Welcome />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/app" element={<Layout />}>
-                <Route index element={<Home />} />
-                <Route path="units" element={<Units />} />
-                <Route path="units/:unitId" element={<Units />} />
-                <Route path="lesson/:lessonId" element={<Lesson />} />
-                <Route path="exercise/:exerciseId" element={<Exercise />} />
-                <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
-                <Route path="achievements" element={<Achievements />} />
-                <Route path="profile" element={<Profile />} />
-              </Route>
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </ThemeProvider>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Welcome />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/app" element={<Layout />}>
+              <Route index element={<Home />} />
+              <Route path="units" element={<Units />} />
+              <Route path="units/:unitId" element={<Units />} />
+              <Route path="lesson/:lessonId" element={<Lesson />} />
+              {/* Fixed route parameter to use lessonId since that's what we're passing */}
+              <Route path="exercise/:exerciseId" element={<Exercise />} />
+              <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
+              <Route path="achievements" element={<Achievements />} />
+              <Route path="profile" element={<Profile />} />
+            </Route>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
   </QueryClientProvider>
 );
 

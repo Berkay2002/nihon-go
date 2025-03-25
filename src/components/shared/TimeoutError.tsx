@@ -15,7 +15,7 @@ interface TimeoutErrorProps {
 export const TimeoutError: React.FC<TimeoutErrorProps> = ({ 
   onRefresh, 
   title = "Connection Issue",
-  description = "We're having trouble connecting. Please check your internet connection and try again.",
+  description = "We're having trouble connecting to the server. This might be due to network issues.",
   showGuestOption = false,
   onContinueAsGuest
 }) => {
@@ -33,7 +33,7 @@ export const TimeoutError: React.FC<TimeoutErrorProps> = ({
             className="bg-nihongo-blue hover:bg-nihongo-blue/90 w-full flex items-center justify-center"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
-            Retry Connection
+            Refresh Page
           </Button>
           
           {showGuestOption && onContinueAsGuest && (

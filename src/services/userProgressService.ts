@@ -29,11 +29,10 @@ export const useUserProgress = () => {
     if (!user) return [];
     
     try {
-      // Increased timeout threshold from 3000ms to 10000ms (10 seconds)
-      // This gives more time for slow connections to complete
+      // Add a timeout to the API call
       const progressPromise = userProgressApi.getUserProgress(user.id);
       const timeoutPromise = new Promise<UserProgress[]>((_, reject) => 
-        setTimeout(() => reject(new Error('Progress data fetch timeout')), 10000)
+        setTimeout(() => reject(new Error('Progress data fetch timeout')), 3000)
       );
       
       // Race the real API call against the timeout
@@ -62,10 +61,10 @@ export const useUserProgress = () => {
     if (!user) return getDefaultStreak();
     
     try {
-      // Increased timeout threshold from 3000ms to 10000ms (10 seconds)
+      // Add a timeout to the API call
       const streakPromise = userProgressApi.getUserStreak(user.id);
       const timeoutPromise = new Promise<UserStreak>((_, reject) => 
-        setTimeout(() => reject(new Error('Streak data fetch timeout')), 10000)
+        setTimeout(() => reject(new Error('Streak data fetch timeout')), 3000)
       );
       
       // Race the real API call against the timeout

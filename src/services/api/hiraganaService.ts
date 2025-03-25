@@ -18,10 +18,14 @@ const hiraganaService = {
   getHiragana: async (): Promise<Hiragana[]> => {
     try {
       console.log('Fetching all hiragana characters');
-      const { data, error } = await baseService.client
+      const { data, error } = await baseService.executeWithTimeout(
+        () => baseService.client
           .from('hiragana')
           .select('*')
-          .order('order_index');
+          .order('order_index'),
+        8000, // Increased timeout to 8 seconds
+        "Hiragana fetch timeout"
+      );
       
       if (error) {
         console.error('Error fetching hiragana:', error);
@@ -32,6 +36,7 @@ const hiraganaService = {
       return data || [];
     } catch (error) {
       console.error('Error in getHiragana:', error);
+      // Return empty array on error to prevent app from crashing
       return [];
     }
   },
@@ -39,11 +44,15 @@ const hiraganaService = {
   getHiraganaByGroup: async (groupName: string): Promise<Hiragana[]> => {
     try {
       console.log(`Fetching hiragana for group: ${groupName}`);
-      const { data, error } = await baseService.client
+      const { data, error } = await baseService.executeWithTimeout(
+        () => baseService.client
           .from('hiragana')
           .select('*')
           .eq('group_name', groupName)
-          .order('order_index');
+          .order('order_index'),
+        8000, // Increased timeout to 8 seconds
+        "Hiragana by group fetch timeout"
+      );
       
       if (error) {
         console.error('Error fetching hiragana by group:', error);
@@ -54,6 +63,7 @@ const hiraganaService = {
       return data || [];
     } catch (error) {
       console.error(`Error in getHiraganaByGroup for group ${groupName}:`, error);
+      // Return empty array on error to prevent app from crashing
       return [];
     }
   }

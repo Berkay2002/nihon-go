@@ -1,7 +1,6 @@
 
 import React from "react";
 import { UnitCard, UnitCardSkeleton } from "./UnitCard";
-import { useTheme } from "@/providers/ThemeProvider";
 
 interface Unit {
   id: string;
@@ -25,8 +24,6 @@ export const UnitsList: React.FC<UnitsListProps> = ({
   loading, 
   onSelectUnit 
 }) => {
-  const { theme } = useTheme();
-  
   if (loading && !units.length) {
     return (
       <div className="flex space-x-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-none">
