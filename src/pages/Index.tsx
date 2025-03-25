@@ -1,15 +1,14 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { VocabularySection } from "@/components/lesson/VocabularySection";
 import { useAuth } from "@/hooks/useAuth";
 import learningAlgorithmService, { ReviewItem, ReviewSession } from "@/services/learningAlgorithmService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { Vocabulary } from "@/services/contentService";
 import { AlertCircle, Check, Star, X } from "lucide-react";
+import { ReviewHeader } from "@/components/shared/ReviewHeader";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -33,7 +32,9 @@ const Index = () => {
         setLoading(true);
         setError(null);
         
+        console.log("Generating review session for user:", user.id);
         const session = await learningAlgorithmService.generateReviewSession(user.id);
+        console.log("Session generated:", session);
         setReviewSession(session);
         
         if (!session || session.items.length === 0) {
@@ -62,7 +63,6 @@ const Index = () => {
     const currentItem = reviewSession.items[currentItemIndex];
     
     try {
-      // Update the SRS data for this item
       await learningAlgorithmService.updateReviewItem(
         user.id,
         currentItem.item.id,
@@ -70,13 +70,11 @@ const Index = () => {
         difficulty
       );
       
-      // Update stats
       setReviewStats({
         correct: reviewStats.correct + (correct ? 1 : 0),
         incorrect: reviewStats.incorrect + (correct ? 0 : 1)
       });
       
-      // Move to next item or complete review
       if (currentItemIndex < reviewSession.items.length - 1) {
         setCurrentItemIndex(currentItemIndex + 1);
         setRevealAnswer(false);
@@ -289,10 +287,13 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
-        <div className="text-center">
-          <LoadingSpinner />
-          <p className="mt-4 text-slate-600 dark:text-slate-400">Loading review items...</p>
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
+        <ReviewHeader title="Vocabulary Review" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center">
+            <LoadingSpinner />
+            <p className="mt-4 text-slate-600 dark:text-slate-400">Loading review items...</p>
+          </div>
         </div>
       </div>
     );
@@ -300,53 +301,60 @@ const Index = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6 flex flex-col items-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
-            <h3 className="text-lg font-semibold mb-2">Error</h3>
-            <p className="text-center text-muted-foreground mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()} className="w-full">
-              Try Again
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
+        <ReviewHeader title="Vocabulary Review" />
+        <div className="flex-1 flex items-center justify-center">
+          <Card className="max-w-md w-full">
+            <CardContent className="pt-6 flex flex-col items-center">
+              <AlertCircle className="h-12 w-12 text-red-500 mb-2" />
+              <h3 className="text-lg font-semibold mb-2">Error</h3>
+              <p className="text-center text-muted-foreground mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()} className="w-full">
+                Try Again
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900">
-        <div className="max-w-md w-full px-4">
-          {renderGuestPrompt()}
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
+        <ReviewHeader title="Vocabulary Review" />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="max-w-md w-full px-4">
+            {renderGuestPrompt()}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-900">
-      <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
-        <h1 className="text-2xl font-bold mb-6">Vocabulary Review</h1>
-        
-        {reviewSession?.items.length === 0 ? (
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <h3 className="text-lg font-medium mb-2">No Items to Review</h3>
-              <p className="text-slate-600 dark:text-slate-400 mb-4">
-                Complete more lessons to add vocabulary to your review queue.
-              </p>
-              <Button onClick={() => navigate("/app/units")}>
-                Go to Lessons
-              </Button>
-            </CardContent>
-          </Card>
-        ) : reviewComplete ? (
-          renderReviewComplete()
-        ) : (
-          renderCurrentItem()
-        )}
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-slate-900">
+      <ReviewHeader title="Vocabulary Review" />
+      <div className="flex-1 overflow-auto">
+        <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
+          {reviewSession?.items.length === 0 ? (
+            <Card>
+              <CardContent className="pt-6 text-center">
+                <h3 className="text-lg font-medium mb-2">No Items to Review</h3>
+                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                  Complete more lessons to add vocabulary to your review queue.
+                </p>
+                <Button onClick={() => navigate("/app/units")}>
+                  Go to Lessons
+                </Button>
+              </CardContent>
+            </Card>
+          ) : reviewComplete ? (
+            renderReviewComplete()
+          ) : (
+            renderCurrentItem()
+          )}
+        </div>
       </div>
     </div>
   );
