@@ -7,3 +7,4 @@ export * from './ReviewError';
 export * from './LoadingReviewSession';
 export * from './ReviewSessionContent';
 export * from './ReviewSessionContainer';
+export * from './ReviewSessionStorage';

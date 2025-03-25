@@ -11,6 +11,11 @@ import {
   ReviewSessionContent
 } from "@/components/review";
 
+// Constants for localStorage keys
+const REVIEW_SESSION_KEY = "review_session";
+const REVIEW_PROGRESS_KEY = "review_progress";
+const REVIEW_STATS_KEY = "review_stats";
+
 export const ReviewSessionContainer: React.FC = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -20,7 +25,42 @@ export const ReviewSessionContainer: React.FC = () => {
   const [reviewComplete, setReviewComplete] = useState(false);
   const [reviewStats, setReviewStats] = useState({ correct: 0, incorrect: 0 });
 
+  // Load saved session from localStorage on initial component mount
   useEffect(() => {
+    const loadSavedSession = () => {
+      if (!user) return false;
+      
+      try {
+        const savedSession = localStorage.getItem(`${REVIEW_SESSION_KEY}_${user.id}`);
+        const savedProgress = localStorage.getItem(`${REVIEW_PROGRESS_KEY}_${user.id}`);
+        const savedStats = localStorage.getItem(`${REVIEW_STATS_KEY}_${user.id}`);
+        
+        if (savedSession && savedProgress && savedStats) {
+          const parsedSession = JSON.parse(savedSession);
+          const parsedProgress = JSON.parse(savedProgress);
+          const parsedStats = JSON.parse(savedStats);
+          
+          // Validate session data (check if it has items array)
+          if (parsedSession && parsedSession.items && Array.isArray(parsedSession.items)) {
+            setReviewSession(parsedSession);
+            setCurrentItemIndex(parsedProgress.currentIndex);
+            setReviewComplete(parsedProgress.complete);
+            setReviewStats(parsedStats);
+            console.log("Restored review session from localStorage", {
+              currentIndex: parsedProgress.currentIndex,
+              complete: parsedProgress.complete,
+              stats: parsedStats
+            });
+            return true;
+          }
+        }
+      } catch (err) {
+        console.error("Error loading saved review session", err);
+      }
+      
+      return false;
+    };
+
     const loadReviewSession = async () => {
       if (!user) {
         setLoading(false);
@@ -31,15 +71,24 @@ export const ReviewSessionContainer: React.FC = () => {
         setLoading(true);
         setError(null);
         
-        console.log("Generating review session for user:", user.id);
-        const session = await learningAlgorithmService.generateReviewSession(user.id);
-        console.log("Session generated:", session);
-        setReviewSession(session);
+        // Try to load saved session first
+        const hasSavedSession = loadSavedSession();
         
-        if (!session || session.items.length === 0) {
-          toast.info("No review items available", {
-            description: "Complete more lessons to add vocabulary to your review queue."
-          });
+        // If no saved session, fetch new one
+        if (!hasSavedSession) {
+          console.log("Generating review session for user:", user.id);
+          const session = await learningAlgorithmService.generateReviewSession(user.id);
+          console.log("Session generated:", session);
+          setReviewSession(session);
+          
+          if (!session || session.items.length === 0) {
+            toast.info("No review items available", {
+              description: "Complete more lessons to add vocabulary to your review queue."
+            });
+          } else {
+            // Save the new session to localStorage
+            saveSessionToLocalStorage(session, 0, false, { correct: 0, incorrect: 0 });
+          }
         }
       } catch (err) {
         console.error("Error loading review session:", err);
@@ -51,6 +100,33 @@ export const ReviewSessionContainer: React.FC = () => {
 
     loadReviewSession();
   }, [user]);
+
+  // Save current session state to localStorage
+  const saveSessionToLocalStorage = (
+    session: ReviewSession | null,
+    index: number,
+    complete: boolean,
+    stats: { correct: number; incorrect: number }
+  ) => {
+    if (!user || !session) return;
+    
+    try {
+      localStorage.setItem(`${REVIEW_SESSION_KEY}_${user.id}`, JSON.stringify(session));
+      localStorage.setItem(`${REVIEW_PROGRESS_KEY}_${user.id}`, JSON.stringify({
+        currentIndex: index,
+        complete
+      }));
+      localStorage.setItem(`${REVIEW_STATS_KEY}_${user.id}`, JSON.stringify(stats));
+      
+      console.log("Saved review session to localStorage", {
+        currentIndex: index,
+        complete,
+        stats
+      });
+    } catch (err) {
+      console.error("Error saving review session to localStorage", err);
+    }
+  };
 
   const handleResponse = async (correct: boolean, difficulty: number) => {
     if (!user || !reviewSession || currentItemIndex >= reviewSession.items.length) return;
@@ -66,15 +142,25 @@ export const ReviewSessionContainer: React.FC = () => {
       );
       
       // Update stats
-      setReviewStats({
+      const newStats = {
         correct: reviewStats.correct + (correct ? 1 : 0),
         incorrect: reviewStats.incorrect + (correct ? 0 : 1)
-      });
+      };
+      setReviewStats(newStats);
       
-      if (currentItemIndex < reviewSession.items.length - 1) {
-        setCurrentItemIndex(currentItemIndex + 1);
+      // Update progress
+      const newIndex = currentItemIndex + 1;
+      const isComplete = newIndex >= reviewSession.items.length;
+      
+      if (!isComplete) {
+        setCurrentItemIndex(newIndex);
+        // Save progress
+        saveSessionToLocalStorage(reviewSession, newIndex, false, newStats);
       } else {
         setReviewComplete(true);
+        // Save completed state
+        saveSessionToLocalStorage(reviewSession, newIndex, true, newStats);
+        
         toast.success("Review session completed!", {
           description: `You reviewed ${reviewSession.items.length} items.`
         });
@@ -95,6 +181,9 @@ export const ReviewSessionContainer: React.FC = () => {
       if (user) {
         const session = await learningAlgorithmService.generateReviewSession(user.id);
         setReviewSession(session);
+        
+        // Save the new session
+        saveSessionToLocalStorage(session, 0, false, { correct: 0, incorrect: 0 });
       }
     } catch (err) {
       console.error("Error loading review session:", err);
