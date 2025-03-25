@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import contentService from "@/services/contentService";
@@ -5,6 +6,7 @@ import { useUserProgress } from "@/services/userProgressService";
 import { useAuth } from "@/hooks/useAuth";
 import { ExerciseType } from "@/types/exercises";
 import { toast } from "sonner";
+import { normalizeJapaneseText } from "@/lib/utils";
 
 export const useExerciseSession = (lessonId: string | undefined) => {
   const navigate = useNavigate();

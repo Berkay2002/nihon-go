@@ -46,10 +46,20 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Cast each item to DBGrammarPattern first to resolve the circular reference issue
+    // Use a simpler approach to avoid deep type instantiation
     return (data || []).map((item) => {
-      const dbPattern = item as any as DBGrammarPattern;
-      return mapToGrammarPattern(dbPattern);
+      // First cast to any to break the type chain
+      const rawItem: any = item;
+      return mapToGrammarPattern({
+        id: rawItem.id,
+        pattern: rawItem.pattern,
+        explanation: rawItem.explanation,
+        example_sentences: rawItem.example_sentences,
+        lesson_id: rawItem.lesson_id,
+        difficulty: rawItem.difficulty,
+        created_at: rawItem.created_at,
+        updated_at: rawItem.updated_at
+      });
     });
   },
 
@@ -64,10 +74,20 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Cast each item to DBGrammarPattern first to resolve the circular reference issue
+    // Use a simpler approach to avoid deep type instantiation
     return (data || []).map((item) => {
-      const dbPattern = item as any as DBGrammarPattern;
-      return mapToGrammarPattern(dbPattern);
+      // First cast to any to break the type chain
+      const rawItem: any = item;
+      return mapToGrammarPattern({
+        id: rawItem.id,
+        pattern: rawItem.pattern,
+        explanation: rawItem.explanation,
+        example_sentences: rawItem.example_sentences,
+        lesson_id: rawItem.lesson_id,
+        difficulty: rawItem.difficulty,
+        created_at: rawItem.created_at,
+        updated_at: rawItem.updated_at
+      });
     });
   }
 };
