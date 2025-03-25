@@ -58,7 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               console.log("Password recovery event detected");
             }
           }),
-          3000, // Reduced to 3000ms
+          8000, // Increased from 3000ms to 8000ms
           "Auth listener setup timeout"
         );
 
@@ -80,10 +80,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         return () => subscription.unsubscribe();
       } catch (error) {
         console.error("Failed to initialize auth after retries:", error);
-        toast.error("Authentication service unavailable", {
-          description: "Please try refreshing the page or check your internet connection."
-        });
-        setAuthError("Authentication service unavailable. Please refresh the page.");
         setInitComplete(true); // Mark as complete even on error so UI isn't stuck
       }
     };

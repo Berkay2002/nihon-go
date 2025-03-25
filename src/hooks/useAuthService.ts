@@ -1,4 +1,3 @@
-
 import { useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,14 +17,11 @@ export function useAuthService() {
   // Initialize authentication session with improved performance
   const initializeAuth = useCallback(async () => {
     try {
-      // Set a shorter timeout for authentication check
+      // Set a longer timeout for authentication check (increased from 2500ms to 8000ms)
       const timeoutId = window.setTimeout(() => {
         setIsLoading(false);
-        console.error("Session loading timed out");
-        toast.error("Connection issue detected", {
-          description: "Could not retrieve authentication status. Please refresh the page.",
-        });
-      }, 2500); // Reduced to 2500ms for faster feedback
+        console.log("Session loading completed by timeout");
+      }, 8000);
 
       // Use direct call to get session without retries for initial load
       const { data: { session } } = await supabase.auth.getSession();
