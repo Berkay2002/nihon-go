@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { baseService } from "@/services/api/baseService";
 
 /**
@@ -72,8 +73,26 @@ export const signInWithIdentifier = async (identifier: string, password: string)
       throw new Error("Username not found");
     }
     
-    // Tell user to use email instead for faster login
-    throw new Error("Please use your email to sign in instead of username");
+    // Now get the email for this user id
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('email')
+      .eq('id', profiles.id)
+      .single();
+      
+    if (usersError || !users || !users.email) {
+      // If we can't find the email, ask them to use email instead
+      throw new Error("Please use your email to sign in instead of username");
+    }
+    
+    // Sign in with the email we found
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: users.email,
+      password,
+    });
+    
+    if (error) throw error;
+    return data;
   } catch (usernameError: any) {
     throw usernameError;
   }

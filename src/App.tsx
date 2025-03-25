@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import {
   BrowserRouter as Router,
   Routes,
   Route,
   Navigate,
+  Outlet,
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ThemeProvider } from "@/lib/theme-provider"
@@ -36,14 +37,14 @@ import { ReviewSessionContainer } from './components/review';
 const queryClient = new QueryClient();
 
 // Protected route component
-const ProtectedRoutes = ({ children }: { children?: React.ReactNode }) => {
+const ProtectedRoutes = () => {
   const { user, isLoading } = useAuth();
   
   if (isLoading) {
     return <div>Loading...</div>; // Or a loading spinner
   }
 
-  return user ? <>{children}</> : <Navigate to="/auth" />;
+  return user ? <Outlet /> : <Navigate to="/auth" />;
 };
 
 const App = () => {

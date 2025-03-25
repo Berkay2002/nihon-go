@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { 
   UserProgress, 
@@ -239,11 +238,12 @@ export const userProgressApi = {
       // Attempt to use a serverless function to record the response
       try {
         // Using fetch to make a direct API call instead of supabase.functions.invoke
-        const { data: authData } = await supabase.auth.getSession();
-        const accessToken = authData.session?.access_token || '';
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token || '';
         
         // Get the Supabase project URL from the client
-        const apiUrl = `${supabase.auth.getSession().then(res => res.data.session?.user?.app_metadata?.provider || 'https://iavdoqzfradhdlhsgsms.supabase.co')}/functions/v1/record-exercise-response`;
+        const supabaseUrl = supabase.supabaseUrl;
+        const apiUrl = `${supabaseUrl}/functions/v1/record-exercise-response`;
         
         const response = await fetch(apiUrl, {
           method: 'POST',
@@ -288,11 +288,12 @@ export const userProgressApi = {
       // Try to get detailed exercise responses
       try {
         // Get auth session for API call
-        const { data: authData } = await supabase.auth.getSession();
-        const accessToken = authData.session?.access_token || '';
+        const { data } = await supabase.auth.getSession();
+        const accessToken = data.session?.access_token || '';
         
         // Get the Supabase project URL from the client
-        const apiUrl = `${supabase.auth.getSession().then(res => res.data.session?.user?.app_metadata?.provider || 'https://iavdoqzfradhdlhsgsms.supabase.co')}/functions/v1/get-lesson-responses`;
+        const supabaseUrl = supabase.supabaseUrl;
+        const apiUrl = `${supabaseUrl}/functions/v1/get-lesson-responses`;
         
         const response = await fetch(apiUrl, {
           method: 'POST',

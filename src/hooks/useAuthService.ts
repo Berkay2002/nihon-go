@@ -1,3 +1,4 @@
+
 import { useState, useCallback } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,17 +34,18 @@ export function useAuthService() {
       }, 2500); // Reduced to 2500ms for faster feedback
 
       // Use direct call to get session without retries for initial load
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getSession();
+      const currentSession = data.session;
       
       // Clear the timeout since we got a response
       clearTimeout(timeoutId);
       
-      setSession(session);
-      setUser(session?.user ?? null);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
       
-      if (session?.user) {
+      if (currentSession?.user) {
         try {
-          const profileData = await fetchUserProfile(session.user.id);
+          const profileData = await fetchUserProfile(currentSession.user.id);
           setProfile(profileData);
         } catch (error) {
           console.error("Error fetching profile:", error);
@@ -92,13 +94,22 @@ export function useAuthService() {
       }, 4000); // Reduced to 4000ms
       
       // Try to sign in directly without retries first (faster path)
-      await signInWithIdentifier(identifier, password);
+      const result = await signInWithIdentifier(identifier, password);
       
       // Clear the timeout if sign in is successful
       if (timeoutId) clearTimeout(timeoutId);
       timeoutId = null;
       
-      // Don't navigate here - AuthProvider will handle this via listener
+      setSession(result.session);
+      setUser(result.session?.user ?? null);
+      
+      if (result.session?.user) {
+        const profileData = await fetchUserProfile(result.session.user.id);
+        setProfile(profileData);
+      }
+      
+      // Navigate to app on success
+      navigate("/app");
     } catch (error: unknown) {
       const err = error as AuthError;
       console.error("Sign in error:", err);
@@ -112,6 +123,7 @@ export function useAuthService() {
             1, // Single retry
             150 // Shorter delay
           );
+          navigate("/app");
         } catch (retryError: unknown) {
           const retry = retryError as AuthError;
           console.error("Sign in retry failed:", retry);
@@ -119,6 +131,7 @@ export function useAuthService() {
             description: retry.message || "Invalid credentials or server error",
           });
           setAuthLoading(false);
+          if (timeoutId) clearTimeout(timeoutId);
           return;
         }
       } else {
@@ -126,11 +139,12 @@ export function useAuthService() {
           description: err.message || "Invalid credentials or server error",
         });
         setAuthLoading(false);
+        if (timeoutId) clearTimeout(timeoutId);
       }
+    } finally {
+      setAuthLoading(false);
+      if (timeoutId) clearTimeout(timeoutId);
     }
-    
-    // Navigate to app on success - this will only execute if there was no error
-    navigate("/app");
   };
 
   // Sign out with improved reliability
@@ -142,13 +156,13 @@ export function useAuthService() {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
-      // Don't wait for auth state change, just navigate
-      navigate("/auth");
-      
       // Reset state manually for immediate feedback
       setSession(null);
       setUser(null);
       setProfile(null);
+      
+      // Don't wait for auth state change, just navigate
+      navigate("/auth");
     } catch (error: unknown) {
       const err = error as AuthError;
       toast.error("Sign out failed", {

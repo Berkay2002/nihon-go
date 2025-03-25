@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthContext } from "@/contexts/AuthContext";
@@ -29,23 +30,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       try {
         // Set auth state listener first with optimized error handling
         const { data: { subscription } } = await baseService.executeWithTimeout(
-          () => supabase.auth.onAuthStateChange(async (event, session) => {
-            console.log("Auth state changed:", event, session);
-            setSession(session);
-            setUser(session?.user ?? null);
+          () => supabase.auth.onAuthStateChange(async (event, newSession) => {
+            console.log("Auth state changed:", event, newSession ? "session present" : "no session");
             
-            if (session?.user) {
+            if (newSession) {
+              setSession(newSession);
+              setUser(newSession.user);
+              
               try {
-                const profileData = await fetchUserProfile(session.user.id);
-                setProfile(profileData);
+                if (newSession.user) {
+                  const profileData = await fetchUserProfile(newSession.user.id);
+                  setProfile(profileData);
+                }
               } catch (error) {
-                console.error("Error fetching profile:", error);
+                console.error("Error fetching profile during auth change:", error);
               }
             }
             
             if (event === 'SIGNED_IN') {
               setAuthError(null);
             } else if (event === 'SIGNED_OUT') {
+              setSession(null);
+              setUser(null);
               setProfile(null);
             } else if (event === 'PASSWORD_RECOVERY') {
               console.log("Password recovery event detected");
@@ -79,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
 
     setupAuthListener();
-  }, []);
+  }, [initializeAuth, setProfile, setSession, setUser]);
 
   if (authError) {
     return (
