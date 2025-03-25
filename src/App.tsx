@@ -17,6 +17,7 @@ import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./hooks/useAuth";
 import { ThemeProvider } from "./components/theme/ThemeProvider";
+import { InstallPrompt } from "./components/install-prompt";
 
 const queryClient = new QueryClient();
 const App = () => (
@@ -27,6 +28,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <InstallPrompt />
             <Routes>
               <Route path="/" element={<Welcome />} />
               <Route path="/auth" element={<Auth />} />
