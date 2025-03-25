@@ -32,7 +32,85 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
   const [reviewComplete, setReviewComplete] = useState(false);
   const [reviewStats, setReviewStats] = useState({ correct: 0, incorrect: 0 });
 
-  // Load saved session from localStorage on initial component mount
+  const loadDifficultExercisesSession = async () => {
+    if (!user) return null;
+    
+    try {
+      // Get user progress data to find completed lessons
+      const { data: progress } = await learningAlgorithmService.client
+        .from('user_progress')
+        .select('lesson_id')
+        .eq('user_id', user.id)
+        .eq('is_completed', true);
+      
+      if (!progress || progress.length === 0) {
+        console.log("No completed lessons found");
+        return null;
+      }
+      
+      // Get all lessons the user has completed
+      const lessonIds = progress.map(p => p.lesson_id);
+      
+      // For each lesson, get the scorecard to find difficult exercises
+      const difficultItems = [];
+      
+      // Process up to 5 most recent lessons for performance
+      const recentLessonIds = lessonIds.slice(0, 5);
+      
+      for (const lessonId of recentLessonIds) {
+        try {
+          const scorecard = await getLessonScorecard(lessonId);
+          
+          // Find exercises where the user made mistakes
+          const difficultExercises = scorecard.responses
+            .filter(response => !response.is_correct)
+            .map(response => ({
+              item: {
+                id: response.exercise_id,
+                japanese: response.question || "",
+                english: response.correct_answer || "",
+                romaji: "",
+                hiragana: "",
+                category: "difficult-exercise",
+                difficulty: 4, // Higher difficulty for failed exercises
+                lessonId: lessonId,
+                // Include exercise-specific data
+                exerciseType: response.exercise_type || "multiple_choice",
+                question: response.question || "",
+                options: [],
+                correctAnswer: response.correct_answer || "",
+              },
+              dueDate: new Date(),
+              difficulty: 4,
+              interval: 1
+            }));
+            
+          difficultItems.push(...difficultExercises);
+        } catch (err) {
+          console.error(`Error getting scorecard for lesson ${lessonId}:`, err);
+        }
+      }
+      
+      // Limit to max 10 difficult items and shuffle them
+      const shuffledItems = difficultItems
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 10);
+        
+      if (shuffledItems.length === 0) {
+        return null;
+      }
+      
+      return {
+        items: shuffledItems,
+        userId: user.id,
+        sessionDate: new Date()
+      };
+    } catch (err) {
+      console.error("Error creating difficult exercises session:", err);
+      return null;
+    }
+  };
+
   useEffect(() => {
     const loadSavedSession = () => {
       if (!user) return false;
@@ -51,7 +129,6 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
           const parsedProgress = JSON.parse(savedProgress);
           const parsedStats = JSON.parse(savedStats);
           
-          // Validate session data (check if it has items array)
           if (parsedSession && parsedSession.items && Array.isArray(parsedSession.items)) {
             setReviewSession(parsedSession);
             setCurrentItemIndex(parsedProgress.currentIndex);
@@ -72,85 +149,6 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
       return false;
     };
 
-    const loadDifficultExercisesSession = async () => {
-      if (!user) return null;
-      
-      try {
-        // Get user progress data to find completed lessons
-        const { data: progress } = await learningAlgorithmService.client
-          .from('user_progress')
-          .select('lesson_id')
-          .eq('user_id', user.id)
-          .eq('is_completed', true);
-        
-        if (!progress || progress.length === 0) {
-          console.log("No completed lessons found");
-          return null;
-        }
-        
-        // Get all lessons the user has completed
-        const lessonIds = progress.map(p => p.lesson_id);
-        
-        // For each lesson, get the scorecard to find difficult exercises
-        const difficultItems = [];
-        
-        // Process up to 5 most recent lessons for performance
-        const recentLessonIds = lessonIds.slice(0, 5);
-        
-        for (const lessonId of recentLessonIds) {
-          try {
-            const scorecard = await getLessonScorecard(lessonId);
-            
-            // Find exercises where the user made mistakes
-            const difficultExercises = scorecard.responses
-              .filter(response => !response.is_correct)
-              .map(response => ({
-                item: {
-                  id: response.exercise_id,
-                  japanese: response.question || "",
-                  english: response.correct_answer || "",
-                  romaji: "",
-                  hiragana: "",
-                  category: "difficult-exercise",
-                  difficulty: 4, // Higher difficulty for failed exercises
-                  lessonId: lessonId,
-                  // Include exercise-specific data
-                  exerciseType: response.exercise_type || "multiple_choice",
-                  question: response.question || "",
-                  options: [],
-                  correctAnswer: response.correct_answer || "",
-                },
-                dueDate: new Date(),
-                difficulty: 4,
-                interval: 1
-              }));
-              
-            difficultItems.push(...difficultExercises);
-          } catch (err) {
-            console.error(`Error getting scorecard for lesson ${lessonId}:`, err);
-          }
-        }
-        
-        // Limit to max 10 difficult items and shuffle them
-        const shuffledItems = difficultItems
-          .sort(() => Math.random() - 0.5)
-          .slice(0, 10);
-          
-        if (shuffledItems.length === 0) {
-          return null;
-        }
-        
-        return {
-          items: shuffledItems,
-          userId: user.id,
-          sessionDate: new Date()
-        };
-      } catch (err) {
-        console.error("Error creating difficult exercises session:", err);
-        return null;
-      }
-    };
-
     const loadReviewSession = async () => {
       if (!user) {
         setLoading(false);
@@ -161,10 +159,8 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
         setLoading(true);
         setError(null);
         
-        // Try to load saved session first
         const hasSavedSession = loadSavedSession();
         
-        // If no saved session, fetch new one
         if (!hasSavedSession) {
           console.log(`Generating ${reviewType} session for user:`, user.id);
           
@@ -188,7 +184,6 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
               description: message
             });
           } else {
-            // Save the new session to localStorage
             saveSessionToLocalStorage(session, 0, false, { correct: 0, incorrect: 0 });
           }
         }
@@ -203,7 +198,6 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
     loadReviewSession();
   }, [user, reviewType, getLessonScorecard]);
 
-  // Save current session state to localStorage
   const saveSessionToLocalStorage = (
     session: ReviewSession | null,
     index: number,
@@ -240,7 +234,6 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
     const currentItem = reviewSession.items[currentItemIndex];
     
     try {
-      // Only update SRS data for vocabulary reviews
       if (reviewType === "vocabulary") {
         await learningAlgorithmService.updateReviewItem(
           user.id,
@@ -250,24 +243,20 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
         );
       }
       
-      // Update stats
       const newStats = {
         correct: reviewStats.correct + (correct ? 1 : 0),
         incorrect: reviewStats.incorrect + (correct ? 0 : 1)
       };
       setReviewStats(newStats);
       
-      // Update progress
       const newIndex = currentItemIndex + 1;
       const isComplete = newIndex >= reviewSession.items.length;
       
       if (!isComplete) {
         setCurrentItemIndex(newIndex);
-        // Save progress
         saveSessionToLocalStorage(reviewSession, newIndex, false, newStats);
       } else {
         setReviewComplete(true);
-        // Save completed state
         saveSessionToLocalStorage(reviewSession, newIndex, true, newStats);
         
         toast.success(`${reviewType === "vocabulary" ? "Review" : "Practice"} session completed!`, {
@@ -298,7 +287,6 @@ export const ReviewSessionContainer: React.FC<ReviewSessionContainerProps> = ({
         
         setReviewSession(session);
         
-        // Save the new session
         saveSessionToLocalStorage(session, 0, false, { correct: 0, incorrect: 0 });
       }
     } catch (err) {
