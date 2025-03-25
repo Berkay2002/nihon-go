@@ -72,7 +72,7 @@ const Achievements = () => {
       // Get all hiragana characters for hiragana achievement
       let hiraganaCount = 0;
       try {
-        const hiragana = await contentService.getAllHiragana();
+        const hiragana = await contentService.getHiragana();
         hiraganaCount = hiragana.length;
       } catch (error) {
         console.error("Error getting hiragana:", error);
