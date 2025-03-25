@@ -7,10 +7,12 @@ import { User, Book, Flame, Award, Settings, LogOut, Clock, Sun, Moon } from "lu
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
 import contentService from "@/services/contentService";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState({
     level: 1,
@@ -96,6 +98,10 @@ const Profile = () => {
     }
   };
 
+  const toggleTheme = (newTheme: "light" | "dark") => {
+    setTheme(newTheme);
+  };
+
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <header className="mb-8">
@@ -179,11 +185,21 @@ const Profile = () => {
               <span>Theme</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="ghost" size="sm" className="text-nihongo-blue">
+              <Button 
+                variant={theme === "light" ? "secondary" : "ghost"} 
+                size="sm" 
+                className={theme === "light" ? "text-nihongo-blue" : "text-muted-foreground"}
+                onClick={() => toggleTheme("light")}
+              >
                 <Sun className="w-4 h-4 mr-1" />
                 Light
               </Button>
-              <Button variant="ghost" size="sm" className="text-muted-foreground">
+              <Button 
+                variant={theme === "dark" ? "secondary" : "ghost"} 
+                size="sm" 
+                className={theme === "dark" ? "text-nihongo-blue" : "text-muted-foreground"}
+                onClick={() => toggleTheme("dark")}
+              >
                 <Moon className="w-4 h-4 mr-1" />
                 Dark
               </Button>
