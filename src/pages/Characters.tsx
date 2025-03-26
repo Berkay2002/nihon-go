@@ -52,7 +52,7 @@ const Characters = () => {
 
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
-      <h1 className="text-2xl font-bold mb-6 text-center">Japanese Characters</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center text-high-contrast">Japanese Characters</h1>
 
       <Tabs defaultValue="hiragana" onValueChange={setActiveTab} className="mb-8">
         <TabsList className="grid w-full grid-cols-3">
@@ -63,15 +63,15 @@ const Characters = () => {
 
         <TabsContent value="hiragana" className="mt-6">
           <div className="text-center mb-8">
-            <h2 className="text-xl font-bold mb-2">Let's learn Hiragana!</h2>
-            <p className="text-sm text-muted-foreground mb-6">
+            <h2 className="text-xl font-bold mb-2 text-high-contrast">Let's learn Hiragana!</h2>
+            <p className="text-sm text-medium-contrast mb-6">
               Get to know the main writing system in Japanese
             </p>
             <div className="mb-4">
               <Button variant="outline" className="w-full mb-4">
                 TIPS
               </Button>
-              <Button className="w-full bg-blue-500 hover:bg-blue-600">
+              <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
                 LEARN THE CHARACTERS
               </Button>
             </div>
@@ -87,7 +87,7 @@ const Characters = () => {
             <div className="space-y-8">
               {Object.entries(hiraganaGroups).map(([groupName, chars]) => (
                 <div key={groupName} className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2">
+                  <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-medium-contrast">
                     {groupName.charAt(0).toUpperCase() + groupName.slice(1)} Row
                   </h3>
                   <div className="grid grid-cols-5 gap-2">
@@ -98,10 +98,10 @@ const Characters = () => {
                         onClick={() => handleCharacterClick(char.id)}
                       >
                         <CardContent className="p-2 text-center">
-                          <div className="text-2xl font-japanese mb-1">
+                          <div className="text-2xl font-japanese mb-1 text-high-contrast">
                             {char.character}
                           </div>
-                          <div className="text-xs text-gray-500">
+                          <div className="text-xs text-medium-contrast">
                             {char.romaji}
                           </div>
                         </CardContent>
@@ -115,18 +115,18 @@ const Characters = () => {
         </TabsContent>
 
         <TabsContent value="katakana" className="mt-6">
-          <div className="text-center p-12 bg-gray-50 rounded-lg">
-            <p className="text-lg font-medium mb-2">Coming Soon</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center p-12 bg-gray-50 dark:bg-slate-800/30 rounded-lg">
+            <p className="text-lg font-medium mb-2 text-high-contrast">Coming Soon</p>
+            <p className="text-sm text-medium-contrast">
               Katakana learning will be available in a future update
             </p>
           </div>
         </TabsContent>
 
         <TabsContent value="kanji" className="mt-6">
-          <div className="text-center p-12 bg-gray-50 rounded-lg">
-            <p className="text-lg font-medium mb-2">Coming Soon</p>
-            <p className="text-sm text-muted-foreground">
+          <div className="text-center p-12 bg-gray-50 dark:bg-slate-800/30 rounded-lg">
+            <p className="text-lg font-medium mb-2 text-high-contrast">Coming Soon</p>
+            <p className="text-sm text-medium-contrast">
               Kanji learning will be available in a future update
             </p>
           </div>

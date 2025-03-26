@@ -88,28 +88,28 @@ const CharacterDetail = () => {
       </Button>
       
       <div className="text-center mb-8">
-        <div className="inline-block p-8 rounded-full bg-blue-50 mb-4">
-          <span className="text-8xl font-japanese">{character.character}</span>
+        <div className="inline-block p-8 rounded-full bg-blue-50 dark:bg-blue-900/30 mb-4">
+          <span className="text-8xl font-japanese text-high-contrast">{character.character}</span>
         </div>
-        <h1 className="text-2xl font-bold mb-1">{character.romaji}</h1>
-        <p className="text-muted-foreground">Hiragana</p>
+        <h1 className="text-2xl font-bold mb-1 text-high-contrast">{character.romaji}</h1>
+        <p className="text-medium-contrast">Hiragana</p>
       </div>
       
       <div className="space-y-6">
         <Card>
           <CardContent className="p-4">
-            <h2 className="font-semibold mb-3">Stroke Order</h2>
-            <p className="text-sm text-muted-foreground">{character.stroke_order}</p>
+            <h2 className="font-semibold mb-3 text-medium-contrast">Stroke Order</h2>
+            <p className="text-sm text-high-contrast">{character.stroke_order}</p>
           </CardContent>
         </Card>
         
         <Card>
           <CardContent className="p-4">
-            <h2 className="font-semibold mb-3">Example Word</h2>
+            <h2 className="font-semibold mb-3 text-medium-contrast">Example Word</h2>
             <div className="flex justify-between items-center">
               <div>
-                <p className="text-lg font-japanese mb-1">{character.example_word}</p>
-                <p className="text-sm text-muted-foreground">{character.example_word_meaning}</p>
+                <p className="text-lg font-japanese mb-1 text-high-contrast">{character.example_word}</p>
+                <p className="text-sm text-medium-contrast">{character.example_word_meaning}</p>
               </div>
               <Button size="sm" variant="outline">
                 Practice
@@ -120,8 +120,8 @@ const CharacterDetail = () => {
         
         <Card>
           <CardContent className="p-4">
-            <h2 className="font-semibold mb-3">Pronunciation Tips</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="font-semibold mb-3 text-medium-contrast">Pronunciation Tips</h2>
+            <p className="text-sm text-high-contrast">
               {character.romaji === "a" && "Pronounced like the 'a' in 'father'."}
               {character.romaji === "i" && "Pronounced like the 'ee' in 'feet'."}
               {character.romaji === "u" && "Pronounced like the 'oo' in 'food', but shorter."}
@@ -134,7 +134,7 @@ const CharacterDetail = () => {
         </Card>
         
         <div className="text-center mt-8">
-          <Button className="bg-blue-500 hover:bg-blue-600 w-full">
+          <Button className="bg-blue-500 hover:bg-blue-600 w-full text-white">
             Practice Writing
           </Button>
         </div>

@@ -1,3 +1,4 @@
+
 import { toast } from "sonner";
 import { ExerciseType } from "@/types/exercises";
 import { useUserProgress } from "@/services/userProgressService";
@@ -24,7 +25,10 @@ export const useExerciseNavigation = () => {
     
     if (isCorrect) {
       setTotalCorrect(prev => prev + 1);
-      setXpEarned(prev => prev + (currentExercise?.xp_reward || 0));
+      // Only add XP if not in review mode
+      if (!isReviewMode && currentExercise?.xp_reward) {
+        setXpEarned(prev => prev + (currentExercise.xp_reward || 0));
+      }
       toast.success("Correct answer!", { duration: 1500 });
     } else {
       toast.error("Incorrect. Try to remember this one.", { duration: 2000 });
@@ -53,13 +57,16 @@ export const useExerciseNavigation = () => {
     // If we're checking an answer, submit the result
     if (user && currentExercise && isAnswerChecked) {
       try {
+        // Only submit XP if correct and not in review mode
+        const xpEarned = isCorrect && !isReviewMode ? (currentExercise.xp_reward || 0) : 0;
+        
         await submitExerciseResult({
           lessonId: lessonId || "",
           exerciseId: currentExercise.id,
           isCorrect: isCorrect,
           userAnswer: getUserAnswer(),
           timeSpent: 0,
-          xpEarned: isCorrect ? (currentExercise.xp_reward || 0) : 0
+          xpEarned: xpEarned
         });
       } catch (error) {
         console.error("Error submitting exercise result:", error);

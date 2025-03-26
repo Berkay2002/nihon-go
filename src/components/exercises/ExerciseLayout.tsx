@@ -85,7 +85,8 @@ export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
         <ExerciseProgress 
           currentIndex={currentExerciseIndex} 
           totalExercises={totalExercises} 
-          xpEarned={xpEarned} 
+          xpEarned={xpEarned}
+          isReviewMode={isReviewMode}
         />
 
         <ExerciseQuestion

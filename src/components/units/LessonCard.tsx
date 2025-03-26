@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Book, Check, Lock, ChevronRight, Zap, XCircle } from "lucide-react";
@@ -47,15 +48,15 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
               )}
             </div>
             <div>
-              <h3 className="font-semibold">{lesson.title}</h3>
+              <h3 className="font-semibold text-high-contrast">{lesson.title}</h3>
               <div className="flex items-center">
                 {lesson.is_locked ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-medium-contrast">
                     Complete previous lessons to unlock
                   </p>
                 ) : (
                   <div className="flex items-center">
-                    {lesson.hasEarnedXP ? (
+                    {lesson.is_completed ? (
                       <div className="flex items-center">
                         <XCircle className="h-3 w-3 text-gray-400 mr-1" />
                         <p className="text-xs text-gray-400">
@@ -75,7 +76,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
               </div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          <ChevronRight className="w-5 h-5 text-medium-contrast" />
         </div>
       </CardContent>
     </Card>
