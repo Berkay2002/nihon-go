@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 interface ExerciseLayoutProps {
   currentExercise: ExerciseType;
   isReviewMode: boolean;
+  isCompleted?: boolean;
   currentExerciseIndex: number;
   totalExercises: number;
   xpEarned: number;
@@ -30,6 +31,7 @@ interface ExerciseLayoutProps {
 export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
   currentExercise,
   isReviewMode,
+  isCompleted = false,
   currentExerciseIndex,
   totalExercises,
   xpEarned,
@@ -87,6 +89,7 @@ export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
           totalExercises={totalExercises} 
           xpEarned={xpEarned}
           isReviewMode={isReviewMode}
+          isCompleted={isCompleted}
         />
 
         <ExerciseQuestion

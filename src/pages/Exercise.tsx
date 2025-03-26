@@ -1,28 +1,28 @@
 
-import { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
-import contentService from "@/services/contentService";
-import { useUserProgress } from "@/services/userProgressService";
-import { useAuth } from "@/hooks/useAuth";
-import { ExerciseType } from "@/types/exercises";
-import { LoadingExercise, NoExercisesFound } from "@/components/exercises";
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 import { useExerciseSession } from "@/hooks/useExerciseSession";
 import { ExerciseLayout } from "@/components/exercises/ExerciseLayout";
+import { LoadingExercise } from "@/components/exercises/LoadingExercise";
+import { NoExercisesFound } from "@/components/exercises/NoExercisesFound";
+import { useUserProgress } from "@/services/userProgressService";
 
 const Exercise = () => {
-  const navigate = useNavigate();
-  const { exerciseId } = useParams<{ exerciseId: string }>();
+  const { lessonId } = useParams<{ lessonId: string }>();
   const { user } = useAuth();
-  const lessonId = exerciseId;
+  const { getUserProgressData } = useUserProgress();
+  const [isLessonCompleted, setIsLessonCompleted] = useState(false);
   
   const {
     exercises,
-    incorrectExercises,
     currentExercise,
     currentExerciseIndex,
     isAnswerChecked,
     isReviewMode,
+    isLoading,
+    error,
     xpEarned,
     totalCorrect,
     totalAnswered,
@@ -30,45 +30,87 @@ const Exercise = () => {
     textAnswer,
     arrangedWords,
     availableWords,
-    isLoading,
+    matchingResult,
     handleSelectAnswer,
     handleTextAnswerChange,
     handleAddWord,
     handleRemoveWord,
     handleMatchingResult,
     handleCheckAnswer,
-    handleNextExercise,
-    matchingResult,
-    error
+    handleNextExercise
   } = useExerciseSession(lessonId);
 
-  console.log("Current exercise state:", {
-    lessonId,
-    hasExercises: exercises.length > 0,
-    currentExercise,
-    error
-  });
+  // Check if the lesson is already completed
+  useEffect(() => {
+    const checkLessonCompletion = async () => {
+      if (user && lessonId) {
+        try {
+          const progressData = await getUserProgressData();
+          const lessonProgress = progressData.find(p => p.lesson_id === lessonId);
+          setIsLessonCompleted(lessonProgress?.is_completed || false);
+        } catch (error) {
+          console.error("Error checking lesson completion:", error);
+        }
+      }
+    };
+
+    checkLessonCompletion();
+  }, [user, lessonId, getUserProgressData]);
+
+  // Calculate if the exercise is valid for submission
+  const isInputValid = (): boolean => {
+    if (!currentExercise) return false;
+
+    switch (currentExercise.type) {
+      case "multiple_choice":
+        return selectedAnswer !== null;
+      case "text_input":
+        return textAnswer.trim().length > 0;
+      case "arrange_sentence":
+        return arrangedWords.length > 0;
+      case "matching":
+        return matchingResult !== null;
+      default:
+        return false;
+    }
+  };
+
+  // Calculate if this is the last exercise
+  const isLastExercise = (): boolean => {
+    const currentArray = isReviewMode ? [] : exercises; // Placeholder for incorrect exercises array
+    return currentExerciseIndex >= currentArray.length - 1;
+  };
 
   if (isLoading) {
     return <LoadingExercise />;
   }
 
-  if (error || !currentExercise) {
-    return <NoExercisesFound lessonId={lessonId || ""} />;
+  if (error || !exercises || exercises.length === 0) {
+    return <NoExercisesFound error={error} />;
+  }
+
+  if (!currentExercise) {
+    toast.error("Could not find exercise", {
+      description: "Please try again or return to lessons",
+    });
+    return <NoExercisesFound />;
   }
 
   return (
     <ExerciseLayout
       currentExercise={currentExercise}
       isReviewMode={isReviewMode}
+      isCompleted={isLessonCompleted}
       currentExerciseIndex={currentExerciseIndex}
-      totalExercises={isReviewMode ? incorrectExercises.length : exercises.length}
+      totalExercises={exercises.length}
       xpEarned={xpEarned}
       selectedAnswer={selectedAnswer}
       textAnswer={textAnswer}
       arrangedWords={arrangedWords}
       availableWords={availableWords}
       isAnswerChecked={isAnswerChecked}
+      isLastExercise={isLastExercise()}
+      isInputValid={isInputValid()}
       onSelectAnswer={handleSelectAnswer}
       onTextAnswerChange={handleTextAnswerChange}
       onAddWord={handleAddWord}
@@ -76,18 +118,6 @@ const Exercise = () => {
       onMatchingResult={handleMatchingResult}
       onCheckAnswer={handleCheckAnswer}
       onNextExercise={handleNextExercise}
-      isLastExercise={currentExerciseIndex === (isReviewMode ? incorrectExercises.length - 1 : exercises.length - 1)}
-      isInputValid={
-        currentExercise.type === "multiple_choice" || currentExercise.type === "translation"
-          ? selectedAnswer !== null
-          : currentExercise.type === "text_input"
-          ? textAnswer.trim() !== ""
-          : currentExercise.type === "arrange_sentence"
-          ? arrangedWords.length > 0
-          : currentExercise.type === "matching"
-          ? true
-          : false
-      }
     />
   );
 };

@@ -131,6 +131,84 @@ export type Database = {
         }
         Relationships: []
       }
+      kanji: {
+        Row: {
+          character: string
+          created_at: string
+          example_word: string
+          example_word_meaning: string
+          group_name: string
+          id: string
+          order_index: number
+          romaji: string
+          stroke_order: string
+          updated_at: string
+        }
+        Insert: {
+          character: string
+          created_at?: string
+          example_word: string
+          example_word_meaning: string
+          group_name: string
+          id?: string
+          order_index: number
+          romaji: string
+          stroke_order: string
+          updated_at?: string
+        }
+        Update: {
+          character?: string
+          created_at?: string
+          example_word?: string
+          example_word_meaning?: string
+          group_name?: string
+          id?: string
+          order_index?: number
+          romaji?: string
+          stroke_order?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      katakana: {
+        Row: {
+          character: string
+          created_at: string
+          example_word: string
+          example_word_meaning: string
+          group_name: string
+          id: string
+          order_index: number
+          romaji: string
+          stroke_order: string
+          updated_at: string
+        }
+        Insert: {
+          character: string
+          created_at?: string
+          example_word: string
+          example_word_meaning: string
+          group_name: string
+          id?: string
+          order_index: number
+          romaji: string
+          stroke_order: string
+          updated_at?: string
+        }
+        Update: {
+          character?: string
+          created_at?: string
+          example_word?: string
+          example_word_meaning?: string
+          group_name?: string
+          id?: string
+          order_index?: number
+          romaji?: string
+          stroke_order?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           created_at: string

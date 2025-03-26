@@ -1,20 +1,22 @@
 
 import React from "react";
 import { Progress } from "@/components/ui/progress";
-import { Zap } from "lucide-react";
+import { Zap, XCircle } from "lucide-react";
 
 interface ExerciseProgressProps {
   currentIndex: number;
   totalExercises: number;
   xpEarned: number;
   isReviewMode?: boolean;
+  isCompleted?: boolean;
 }
 
 export const ExerciseProgress: React.FC<ExerciseProgressProps> = ({
   currentIndex,
   totalExercises,
   xpEarned,
-  isReviewMode = false
+  isReviewMode = false,
+  isCompleted = false
 }) => {
   const progress = Math.round(((currentIndex + 1) / totalExercises) * 100);
 
@@ -27,8 +29,14 @@ export const ExerciseProgress: React.FC<ExerciseProgressProps> = ({
         
         <div className="flex items-center">
           {isReviewMode ? (
-            <div className="flex items-center text-sm text-amber-500">
-              <span className="mr-1">Review Mode</span>
+            <div className="flex items-center text-sm">
+              <XCircle className="w-4 h-4 text-gray-400 mr-1" />
+              <span className="text-gray-400">0 XP (Review Mode)</span>
+            </div>
+          ) : isCompleted ? (
+            <div className="flex items-center">
+              <XCircle className="w-4 h-4 text-gray-400 mr-1" />
+              <span className="text-sm text-gray-400">0 XP (already completed)</span>
             </div>
           ) : (
             <div className="flex items-center">

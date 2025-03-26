@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
 import contentService, { Lesson } from "@/services/contentService";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProgress } from "@/services/userProgressService";
 import { AlertCircle, LoaderCircle } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,8 @@ const LessonPage = () => {
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const { getUserProgressData } = useUserProgress();
 
   // Fetch lesson data
   useEffect(() => {
@@ -41,6 +44,18 @@ const LessonPage = () => {
           
           console.log("Lesson data received:", updatedLessonData);
           setLesson(updatedLessonData);
+          
+          // Check if the lesson is already completed
+          if (user) {
+            try {
+              const progressData = await getUserProgressData();
+              const lessonProgress = progressData.find(p => p.lesson_id === lessonId);
+              setIsCompleted(lessonProgress?.is_completed || false);
+            } catch (progressError) {
+              console.error("Error fetching progress data:", progressError);
+              // Continue without progress data
+            }
+          }
         }
         
         setLoading(false);
@@ -55,7 +70,7 @@ const LessonPage = () => {
     };
 
     fetchLessonData();
-  }, [lessonId]);
+  }, [lessonId, user]);
 
   if (loading) {
     return (
@@ -105,13 +120,17 @@ const LessonPage = () => {
         <div className="flex items-center justify-between mb-8">
           <div>
             <p className="text-sm text-slate-300 mb-1">XP Reward:</p>
-            <p className="font-medium">{lesson.xp_reward} XP</p>
+            {isCompleted ? (
+              <p className="font-medium text-gray-400">0 XP (already completed)</p>
+            ) : (
+              <p className="font-medium">{lesson.xp_reward} XP</p>
+            )}
           </div>
           <Button 
             onClick={() => navigate(`/app/exercise/${lesson.id}`)}
             className="bg-green-500 hover:bg-green-600 text-white px-6 py-2"
           >
-            Start Exercises
+            {isCompleted ? 'Practice Again' : 'Start Exercises'}
           </Button>
         </div>
         

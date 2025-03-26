@@ -1,36 +1,39 @@
 
-import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { BookOpen, Zap } from "lucide-react";
-import { Lesson } from "@/services/contentService";
+import React from 'react';
+import { Lesson } from '@/services/contentService';
+import { Clock, Zap, XCircle } from 'lucide-react';
 
 interface LessonOverviewProps {
   lesson: Lesson;
+  isCompleted?: boolean;
 }
 
-export const LessonOverview: React.FC<LessonOverviewProps> = ({ lesson }) => {
+export const LessonOverview: React.FC<LessonOverviewProps> = ({ 
+  lesson, 
+  isCompleted = false 
+}) => {
   return (
-    <section className="mb-8">
-      <Card className="border border-nihongo-blue/10 shadow-md">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-nihongo-blue/10 flex items-center justify-center mr-3">
-                <BookOpen className="w-5 h-5 text-nihongo-blue" />
-              </div>
-              <div>
-                <h3 className="font-semibold">Overview</h3>
-                <p className="text-xs text-muted-foreground">{lesson.estimated_time} · Exercises</p>
-              </div>
-            </div>
-            <div className="flex items-center bg-nihongo-red/10 px-3 py-1 rounded-full">
-              <Zap className="w-4 h-4 text-nihongo-red mr-1" />
-              <span className="text-xs font-medium text-nihongo-red">{lesson.xp_reward} XP</span>
-            </div>
-          </div>
-          <p className="text-sm mb-4">{lesson.description}</p>
-        </CardContent>
-      </Card>
-    </section>
+    <div className="mb-8 space-y-4">
+      <p className="text-lg text-high-contrast">{lesson.description}</p>
+      
+      <div className="flex items-center gap-3 text-sm">
+        <Clock className="h-5 w-5 text-medium-contrast" />
+        <span className="text-medium-contrast">{lesson.estimated_time}</span>
+      </div>
+      
+      <div className="flex items-center gap-3 text-sm">
+        {isCompleted ? (
+          <>
+            <XCircle className="h-5 w-5 text-gray-400" />
+            <span className="text-gray-400">0 XP (already completed)</span>
+          </>
+        ) : (
+          <>
+            <Zap className="h-5 w-5 text-yellow-500" />
+            <span className="text-yellow-500 font-medium">{lesson.xp_reward} XP</span>
+          </>
+        )}
+      </div>
+    </div>
   );
 };

@@ -60,7 +60,7 @@ export const LessonCard: React.FC<LessonCardProps> = ({ lesson, onClick }) => {
                       <div className="flex items-center">
                         <XCircle className="h-3 w-3 text-gray-400 mr-1" />
                         <p className="text-xs text-gray-400">
-                          XP already earned
+                          0 XP (already completed)
                         </p>
                       </div>
                     ) : (

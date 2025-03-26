@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
 import contentService, { Lesson as LessonType, Vocabulary } from "@/services/contentService";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserProgress } from "@/services/userProgressService";
 import { 
   LessonHeader, 
   LessonOverview, 
@@ -24,6 +25,9 @@ const Lesson = () => {
   const [loading, setLoading] = useState(true);
   const [longLoading, setLongLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+  const { user } = useAuth();
+  const { getUserProgressData } = useUserProgress();
 
   // Add a better timeout mechanism with two stages
   useEffect(() => {
@@ -125,6 +129,18 @@ const Lesson = () => {
         
         setLesson(updatedLessonData);
         setVocabulary(vocabData);
+        
+        // Check if the lesson is already completed
+        if (user) {
+          try {
+            const progressData = await getUserProgressData();
+            const lessonProgress = progressData.find(p => p.lesson_id === lessonId);
+            setIsCompleted(lessonProgress?.is_completed || false);
+          } catch (progressError) {
+            console.error("Error fetching progress data:", progressError);
+            // Continue without progress data
+          }
+        }
       } catch (error) {
         console.error("Error fetching lesson:", error);
         setError("Failed to load lesson data. Please try refreshing the page.");
@@ -152,7 +168,7 @@ const Lesson = () => {
     };
     
     fetchLessonData();
-  }, [lessonId]);
+  }, [lessonId, user]);
 
   const handleRefresh = () => {
     window.location.reload();
@@ -220,9 +236,9 @@ const Lesson = () => {
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20 animate-fade-in">
       <LessonHeader lesson={lesson} />
-      <LessonOverview lesson={lesson} />
+      <LessonOverview lesson={lesson} isCompleted={isCompleted} />
       <VocabularySection vocabulary={vocabulary} />
-      <LessonActions lessonId={lessonId || ""} />
+      <LessonActions lessonId={lessonId || ""} isCompleted={isCompleted} />
     </div>
   );
 };
