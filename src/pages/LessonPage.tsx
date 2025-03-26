@@ -1,4 +1,4 @@
-
+// src/pages/LessonPage.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from "sonner";
@@ -74,10 +74,10 @@ const LessonPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <LoaderCircle className="h-12 w-12 animate-spin text-blue-500 mx-auto mb-4" />
-          <p className="text-white">Loading lesson...</p>
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-medium-contrast">Loading lesson...</p>
         </div>
       </div>
     );
@@ -85,17 +85,17 @@ const LessonPage = () => {
 
   if (error || !lesson) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="max-w-md w-full">
           <CardContent className="pt-6 flex flex-col items-center">
-            <AlertCircle className="h-12 w-12 text-red-500 mb-4" />
-            <h1 className="text-2xl font-bold mb-4 text-center">Lesson not found</h1>
-            <p className="text-muted-foreground mb-6 text-center">
+            <AlertCircle className="h-12 w-12 text-nihongo-error mb-4" />
+            <h1 className="text-2xl font-bold mb-4 text-center text-high-contrast">Lesson not found</h1>
+            <p className="text-medium-contrast mb-6 text-center">
               {error || "The lesson you're looking for could not be found."}
             </p>
             <Button 
               onClick={() => navigate('/app')}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-nihongo-blue hover:bg-nihongo-blue/90 text-white"
             >
               Back to Home
             </Button>
@@ -107,28 +107,28 @@ const LessonPage = () => {
 
   // Now, let's see if we can render the actual lesson
   return (
-    <div className="min-h-screen bg-slate-900 text-white p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-3xl font-bold mb-4">{lesson.title}</h1>
-        <p className="text-lg mb-6">{lesson.description}</p>
+        <h1 className="text-3xl font-bold mb-4 text-high-contrast">{lesson.title}</h1>
+        <p className="text-lg mb-6 text-medium-contrast">{lesson.description}</p>
         
-        <div className="mb-6 bg-slate-800 p-4 rounded-lg">
-          <p className="text-sm text-slate-300 mb-2">Estimated time:</p>
-          <p className="font-medium">{lesson.estimated_time}</p>
+        <div className="mb-6 bg-slate-100 dark:bg-slate-800 p-4 rounded-lg">
+          <p className="text-sm text-medium-contrast mb-2">Estimated time:</p>
+          <p className="font-medium text-high-contrast">{lesson.estimated_time}</p>
         </div>
         
         <div className="flex items-center justify-between mb-8">
           <div>
-            <p className="text-sm text-slate-300 mb-1">XP Reward:</p>
+            <p className="text-sm text-medium-contrast mb-1">XP Reward:</p>
             {isCompleted ? (
-              <p className="font-medium text-gray-400">0 XP (already completed)</p>
+              <p className="font-medium text-low-contrast">0 XP (already completed)</p>
             ) : (
-              <p className="font-medium">{lesson.xp_reward} XP</p>
+              <p className="font-medium text-nihongo-blue dark:text-blue-400">{lesson.xp_reward} XP</p>
             )}
           </div>
           <Button 
             onClick={() => navigate(`/app/exercise/${lesson.id}`)}
-            className="bg-green-500 hover:bg-green-600 text-white px-6 py-2"
+            className="bg-nihongo-green hover:bg-nihongo-green/90 text-white px-6 py-2"
           >
             {isCompleted ? 'Practice Again' : 'Start Exercises'}
           </Button>
@@ -137,7 +137,7 @@ const LessonPage = () => {
         <Button 
           onClick={() => navigate('/app')}
           variant="outline"
-          className="mt-4"
+          className="mt-4 border-border text-medium-contrast hover:text-high-contrast"
         >
           Back to Home
         </Button>

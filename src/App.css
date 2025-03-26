@@ -3,6 +3,9 @@
   margin: 0 auto;
   padding: 2rem;
   text-align: center;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  height: 100%;
 }
 
 .logo {
@@ -39,4 +42,45 @@
 
 .read-the-docs {
   color: #888;
+}
+
+/* Handle iOS notch and bottom bar safe areas */
+@supports (padding: max(0px)) {
+  .container {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+  
+  /* Add padding to bottom for iPhone home indicator */
+  .pb-20 {
+    padding-bottom: max(5rem, env(safe-area-inset-bottom) + 3rem);
+  }
+  
+  /* Adjust top navigation for iPhone notch */
+  header, 
+  .navbar, 
+  nav {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
+  
+  /* Bottom navigation bar should respect safe area */
+  .fixed-bottom,
+  .fixed.bottom-0 {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* iPhone X and newer specific fixes */
+@media screen and (min-width: 375px) and (min-height: 812px) and (orientation: portrait) {
+  /* Additional iPhone-specific adjustments can go here */
+  body::after {
+    content: '';
+    height: env(safe-area-inset-bottom, 0);
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: inherit;
+    z-index: 9;
+  }
 }

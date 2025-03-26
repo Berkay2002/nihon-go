@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ExerciseType } from "@/types/exercises";
-import { Check, X } from "lucide-react";
+import { Check, X, Volume2, Loader2 } from "lucide-react";
 import { shuffleArray } from "@/lib/utils";
+import { useAudio } from "@/hooks/useAudio";
 
 interface MatchingExerciseProps {
   exercise: ExerciseType;
   isAnswerChecked: boolean;
   onAnswerCheck: (isCorrect: boolean) => void;
+  audioEnabled?: boolean;
 }
 
 export const MatchingExercise = ({
   exercise,
   isAnswerChecked,
   onAnswerCheck,
+  audioEnabled = false,
 }: MatchingExerciseProps) => {
   const [selectedLeft, setSelectedLeft] = useState<string | null>(null);
   const [selectedRight, setSelectedRight] = useState<string | null>(null);
@@ -21,6 +24,7 @@ export const MatchingExercise = ({
   const [leftItems, setLeftItems] = useState<string[]>([]);
   const [rightItems, setRightItems] = useState<string[]>([]);
   const [isCorrect, setIsCorrect] = useState(false);
+  const { speak, isPlaying } = useAudio({ lang: 'ja-JP' });
 
   // Initialize the matching exercise
   useEffect(() => {
@@ -160,6 +164,12 @@ export const MatchingExercise = ({
     onAnswerCheck(allCorrect);
   };
 
+  // Function to pronounce hiragana
+  const handlePronounce = (text: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent selection when clicking audio button
+    speak(text);
+  };
+
   // Filter out items that are already matched
   const availableLeftItems = leftItems.filter(item => !matches.has(item));
   const availableRightItems = rightItems.filter(item => !Array.from(matches.values()).includes(item));
@@ -177,7 +187,22 @@ export const MatchingExercise = ({
                 className="flex items-center justify-between p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800"
               >
                 <div className="flex items-center">
-                  <span className="text-lg font-medium mr-2">{leftItem}</span>
+                  <div className="flex items-center mr-2">
+                    <span className="text-lg font-medium">{leftItem}</span>
+                    {audioEnabled && (
+                      <button
+                        onClick={(e) => handlePronounce(leftItem, e)}
+                        disabled={isPlaying}
+                        className="ml-1 p-1 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                      >
+                        {isPlaying ? (
+                          <Loader2 className="h-3 w-3 animate-spin text-blue-500" />
+                        ) : (
+                          <Volume2 className="h-3 w-3 text-blue-500" />
+                        )}
+                      </button>
+                    )}
+                  </div>
                   <span className="text-slate-500">→</span>
                   <span className="text-lg font-medium ml-2">{rightItem}</span>
                 </div>
@@ -219,11 +244,24 @@ export const MatchingExercise = ({
               <Button
                 key={item}
                 variant={selectedLeft === item ? "default" : "outline"}
-                className={selectedLeft === item ? "bg-blue-500" : ""}
+                className={`${selectedLeft === item ? "bg-blue-500" : ""} justify-between group`}
                 onClick={() => handleLeftSelect(item)}
                 disabled={isAnswerChecked}
               >
-                {item}
+                <span>{item}</span>
+                {audioEnabled && (
+                  <button
+                    onClick={(e) => handlePronounce(item, e)}
+                    disabled={isPlaying}
+                    className="opacity-0 group-hover:opacity-100 ml-1 p-1 rounded-full transition-opacity"
+                  >
+                    {isPlaying ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-white" />
+                    ) : (
+                      <Volume2 className="h-3 w-3 text-white" />
+                    )}
+                  </button>
+                )}
               </Button>
             ))}
           </div>

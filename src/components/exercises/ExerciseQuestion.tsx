@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { ExerciseType } from "@/types/exercises";
 import { cn, normalizeJapaneseText } from "@/lib/utils";
-import { Volume2 } from "lucide-react"; 
+import { Volume2, Loader2 } from "lucide-react"; 
 import { MatchingExercise } from "./MatchingExercise";
+import { useAudio } from "@/hooks/useAudio";
 
 interface ExerciseQuestionProps {
   exercise: ExerciseType;
@@ -32,12 +33,38 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
   onRemoveWord,
   onMatchingResult,
 }) => {
-  const playAudio = () => {
+  const { speak, isPlaying } = useAudio({ lang: 'ja-JP' });
+
+  // Function to play audio from URL if available, otherwise use TTS
+  const playAudio = (text?: string) => {
+    // If audio URL is provided, use that first
     if (exercise.audio_url) {
       const audio = new Audio(exercise.audio_url);
-      audio.play().catch(error => console.error("Error playing audio:", error));
+      audio.play().catch(error => {
+        console.error("Error playing audio URL:", error);
+        // Fallback to TTS if audio URL fails
+        if (text) {
+          speak(text);
+        }
+      });
+    } 
+    // Otherwise use TTS for Japanese text
+    else if (text) {
+      speak(text);
+    } 
+    // Or use the question as fallback
+    else if (exercise.japanese) {
+      speak(exercise.japanese);
+    } 
+    // Last resort, try to speak the question
+    else if (exercise.question && !exercise.question.includes("http")) {
+      speak(exercise.question);
     }
   };
+
+  // Determine if text is Japanese for TTS button visibility
+  const hasJapaneseText = Boolean(exercise.japanese) || 
+    (exercise.question && /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(exercise.question));
 
   return (
     <div className="mb-6">
@@ -51,17 +78,24 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
           {exercise.type === "matching" && "Match the hiragana with their romaji"}
         </h2>
         
-        <div className="flex items-center justify-center mb-6">
+        <div className="flex items-center justify-center mb-6 relative">
           <h1 className="text-2xl md:text-3xl font-bold">
             {exercise.question}
           </h1>
           
-          {exercise.audio_url && (
+          {/* Show audio button if there's audio_url OR Japanese content */}
+          {(exercise.audio_url || hasJapaneseText) && (
             <button 
-              onClick={playAudio}
+              onClick={() => playAudio(exercise.question)}
+              disabled={isPlaying}
               className="ml-3 p-2 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+              aria-label="Listen to pronunciation"
             >
-              <Volume2 size={20} className="text-blue-500" />
+              {isPlaying ? (
+                <Loader2 size={20} className="text-blue-500 animate-spin" />
+              ) : (
+                <Volume2 size={20} className="text-blue-500" />
+              )}
             </button>
           )}
         </div>
@@ -120,6 +154,24 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
                   </div>
                 )}
                 <span className="font-medium">{option}</span>
+
+                {/* Add audio button for Japanese options */}
+                {option && /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(option) && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      speak(option);
+                    }}
+                    disabled={isPlaying}
+                    className="ml-auto p-1 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    {isPlaying ? (
+                      <Loader2 size={14} className="text-blue-500 animate-spin" />
+                    ) : (
+                      <Volume2 size={14} className="text-blue-500" />
+                    )}
+                  </button>
+                )}
               </div>
               
               {/* Indicator badges for correct/incorrect */}
@@ -163,9 +215,26 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
           />
           
           {isAnswerChecked && textAnswer.toLowerCase() !== exercise.correct_answer?.toLowerCase() && (
-            <div className="mt-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Correct answer:</p>
-              <p className="font-medium">{exercise.correct_answer}</p>
+            <div className="mt-3 p-3 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Correct answer:</p>
+                <p className="font-medium">{exercise.correct_answer}</p>
+              </div>
+              
+              {/* Add TTS for correct answer */}
+              {exercise.correct_answer && /[\u3000-\u303f\u3040-\u309f\u30a0-\u30ff\uff00-\uff9f\u4e00-\u9faf\u3400-\u4dbf]/.test(exercise.correct_answer) && (
+                <button
+                  onClick={() => speak(exercise.correct_answer)}
+                  disabled={isPlaying}
+                  className="p-2 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+                >
+                  {isPlaying ? (
+                    <Loader2 size={16} className="text-blue-500 animate-spin" />
+                  ) : (
+                    <Volume2 size={16} className="text-blue-500" />
+                  )}
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -209,9 +278,24 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
           </div>
           
           {isAnswerChecked && normalizeJapaneseText(arrangedWords.join("")) !== normalizeJapaneseText(exercise.correct_answer) && (
-            <div className="mt-4 p-3 rounded-lg bg-slate-100 dark:bg-slate-800">
-              <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Correct answer:</p>
-              <p className="font-medium">{exercise.correct_answer}</p>
+            <div className="mt-4 p-3 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Correct answer:</p>
+                <p className="font-medium">{exercise.correct_answer}</p>
+              </div>
+              
+              {/* Add TTS for correct answer */}
+              <button
+                onClick={() => speak(exercise.correct_answer)}
+                disabled={isPlaying}
+                className="p-2 rounded-full bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 transition-colors"
+              >
+                {isPlaying ? (
+                  <Loader2 size={16} className="text-blue-500 animate-spin" />
+                ) : (
+                  <Volume2 size={16} className="text-blue-500" />
+                )}
+              </button>
             </div>
           )}
         </div>
@@ -223,6 +307,7 @@ export const ExerciseQuestion: React.FC<ExerciseQuestionProps> = ({
           exercise={exercise}
           isAnswerChecked={isAnswerChecked}
           onAnswerCheck={onMatchingResult || (() => {})}
+          audioEnabled={true}
         />
       )}
     </div>

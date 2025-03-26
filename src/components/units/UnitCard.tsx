@@ -1,9 +1,11 @@
+// src/components/units/UnitCard.tsx
 import React from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Book, Lock } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/lib/theme-provider";
 
 interface Unit {
   id: string;
@@ -29,6 +31,8 @@ export const UnitCard: React.FC<UnitCardProps> = ({
   className = "",
   dataUnitId
 }) => {
+  const { isDark } = useTheme();
+  
   return (
     <Card 
       key={unit.id} 
@@ -37,7 +41,7 @@ export const UnitCard: React.FC<UnitCardProps> = ({
         "hover:shadow-lg hover:translate-y-[-3px]",
         isSelected ? 
           "border-nihongo-red shadow-md dark:border-nihongo-red" : 
-          "border-gray-200 dark:border-gray-800",
+          "border-border",
         unit.is_locked ? "opacity-80" : "",
         className
       )}
@@ -53,10 +57,10 @@ export const UnitCard: React.FC<UnitCardProps> = ({
           "w-full h-24 flex items-center justify-center",
           !unit.is_locked ? 
             "bg-nihongo-red/10 dark:bg-nihongo-red/20" : 
-            "bg-gray-100 dark:bg-gray-800"
+            "bg-slate-100 dark:bg-slate-800"
         )}>
           {unit.is_locked ? (
-            <Lock className="w-10 h-10 text-gray-400 dark:text-gray-500" />
+            <Lock className="w-10 h-10 text-slate-400 dark:text-slate-500" />
           ) : (
             <Book 
               className={cn(
@@ -68,21 +72,21 @@ export const UnitCard: React.FC<UnitCardProps> = ({
         </div>
         
         <div className="p-3 flex-1 flex flex-col justify-between w-full">
-          <h3 className="font-semibold text-sm">{unit.name}</h3>
+          <h3 className="font-semibold text-sm text-high-contrast">{unit.name}</h3>
           
           <div className="w-full mt-2">
             <div className="flex justify-between items-center text-xs mb-1">
-              <span className="text-muted-foreground">Progress</span>
+              <span className="text-medium-contrast">Progress</span>
               <span className={cn(
                 "font-medium",
-                unit.progress && unit.progress > 0 ? "text-nihongo-blue" : "text-muted-foreground"
+                unit.progress && unit.progress > 0 ? "text-nihongo-blue dark:text-blue-400" : "text-medium-contrast"
               )}>
                 {unit.progress || 0}%
               </span>
             </div>
             <Progress 
               value={unit.progress || 0} 
-              className="h-1.5 w-full bg-gray-100 dark:bg-gray-800" 
+              className="h-1.5 w-full bg-slate-100 dark:bg-slate-800" 
               indicatorClassName={cn(
                 "bg-gradient-to-r",
                 unit.progress && unit.progress >= 100 ? 
@@ -94,9 +98,9 @@ export const UnitCard: React.FC<UnitCardProps> = ({
         </div>
         
         {unit.is_locked && (
-          <div className="absolute inset-0 bg-background/50 dark:bg-gray-900/70 backdrop-blur-[1px] flex items-center justify-center">
-            <div className="bg-background/80 dark:bg-gray-800/80 p-2 rounded-full">
-              <Lock className="w-6 h-6 text-gray-400 dark:text-gray-500" />
+          <div className="absolute inset-0 bg-background/50 dark:bg-slate-900/70 backdrop-blur-[1px] flex items-center justify-center">
+            <div className="bg-background/80 dark:bg-slate-800/80 p-2 rounded-full">
+              <Lock className="w-6 h-6 text-slate-400 dark:text-slate-500" />
             </div>
           </div>
         )}

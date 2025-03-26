@@ -7,6 +7,25 @@
   "background_color": "#ffffff",
   "theme_color": "#1f2937",
   "orientation": "portrait-primary",
+  "display_override": ["standalone", "fullscreen", "minimal-ui", "window-controls-overlay"],
+  "lang": "en-US",
+  "categories": ["education", "language", "learning"],
+  "screenshots": [
+    {
+      "src": "/screenshots/app-screen-1.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "wide",
+      "label": "Nihon Go Home Screen"
+    },
+    {
+      "src": "/screenshots/app-screen-2.webp",
+      "sizes": "1280x720",
+      "type": "image/webp",
+      "form_factor": "narrow",
+      "label": "Japanese Character Learning"
+    }
+  ],
   "icons": [
     {
       "src": "/nihon-go-logo.png",
@@ -50,6 +69,14 @@
       "name": "Start Learning",
       "url": "/app",
       "description": "Begin your Japanese lessons"
+    },
+    {
+      "name": "Characters",
+      "url": "/app/characters",
+      "description": "View Japanese characters"
     }
-  ]
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "iarc_rating_id": ""
 } 

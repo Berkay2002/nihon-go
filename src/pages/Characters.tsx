@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -118,7 +117,7 @@ const Characters = () => {
       <h1 className="text-2xl font-bold mb-6 text-center text-high-contrast">Japanese Characters</h1>
 
       <Tabs defaultValue="hiragana" onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-3 bg-background">
           <TabsTrigger value="hiragana" className="text-base">HIRAGANA</TabsTrigger>
           <TabsTrigger value="katakana" className="text-base">KATAKANA</TabsTrigger>
           <TabsTrigger value="kanji" className="text-base">KANJI</TabsTrigger>
@@ -132,9 +131,6 @@ const Characters = () => {
               Get to know the main writing system in Japanese
             </p>
             <div className="mb-4">
-              <Button variant="outline" className="w-full mb-4">
-                TIPS
-              </Button>
               <Button className="w-full bg-blue-500 hover:bg-blue-600 text-white">
                 LEARN THE CHARACTERS
               </Button>

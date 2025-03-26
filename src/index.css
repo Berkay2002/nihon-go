@@ -1,93 +1,85 @@
-
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@300;400;500;700&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  /* Default light theme variables with improved contrast */
-  --bg-primary: theme('colors.slate.100');
-  --bg-secondary: theme('colors.white');
-  --text-primary: theme('colors.slate.900');
-  --text-secondary: theme('colors.slate.700');
-  --border-color: theme('colors.slate.300');
-  --panel-bg: theme('colors.white');
+/* Custom scrollbar styles */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.dark-theme {
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-muted rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-secondary;
+}
+
+/* Hide horizontal scrollbar for learning path */
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+:root {
+  /* Default light theme variables */
+  --background: #ffffff;
+  --foreground: #1f2937;
+  --primary: #2C5282;
+  --secondary: #6B7280;
+  --muted: #9CA3AF;
+  --accent: #FF4D4D;
+  --border: #E5E7EB;
+  --high-contrast: #1f2937;
+  --medium-contrast: #4B5563;
+  --low-contrast: #9CA3AF;
+  --nihongo-red: #FF4D4D;
+  --nihongo-blue: #2C5282;
+  --nihongo-gold: #FFD700;
+  --nihongo-green: #38A169;
+  --nihongo-error: #FF6B6B;
+  --radius: 0.5rem;
+}
+
+.dark {
   /* Dark theme variables with improved contrast */
-  --bg-primary: theme('colors.slate.900');
-  --bg-secondary: theme('colors.slate.800');
-  --text-primary: theme('colors.slate.50');
-  --text-secondary: theme('colors.slate.200');
-  --border-color: theme('colors.slate.600');
-  --panel-bg: theme('colors.slate.800/90');
+  --background: #1F2937;
+  --foreground: #F9FAFB;
+  --primary: #60A5FA;
+  --secondary: #9CA3AF;
+  --muted: #6B7280;
+  --accent: #FF6B6B;
+  --border: #374151;
+  --high-contrast: #F9FAFB;
+  --medium-contrast: #E5E7EB;
+  --low-contrast: #9CA3AF;
+  --nihongo-red: #FF6B6B;
+  --nihongo-blue: #93C5FD;
+  --nihongo-gold: #FBBF24;
+  --nihongo-green: #4ADE80;
+  --nihongo-error: #F87171;
 }
 
 body {
-  background: var(--bg-primary);
-  color: var(--text-primary);
+  background-color: var(--background);
+  color: var(--foreground);
 }
 
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    /* Improved dark mode contrast */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 75.1%; /* Improved contrast from 65.1% to 75.1% */
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold tracking-tight;
+    color: var(--high-contrast);
   }
 
   .japanese-text {
@@ -96,49 +88,50 @@ body {
   
   /* Improve default link contrast */
   a {
-    @apply text-blue-700 dark:text-blue-400 hover:underline;
-  }
-}
-
-@layer utilities {
-  .glass-card {
-    @apply bg-white/70 backdrop-blur-lg border border-white/20 shadow-lg;
+    color: var(--nihongo-blue);
   }
   
-  .text-gradient {
-    @apply bg-gradient-to-r from-nihongo-red to-nihongo-blue bg-clip-text text-transparent;
+  .dark a {
+    color: var(--blue-400, #60A5FA);
   }
   
-  /* High contrast text classes */
-  .text-high-contrast {
-    @apply text-slate-900 dark:text-white;
+  a:hover {
+    text-decoration: underline;
   }
   
-  .text-medium-contrast {
-    @apply text-slate-700 dark:text-slate-200;
+  /* Focus styles */
+  *:focus-visible {
+    outline-width: 2px;
+    outline-offset: 2px;
+    outline-color: var(--nihongo-blue);
+  }
+  
+  .dark *:focus-visible {
+    outline-color: var(--blue-400, #60A5FA);
   }
 }
 
-/* Add the following rules to ensure scrollbars are properly hidden */
-.units-scroll-container {
-  scrollbar-width: none !important; /* Firefox */
-  -ms-overflow-style: none !important; /* IE/Edge */
+/* Text contrast utility classes */
+.text-high-contrast {
+  color: var(--high-contrast);
 }
 
-.units-scroll-container::-webkit-scrollbar {
-  display: none !important; /* Chrome, Safari, Opera */
-  width: 0 !important;
-  height: 0 !important;
+.text-medium-contrast {
+  color: var(--medium-contrast);
 }
 
-/* Hide horizontal scrollbar specifically */
-.hide-horizontal-scrollbar {
-  overflow-x: auto;
-  scrollbar-width: none !important;
-  -ms-overflow-style: none !important;
+.text-low-contrast {
+  color: var(--low-contrast);
 }
 
-.hide-horizontal-scrollbar::-webkit-scrollbar {
-  height: 0 !important;
-  display: none !important;
+/* Hide Lovable tagger on mobile devices */
+@media screen and (max-width: 768px) {
+  /* These selectors target the Lovable tagger elements */
+  [data-lovable-floating-wrapper],
+  .lovable-editor-wrapper,
+  .lovable-component-outline,
+  .lovable-component-actions,
+  #lovable-editor-wrapper {
+    display: none !important;
+  }
 }

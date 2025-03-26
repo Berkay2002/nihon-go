@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Nihon Go</title>
     <meta name="description" content="Learn Japanese with interactive lessons and exercises" />
     <meta name="author" content="Nihon Go" />
@@ -40,6 +40,48 @@
         (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
       document.documentElement.classList.add(savedTheme);
     </script>
+    
+    <style>
+      /* Fix for iOS status bar in PWA mode */
+      :root {
+        --sat: env(safe-area-inset-top);
+        --sar: env(safe-area-inset-right);
+        --sab: env(safe-area-inset-bottom);
+        --sal: env(safe-area-inset-left);
+      }
+      
+      body {
+        padding-top: var(--sat, 0);
+        padding-right: var(--sar, 0);
+        padding-bottom: var(--sab, 0);
+        padding-left: var(--sal, 0);
+      }
+      
+      /* iOS status bar color matching app theme */
+      @supports (padding-top: env(safe-area-inset-top)) {
+        .dark body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: env(safe-area-inset-top);
+          background-color: #1f2937; /* Match dark theme color */
+          z-index: 10000;
+        }
+        
+        .light body::before {
+          content: '';
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: env(safe-area-inset-top);
+          background-color: #ffffff; /* Match light theme color */
+          z-index: 10000;
+        }
+      }
+    </style>
   </head>
 
   <body>

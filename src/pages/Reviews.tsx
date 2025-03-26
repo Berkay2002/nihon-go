@@ -1,8 +1,8 @@
-
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "@/lib/theme-provider";
 import { SkillPracticeCard } from "@/components/review/SkillPracticeCard";
 import { SectionHeader } from "@/components/review/SectionHeader";
 import { MistakesIcon, WordsIcon, SRSReviewIcon } from "@/components/review/SkillPracticeIcons";
@@ -10,6 +10,7 @@ import { MistakesIcon, WordsIcon, SRSReviewIcon } from "@/components/review/Skil
 const Reviews = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isDark } = useTheme();
   
   const handleSkillPracticeClick = (type: string) => {
     navigate(`/app/practice/${type}`);
@@ -20,7 +21,7 @@ const Reviews = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 pt-4 pb-20">
+    <div className={`min-h-screen ${isDark ? 'bg-slate-900' : 'bg-background'} pt-4 pb-20`}>
       <div className="container max-w-2xl mx-auto px-4">
         <div className="space-y-6">
           {/* Skill Practice Section */}
