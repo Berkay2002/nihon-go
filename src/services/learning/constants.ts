@@ -33,3 +33,6 @@ export const MAX_CONSECUTIVE_BONUS = 10;
 export const BASE_XP_REWARD = 10;
 export const STREAK_BONUS_MULTIPLIER = 0.1;  // 10% bonus per day in streak
 export const MAX_STREAK_BONUS = 2.0;         // Maximum 2x multiplier
+
+// Retention priority settings for fallback algorithm
+export const RETENTION_PRIORITY_DAYS = 14;   // Number of days to prioritize recently learned items
