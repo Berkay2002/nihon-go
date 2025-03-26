@@ -46,19 +46,17 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Use a simpler approach to avoid deep type instantiation
-    return (data || []).map((item) => {
-      // First cast to any to break the type chain
-      const rawItem: any = item;
+    // Create a simple array from the data to avoid deep type instantiation
+    return (data || []).map((item: any) => {
       return mapToGrammarPattern({
-        id: rawItem.id,
-        pattern: rawItem.pattern,
-        explanation: rawItem.explanation,
-        example_sentences: rawItem.example_sentences,
-        lesson_id: rawItem.lesson_id,
-        difficulty: rawItem.difficulty,
-        created_at: rawItem.created_at,
-        updated_at: rawItem.updated_at
+        id: item.id,
+        pattern: item.pattern,
+        explanation: item.explanation,
+        example_sentences: item.example_sentences,
+        lesson_id: item.lesson_id,
+        difficulty: item.difficulty,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       });
     });
   },
@@ -74,19 +72,17 @@ const grammarPatternsService = {
       throw error;
     }
     
-    // Use a simpler approach to avoid deep type instantiation
-    return (data || []).map((item) => {
-      // First cast to any to break the type chain
-      const rawItem: any = item;
+    // Create a simple array from the data to avoid deep type instantiation
+    return (data || []).map((item: any) => {
       return mapToGrammarPattern({
-        id: rawItem.id,
-        pattern: rawItem.pattern,
-        explanation: rawItem.explanation,
-        example_sentences: rawItem.example_sentences,
-        lesson_id: rawItem.lesson_id,
-        difficulty: rawItem.difficulty,
-        created_at: rawItem.created_at,
-        updated_at: rawItem.updated_at
+        id: item.id,
+        pattern: item.pattern,
+        explanation: item.explanation,
+        example_sentences: item.example_sentences,
+        lesson_id: item.lesson_id,
+        difficulty: item.difficulty,
+        created_at: item.created_at,
+        updated_at: item.updated_at
       });
     });
   }
