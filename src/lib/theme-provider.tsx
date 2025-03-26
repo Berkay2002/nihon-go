@@ -49,11 +49,11 @@ export function ThemeProvider({
     
     // Apply theme class to the document element
     if (theme === "dark") {
-      document.documentElement.classList.add("dark-theme");
-      document.documentElement.classList.remove("light-theme");
+      document.documentElement.classList.add("dark");
+      document.documentElement.classList.remove("light");
     } else {
-      document.documentElement.classList.add("light-theme");
-      document.documentElement.classList.remove("dark-theme");
+      document.documentElement.classList.add("light");
+      document.documentElement.classList.remove("dark");
     }
   }, [theme, storageKey]);
   

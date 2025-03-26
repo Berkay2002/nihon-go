@@ -6,13 +6,13 @@ import { User, Book, Flame, Award, Settings, LogOut, Clock, Sun, Moon } from "lu
 import { useAuth } from "@/hooks/useAuth";
 import { useUserProgress } from "@/services/userProgressService";
 import contentService from "@/services/contentService";
-import { useTheme } from "@/components/theme/ThemeProvider";
+import { useTheme } from "@/lib/theme-provider";
 import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
   const { user, profile, signOut } = useAuth();
   const { getUserStreakData, getUserProgressData } = useUserProgress();
-  const { theme, setTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState({
@@ -99,8 +99,8 @@ const Profile = () => {
     }
   };
 
-  const toggleTheme = (newTheme: "light" | "dark") => {
-    setTheme(newTheme);
+  const handleToggleTheme = () => {
+    toggleTheme();
   };
 
   const navigateToAchievements = () => {
@@ -209,7 +209,7 @@ const Profile = () => {
                 variant={theme === "light" ? "secondary" : "ghost"} 
                 size="sm" 
                 className={theme === "light" ? "text-nihongo-blue" : "text-muted-foreground"}
-                onClick={() => toggleTheme("light")}
+                onClick={handleToggleTheme}
               >
                 <Sun className="w-4 h-4 mr-1" />
                 Light
@@ -218,7 +218,7 @@ const Profile = () => {
                 variant={theme === "dark" ? "secondary" : "ghost"} 
                 size="sm" 
                 className={theme === "dark" ? "text-nihongo-blue" : "text-muted-foreground"}
-                onClick={() => toggleTheme("dark")}
+                onClick={handleToggleTheme}
               >
                 <Moon className="w-4 h-4 mr-1" />
                 Dark

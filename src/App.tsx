@@ -8,7 +8,7 @@ import {
   Outlet,
 } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ThemeProvider } from "@/lib/theme-provider"
+import { ThemeProvider } from "@/lib/theme-provider";
 import { Toaster } from 'sonner';
 
 // Import pages
@@ -74,7 +74,7 @@ const App = () => {
   return (
     <Router>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider defaultTheme="dark">
+        <ThemeProvider defaultTheme="dark" storageKey="theme">
           <AuthProvider>
             <Routes>
               {/* Public Routes */}
