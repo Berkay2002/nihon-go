@@ -3,13 +3,14 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, Volume2 } from "lucide-react";
+import { ChevronLeft, Volume2, Loader2, AlertCircle } from "lucide-react";
 import contentService from "@/services/contentService";
 import type { Hiragana } from "@/services/api/hiraganaService";
 import type { Katakana } from "@/services/api/katakanaService";
 import type { Kanji } from "@/services/api/kanjiService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { useAudio } from "@/hooks/useAudio";
+import { toast } from "sonner";
 
 type CharacterType = Hiragana | Katakana | Kanji;
 
@@ -23,17 +24,33 @@ const CharacterDetail = () => {
   const [character, setCharacter] = useState<CharacterType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [playingAudio, setPlayingAudio] = useState(false);
+  const [audioError, setAudioError] = useState(false);
   
-  const { speak, preloadVoices } = useAudio({ 
+  const { speak, isPlaying, voicesLoaded } = useAudio({ 
     lang: 'ja-JP', 
     rate: 0.8, // Slightly slower for better pronunciation
   });
 
-  // Preload voices when component mounts
+  // Effect to try preloading voice data when component mounts
   useEffect(() => {
-    preloadVoices();
-  }, [preloadVoices]);
+    if (!voicesLoaded) {
+      const checkVoicesInterval = setInterval(() => {
+        // This triggers the browser to load voices
+        if (window.speechSynthesis) {
+          window.speechSynthesis.getVoices();
+          if (window.speechSynthesis.getVoices().length > 0) {
+            clearInterval(checkVoicesInterval);
+            console.log("Voices successfully loaded");
+          }
+        }
+      }, 300);
+      
+      // Clear interval after 5 seconds to prevent infinite checking
+      setTimeout(() => clearInterval(checkVoicesInterval), 5000);
+      
+      return () => clearInterval(checkVoicesInterval);
+    }
+  }, [voicesLoaded]);
 
   useEffect(() => {
     const fetchCharacter = async () => {
@@ -96,14 +113,40 @@ const CharacterDetail = () => {
   };
 
   const handlePlayPronunciation = () => {
-    if (character) {
-      setPlayingAudio(true);
+    if (!character) return;
+    
+    try {
+      console.log(`Attempting to speak: ${character.character}`);
       const success = speak(character.character);
+      
       if (!success) {
-        console.error("Could not play pronunciation");
+        console.error("Speech synthesis failed");
+        setAudioError(true);
+        toast.error("Failed to play pronunciation. Your browser might not support this feature.");
+        setTimeout(() => setAudioError(false), 2000);
       }
-      // Reset button state after a short delay
-      setTimeout(() => setPlayingAudio(false), 1000);
+    } catch (error) {
+      console.error("Error playing pronunciation:", error);
+      setAudioError(true);
+      toast.error("An error occurred while playing the pronunciation");
+      setTimeout(() => setAudioError(false), 2000);
+    }
+  };
+
+  const handlePlayExampleWord = () => {
+    if (!character) return;
+    
+    try {
+      console.log(`Attempting to speak example word: ${character.example_word}`);
+      const success = speak(character.example_word);
+      
+      if (!success) {
+        console.error("Speech synthesis failed for example word");
+        toast.error("Failed to play example word pronunciation");
+      }
+    } catch (error) {
+      console.error("Error playing example word:", error);
+      toast.error("An error occurred while playing the example word");
     }
   };
 
@@ -151,10 +194,17 @@ const CharacterDetail = () => {
           <Button 
             onClick={handlePlayPronunciation} 
             size="sm" 
+            variant={audioError ? "destructive" : "default"}
             className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 flex items-center justify-center bg-blue-500 hover:bg-blue-600"
-            disabled={playingAudio}
+            disabled={isPlaying}
           >
-            <Volume2 className="h-4 w-4" />
+            {isPlaying ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : audioError ? (
+              <AlertCircle className="h-4 w-4" />
+            ) : (
+              <Volume2 className="h-4 w-4" />
+            )}
           </Button>
         </div>
         <h1 className="text-2xl font-bold mb-1 text-high-contrast">{character.romaji}</h1>
@@ -180,9 +230,15 @@ const CharacterDetail = () => {
               <Button 
                 size="sm" 
                 variant="outline"
-                onClick={() => speak(character.example_word)}
+                onClick={handlePlayExampleWord}
+                disabled={isPlaying}
               >
-                <Volume2 className="h-3 w-3 mr-1" /> Listen
+                {isPlaying ? (
+                  <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                ) : (
+                  <Volume2 className="h-3 w-3 mr-1" />
+                )}
+                Listen
               </Button>
             </div>
           </CardContent>
