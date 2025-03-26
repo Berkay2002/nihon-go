@@ -49,13 +49,6 @@ export const ExerciseActions: React.FC<ExerciseActionsProps> = ({
               >
                 Check
               </button>
-              <button
-                onClick={handleExit}
-                className="flex items-center justify-center w-full px-8 py-3 rounded-xl font-medium text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Leave Exercise
-              </button>
             </>
           ) : (
             <>
@@ -64,13 +57,6 @@ export const ExerciseActions: React.FC<ExerciseActionsProps> = ({
                 isReviewMode={isReviewMode}
                 onNextExercise={onNextExercise}
               />
-              <button
-                onClick={handleExit}
-                className="flex items-center justify-center w-full px-8 py-3 rounded-xl font-medium text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-200"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Leave Exercise
-              </button>
             </>
           )}
         </div>

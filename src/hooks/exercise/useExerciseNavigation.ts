@@ -85,13 +85,13 @@ export const useExerciseNavigation = () => {
           return { completed: true, lessonId };
         } else {
           // More incorrect questions to review
-          setCurrentExerciseIndex(0);
+          setCurrentExerciseIndex(prev => 0);
           toast.info(`${updatedIncorrect.length} questions left to review`);
           return { completed: false };
         }
       } else {
         // Keep in incorrect questions, but cycle to the beginning
-        setCurrentExerciseIndex(0);
+        setCurrentExerciseIndex(prev => 0);
         return { completed: false };
       }
     } else {
@@ -99,7 +99,7 @@ export const useExerciseNavigation = () => {
       if (incorrectExercises.length > 0) {
         // Enter review mode
         setIsReviewMode(true);
-        setCurrentExerciseIndex(0);
+        setCurrentExerciseIndex(prev => 0);
         toast.info("Let's review the questions you got wrong", {
           description: "You need to answer all questions correctly to complete the lesson"
         });

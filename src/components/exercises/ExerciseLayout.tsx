@@ -2,6 +2,8 @@
 import React from "react";
 import { ExerciseType } from "@/types/exercises";
 import { ExerciseProgress, ExerciseQuestion, ExerciseActions } from "@/components/exercises";
+import { X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface ExerciseLayoutProps {
   currentExercise: ExerciseType;
@@ -46,6 +48,14 @@ export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
   onCheckAnswer,
   onNextExercise
 }) => {
+  const navigate = useNavigate();
+
+  const handleLeaveExercise = () => {
+    if (window.confirm("Are you sure you want to leave? Your progress in this exercise won't be saved.")) {
+      navigate("/app/home");
+    }
+  };
+
   const handleNextExerciseClick = async () => {
     const result = await onNextExercise();
     if (result.completed && result.lessonId) {
@@ -56,11 +66,21 @@ export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 pb-20 md:pb-4">
       <div className="container max-w-md mx-auto px-4 pt-4">
-        {isReviewMode && (
-          <div className="mb-4 bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg text-yellow-800 dark:text-yellow-300">
-            Review Mode: Let's fix the questions you missed
-          </div>
-        )}
+        <div className="flex justify-between items-center mb-4">
+          {isReviewMode && (
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg text-yellow-800 dark:text-yellow-300 flex-1 mr-4">
+              Review Mode: Let's fix the questions you missed
+            </div>
+          )}
+          
+          <button
+            onClick={handleLeaveExercise}
+            className="flex items-center justify-center p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            aria-label="Leave Exercise"
+          >
+            <X className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+          </button>
+        </div>
         
         <ExerciseProgress 
           currentIndex={currentExerciseIndex} 

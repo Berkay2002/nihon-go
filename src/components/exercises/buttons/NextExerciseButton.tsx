@@ -24,7 +24,7 @@ export const NextExerciseButton: React.FC<NextExerciseButtonProps> = ({
 
   return (
     <Button 
-      className="w-full bg-nihongo-red hover:bg-nihongo-red/90 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+      className="w-full bg-green-500 hover:bg-green-600 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
       onClick={onNextExercise}
     >
       {buttonText()}
