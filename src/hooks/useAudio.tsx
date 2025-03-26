@@ -1,4 +1,3 @@
-
 import { useCallback, useState, useEffect } from 'react';
 
 interface UseAudioOptions {
@@ -17,15 +16,29 @@ export const useAudio = (options: UseAudioOptions = {}) => {
   const [voicesLoaded, setVoicesLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
 
-  // Load voices when the component mounts
-  useEffect(() => {
-    const loadVoices = () => {
+  // Function to preload voices
+  const preloadVoices = useCallback(() => {
+    if (window.speechSynthesis) {
       const voices = window.speechSynthesis.getVoices();
       if (voices.length > 0) {
         setVoicesLoaded(true);
-        console.log('Voices loaded:', voices.length);
+        console.log('Voices preloaded:', voices.length);
         console.log('Japanese voices:', voices.filter(v => v.lang.includes('ja')));
+        return true;
+      } else {
+        console.log('No voices available yet, waiting for voiceschanged event');
+        return false;
       }
+    } else {
+      console.error('Speech synthesis not supported in this browser.');
+      return false;
+    }
+  }, []);
+
+  // Load voices when the component mounts
+  useEffect(() => {
+    const loadVoices = () => {
+      preloadVoices();
     };
 
     // Check if voices are already loaded
@@ -41,7 +54,7 @@ export const useAudio = (options: UseAudioOptions = {}) => {
     } else {
       console.error('Speech synthesis not supported in this browser.');
     }
-  }, []);
+  }, [preloadVoices]);
 
   // Function to speak text
   const speak = useCallback((text: string) => {
@@ -116,5 +129,5 @@ export const useAudio = (options: UseAudioOptions = {}) => {
     };
   }, []);
 
-  return { speak, isPlaying, voicesLoaded };
+  return { speak, isPlaying, voicesLoaded, preloadVoices };
 };
