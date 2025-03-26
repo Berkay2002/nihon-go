@@ -39,7 +39,7 @@ const Navigation = () => {
           <img 
             src="/nihon-go-logo-transparent.png" 
             alt="Nihon Go Logo" 
-            className="w-24 h-23"
+            className="w-12 h-12"
           />
         </div>
         
@@ -63,7 +63,7 @@ const Navigation = () => {
               <img 
                 src={item.icon} 
                 alt={item.ariaLabel}
-                className={`w-8 h-8 ${isActive ? "animate-bounce-light" : ""}`}
+                className={`w-6 h-6 ${isActive ? "animate-bounce-light" : ""}`}
               />
             )}
           </NavLink>

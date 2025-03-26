@@ -1,5 +1,5 @@
 
-import { normalizeJapaneseText } from "@/lib/utils";
+import { normalizeJapaneseText, areJapaneseTextsSimilar } from "@/lib/utils";
 import { ExerciseType } from "@/types/exercises";
 
 /**
@@ -71,7 +71,8 @@ export const useAnswerHandling = () => {
       case "translation":
         return selectedAnswer === currentExercise.correct_answer;
       case "text_input":
-        return textAnswer.trim().toLowerCase() === currentExercise.correct_answer.toLowerCase();
+        // Use more forgiving text comparison
+        return areJapaneseTextsSimilar(textAnswer, currentExercise.correct_answer);
       case "arrange_sentence":
         // Extract just the Japanese characters from each word for comparison
         const extractJapaneseChars = (word: string): string => {
@@ -84,11 +85,12 @@ export const useAnswerHandling = () => {
         const userAnswer = arrangedWords.map(extractJapaneseChars).join("");
         const correctAnswer = normalizeJapaneseText(currentExercise.correct_answer);
         
-        return normalizeJapaneseText(userAnswer) === correctAnswer;
+        return areJapaneseTextsSimilar(userAnswer, correctAnswer);
       case "matching":
         return matchingResult === true;
       case "fill_in_blank":
-        return textAnswer.trim().toLowerCase() === currentExercise.correct_answer.toLowerCase();
+        // Use more forgiving text comparison
+        return areJapaneseTextsSimilar(textAnswer, currentExercise.correct_answer);
       default:
         return false;
     }

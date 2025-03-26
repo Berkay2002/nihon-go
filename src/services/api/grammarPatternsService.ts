@@ -1,4 +1,16 @@
-export const getPatternsByLevel = async (level: string): Promise<any[]> => {
+
+export interface GrammarPattern {
+  id: string;
+  level: string;
+  pattern: string;
+  meaning: string;
+  example: string;
+  structure: string;
+  notes: string;
+  jlpt_level: string;
+}
+
+export const getPatternsByLevel = async (level: string): Promise<GrammarPattern[]> => {
   try {
     const data = [
       {
@@ -153,8 +165,7 @@ export const getPatternsByLevel = async (level: string): Promise<any[]> => {
       }
     ];
     
-    // Simplified type casting to avoid excessive deep instantiation
-    return data as any[];
+    return data as GrammarPattern[];
   } catch (error) {
     console.error('Error getting grammar patterns:', error);
     return [];

@@ -67,12 +67,6 @@ export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
     <div className="min-h-screen bg-white dark:bg-slate-900 pb-20 md:pb-4">
       <div className="container max-w-md mx-auto px-4 pt-4">
         <div className="flex justify-between items-center mb-4">
-          {isReviewMode && (
-            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg text-yellow-800 dark:text-yellow-300 flex-1 mr-4">
-              Review Mode: Let's fix the questions you missed
-            </div>
-          )}
-          
           <button
             onClick={handleLeaveExercise}
             className="flex items-center justify-center p-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -80,6 +74,12 @@ export const ExerciseLayout: React.FC<ExerciseLayoutProps> = ({
           >
             <X className="h-5 w-5 text-slate-700 dark:text-slate-300" />
           </button>
+          
+          {isReviewMode && (
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-lg text-yellow-800 dark:text-yellow-300 flex-1 ml-4">
+              Review Mode: Let's fix the questions you missed
+            </div>
+          )}
         </div>
         
         <ExerciseProgress 

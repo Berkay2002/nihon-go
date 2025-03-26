@@ -1,6 +1,7 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface NextExerciseButtonProps {
   isLastExercise: boolean;
@@ -24,7 +25,10 @@ export const NextExerciseButton: React.FC<NextExerciseButtonProps> = ({
 
   return (
     <Button 
-      className="w-full bg-green-500 hover:bg-green-600 text-white py-6 shadow-md hover:shadow-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98]"
+      className={cn(
+        "w-full px-8 py-4 rounded-xl font-bold text-lg text-white transition-all duration-200 shadow-md",
+        "bg-green-500 hover:bg-green-600 active:scale-95"
+      )}
       onClick={onNextExercise}
     >
       {buttonText()}

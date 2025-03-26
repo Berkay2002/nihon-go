@@ -4,13 +4,12 @@ import exercisesService, { Exercise } from "./api/exercisesService";
 import unitsService from "./api/unitsService";
 import lessonsService from "./api/lessonsService";
 import vocabularyService from "./api/vocabularyService";
-import grammarPatternsService from "./api/grammarPatternsService";
+import * as grammarPatternsService from "./api/grammarPatternsService";
 import hiraganaService from "./api/hiraganaService";
 
 // Re-export all the types from the specialized services
 export type { Exercise } from "./api/exercisesService";
 export type { Vocabulary } from "./api/vocabularyService";
-export type { GrammarPattern } from "./api/grammarPatternsService";
 export type { Lesson } from "./api/lessonsService";
 export type { Unit } from "./api/unitsService";
 export type { Hiragana } from "./api/hiraganaService";
@@ -31,8 +30,11 @@ const contentService = {
   getVocabularyByCategory: vocabularyService.getVocabularyByCategory,
   
   // Grammar Patterns
-  getGrammarPatterns: grammarPatternsService.getGrammarPatterns,
-  getGrammarPatternsByLesson: grammarPatternsService.getGrammarPatternsByLesson,
+  getGrammarPatterns: grammarPatternsService.getPatternsByLevel,
+  getGrammarPatternsByLesson: (lessonId: string) => {
+    // Simplified implementation until we have a proper backend
+    return grammarPatternsService.getPatternsByLevel("N5");
+  },
 
   // Hiragana
   getHiragana: hiraganaService.getHiragana,
