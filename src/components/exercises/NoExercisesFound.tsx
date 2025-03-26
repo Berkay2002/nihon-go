@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 export interface NoExercisesFoundProps {
-  lessonId: string;
+  lessonId?: string;
   error?: string;
 }
 
@@ -15,7 +15,11 @@ export const NoExercisesFound: React.FC<NoExercisesFoundProps> = ({
   const navigate = useNavigate();
   
   const handleBackToLesson = () => {
-    navigate(`/app/lesson/${lessonId}`);
+    if (lessonId) {
+      navigate(`/app/lesson/${lessonId}`);
+    } else {
+      navigate("/app/units");
+    }
   };
   
   return (
@@ -32,7 +36,7 @@ export const NoExercisesFound: React.FC<NoExercisesFoundProps> = ({
           onClick={handleBackToLesson}
           className="w-full"
         >
-          Back to Lesson
+          {lessonId ? "Back to Lesson" : "Back to Units"}
         </Button>
         
         <Button 

@@ -92,6 +92,7 @@ const Characters = () => {
           <TabsTrigger value="kanji" className="text-base">KANJI</TabsTrigger>
         </TabsList>
 
+        {/* Hiragana Tab Content */}
         <TabsContent value="hiragana" className="mt-6">
           <div className="text-center mb-8">
             <h2 className="text-xl font-bold mb-2 text-high-contrast">Let's learn Hiragana!</h2>
@@ -145,6 +146,7 @@ const Characters = () => {
           )}
         </TabsContent>
 
+        {/* Katakana Tab Content */}
         <TabsContent value="katakana" className="mt-6">
           <div className="text-center mb-8">
             <h2 className="text-xl font-bold mb-2 text-high-contrast">Let's learn Katakana!</h2>
@@ -173,6 +175,9 @@ const Characters = () => {
               <p className="text-sm text-medium-contrast">
                 Katakana characters will be available soon.
               </p>
+              <Button onClick={fetchCharacters} className="mt-4">
+                Retry Loading
+              </Button>
             </div>
           ) : (
             <div className="space-y-8">
@@ -205,6 +210,7 @@ const Characters = () => {
           )}
         </TabsContent>
 
+        {/* Kanji Tab Content */}
         <TabsContent value="kanji" className="mt-6">
           <div className="text-center mb-8">
             <h2 className="text-xl font-bold mb-2 text-high-contrast">Let's learn Kanji!</h2>

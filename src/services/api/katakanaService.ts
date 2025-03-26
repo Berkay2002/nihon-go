@@ -16,17 +16,23 @@ export interface Katakana {
 
 const katakanaService = {
   getKatakana: async (): Promise<Katakana[]> => {
-    const { data, error } = await baseService.client
-      .from('katakana')
-      .select('*')
-      .order('order_index');
-    
-    if (error) {
-      console.error('Error fetching katakana:', error);
+    try {
+      const { data, error } = await baseService.client
+        .from('katakana')
+        .select('*')
+        .order('order_index');
+      
+      if (error) {
+        console.error('Error fetching katakana:', error);
+        throw error;
+      }
+      
+      console.log('Fetched katakana characters:', data);
+      return data || [];
+    } catch (error) {
+      console.error('Exception when fetching katakana:', error);
       throw error;
     }
-    
-    return data || [];
   }
 };
 
