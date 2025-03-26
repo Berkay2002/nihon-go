@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import contentService from "@/services/contentService";
 import type { Hiragana } from "@/services/api/hiraganaService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { ErrorMessage } from "@/components/units/Messages";
 
 const Characters = () => {
   const [activeTab, setActiveTab] = useState("hiragana");
@@ -14,20 +16,23 @@ const Characters = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchHiragana = async () => {
-      try {
-        setLoading(true);
-        const data = await contentService.getHiragana();
-        setHiraganaChars(data);
-      } catch (err) {
-        setError("Failed to load characters. Please try again later.");
-        console.error("Error fetching hiragana:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchHiragana = async () => {
+    try {
+      setLoading(true);
+      console.log("Fetching hiragana characters");
+      const data = await contentService.getHiragana();
+      console.log("Received hiragana characters:", data);
+      setHiraganaChars(data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching hiragana:", err);
+      setError("Failed to load characters. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchHiragana();
   }, []);
 
@@ -41,6 +46,7 @@ const Characters = () => {
   }, {});
 
   const handleCharacterClick = (characterId: string) => {
+    console.log("Navigating to character:", characterId);
     navigate(`/app/characters/${characterId}`);
   };
 
@@ -76,9 +82,7 @@ const Characters = () => {
               <LoadingSpinner />
             </div>
           ) : error ? (
-            <div className="text-center p-6 bg-red-50 rounded-lg text-red-500">
-              {error}
-            </div>
+            <ErrorMessage error={error} onRetry={fetchHiragana} />
           ) : (
             <div className="space-y-8">
               {Object.entries(hiraganaGroups).map(([groupName, chars]) => (
@@ -132,4 +136,4 @@ const Characters = () => {
   );
 };
 
-export default Characters; 
+export default Characters;

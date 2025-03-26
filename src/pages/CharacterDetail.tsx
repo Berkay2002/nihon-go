@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +9,7 @@ import type { Hiragana } from "@/services/api/hiraganaService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 
 const CharacterDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
   const [character, setCharacter] = useState<Hiragana | null>(null);
   const [loading, setLoading] = useState(true);
@@ -16,7 +17,7 @@ const CharacterDetail = () => {
 
   useEffect(() => {
     const fetchCharacter = async () => {
-      if (!id) {
+      if (!characterId) {
         setError("Character ID not provided");
         setLoading(false);
         return;
@@ -24,24 +25,29 @@ const CharacterDetail = () => {
 
       try {
         setLoading(true);
+        console.log("Fetching character with ID:", characterId);
         const allCharacters = await contentService.getHiragana();
-        const foundCharacter = allCharacters.find(char => char.id === id);
+        console.log("All characters:", allCharacters);
+        
+        const foundCharacter = allCharacters.find(char => char.id === characterId);
         
         if (foundCharacter) {
+          console.log("Found character:", foundCharacter);
           setCharacter(foundCharacter);
         } else {
+          console.log("No character found with ID:", characterId);
           setError("Character not found");
         }
       } catch (err) {
-        setError("Failed to load character details. Please try again later.");
         console.error("Error fetching hiragana character:", err);
+        setError("Failed to load character details. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchCharacter();
-  }, [id]);
+  }, [characterId]);
 
   const goBack = () => {
     navigate(-1);
@@ -65,7 +71,7 @@ const CharacterDetail = () => {
         <Card className="border-red-200">
           <CardContent className="p-6 text-center">
             <p className="text-red-500">{error || "Character not found"}</p>
-            <Button onClick={goBack} className="mt-4">
+            <Button onClick={() => navigate("/app/characters")} className="mt-4">
               Return to Characters
             </Button>
           </CardContent>
@@ -137,4 +143,4 @@ const CharacterDetail = () => {
   );
 };
 
-export default CharacterDetail; 
+export default CharacterDetail;
