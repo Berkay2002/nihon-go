@@ -3,12 +3,13 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Volume2 } from "lucide-react";
 import contentService from "@/services/contentService";
 import type { Hiragana } from "@/services/api/hiraganaService";
 import type { Katakana } from "@/services/api/katakanaService";
 import type { Kanji } from "@/services/api/kanjiService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+import { useAudio } from "@/hooks/useAudio";
 
 type CharacterType = Hiragana | Katakana | Kanji;
 
@@ -22,6 +23,17 @@ const CharacterDetail = () => {
   const [character, setCharacter] = useState<CharacterType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [playingAudio, setPlayingAudio] = useState(false);
+  
+  const { speak, preloadVoices } = useAudio({ 
+    lang: 'ja-JP', 
+    rate: 0.8, // Slightly slower for better pronunciation
+  });
+
+  // Preload voices when component mounts
+  useEffect(() => {
+    preloadVoices();
+  }, [preloadVoices]);
 
   useEffect(() => {
     const fetchCharacter = async () => {
@@ -83,6 +95,18 @@ const CharacterDetail = () => {
     }
   };
 
+  const handlePlayPronunciation = () => {
+    if (character) {
+      setPlayingAudio(true);
+      const success = speak(character.character);
+      if (!success) {
+        console.error("Could not play pronunciation");
+      }
+      // Reset button state after a short delay
+      setTimeout(() => setPlayingAudio(false), 1000);
+    }
+  };
+
   const goBack = () => {
     navigate(-1);
   };
@@ -122,8 +146,16 @@ const CharacterDetail = () => {
       </Button>
       
       <div className="text-center mb-8">
-        <div className="inline-block p-8 rounded-full bg-blue-50 dark:bg-blue-900/30 mb-4">
+        <div className="inline-block p-8 rounded-full bg-blue-50 dark:bg-blue-900/30 mb-4 relative">
           <span className="text-8xl font-japanese text-high-contrast">{character.character}</span>
+          <Button 
+            onClick={handlePlayPronunciation} 
+            size="sm" 
+            className="absolute bottom-0 right-0 rounded-full w-10 h-10 p-0 flex items-center justify-center bg-blue-500 hover:bg-blue-600"
+            disabled={playingAudio}
+          >
+            <Volume2 className="h-4 w-4" />
+          </Button>
         </div>
         <h1 className="text-2xl font-bold mb-1 text-high-contrast">{character.romaji}</h1>
         <p className="text-medium-contrast">{getCharacterTypeLabel()}</p>
@@ -145,8 +177,12 @@ const CharacterDetail = () => {
                 <p className="text-lg font-japanese mb-1 text-high-contrast">{character.example_word}</p>
                 <p className="text-sm text-medium-contrast">{character.example_word_meaning}</p>
               </div>
-              <Button size="sm" variant="outline">
-                Practice
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => speak(character.example_word)}
+              >
+                <Volume2 className="h-3 w-3 mr-1" /> Listen
               </Button>
             </div>
           </CardContent>

@@ -10,6 +10,8 @@ import type { Katakana } from "@/services/api/katakanaService";
 import type { Kanji } from "@/services/api/kanjiService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
 import { ErrorMessage } from "@/components/units/Messages";
+import { CharacterCard } from "@/components/characters/CharacterCard";
+import { useAudio } from "@/hooks/useAudio";
 
 const Characters = () => {
   const [activeTab, setActiveTab] = useState("hiragana");
@@ -19,6 +21,12 @@ const Characters = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { preloadVoices } = useAudio();
+
+  // Preload voices
+  useEffect(() => {
+    preloadVoices();
+  }, [preloadVoices]);
 
   const fetchCharacters = async () => {
     try {
@@ -81,6 +89,30 @@ const Characters = () => {
     navigate(`/app/characters/${characterId}?type=${type}`);
   };
 
+  // Render a character group section
+  const renderCharacterGroup = (
+    groupName: string, 
+    chars: (Hiragana | Katakana | Kanji)[], 
+    type: string
+  ) => (
+    <div key={groupName} className="mb-8">
+      <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-medium-contrast">
+        {groupName.charAt(0).toUpperCase() + groupName.slice(1)} {type === 'kanji' ? 'Group' : 'Row'}
+      </h3>
+      <div className="grid grid-cols-5 gap-2">
+        {chars.map((char) => (
+          <CharacterCard
+            key={char.id}
+            id={char.id}
+            character={char.character}
+            romaji={char.romaji}
+            onClick={() => handleCharacterClick(char.id, type)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+
   return (
     <div className="container max-w-md mx-auto px-4 pt-6 pb-20">
       <h1 className="text-2xl font-bold mb-6 text-center text-high-contrast">Japanese Characters</h1>
@@ -117,31 +149,9 @@ const Characters = () => {
             <ErrorMessage error={error} onRetry={fetchCharacters} />
           ) : (
             <div className="space-y-8">
-              {Object.entries(hiraganaGroups).map(([groupName, chars]) => (
-                <div key={groupName} className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-medium-contrast">
-                    {groupName.charAt(0).toUpperCase() + groupName.slice(1)} Row
-                  </h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    {chars.map((char) => (
-                      <Card 
-                        key={char.id}
-                        className="border hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => handleCharacterClick(char.id, 'hiragana')}
-                      >
-                        <CardContent className="p-2 text-center">
-                          <div className="text-2xl font-japanese mb-1 text-high-contrast">
-                            {char.character}
-                          </div>
-                          <div className="text-xs text-medium-contrast">
-                            {char.romaji}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {Object.entries(hiraganaGroups).map(([groupName, chars]) => 
+                renderCharacterGroup(groupName, chars, 'hiragana')
+              )}
             </div>
           )}
         </TabsContent>
@@ -181,31 +191,9 @@ const Characters = () => {
             </div>
           ) : (
             <div className="space-y-8">
-              {Object.entries(katakanaGroups).map(([groupName, chars]) => (
-                <div key={groupName} className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-medium-contrast">
-                    {groupName.charAt(0).toUpperCase() + groupName.slice(1)} Row
-                  </h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    {chars.map((char) => (
-                      <Card 
-                        key={char.id}
-                        className="border hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => handleCharacterClick(char.id, 'katakana')}
-                      >
-                        <CardContent className="p-2 text-center">
-                          <div className="text-2xl font-japanese mb-1 text-high-contrast">
-                            {char.character}
-                          </div>
-                          <div className="text-xs text-medium-contrast">
-                            {char.romaji}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {Object.entries(katakanaGroups).map(([groupName, chars]) => 
+                renderCharacterGroup(groupName, chars, 'katakana')
+              )}
             </div>
           )}
         </TabsContent>
@@ -242,31 +230,9 @@ const Characters = () => {
             </div>
           ) : (
             <div className="space-y-8">
-              {Object.entries(kanjiGroups).map(([groupName, chars]) => (
-                <div key={groupName} className="mb-8">
-                  <h3 className="text-lg font-semibold mb-4 border-b pb-2 text-medium-contrast">
-                    {groupName.charAt(0).toUpperCase() + groupName.slice(1)} Group
-                  </h3>
-                  <div className="grid grid-cols-5 gap-2">
-                    {chars.map((char) => (
-                      <Card 
-                        key={char.id}
-                        className="border hover:border-blue-500 hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => handleCharacterClick(char.id, 'kanji')}
-                      >
-                        <CardContent className="p-2 text-center">
-                          <div className="text-2xl font-japanese mb-1 text-high-contrast">
-                            {char.character}
-                          </div>
-                          <div className="text-xs text-medium-contrast">
-                            {char.romaji}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                </div>
-              ))}
+              {Object.entries(kanjiGroups).map(([groupName, chars]) => 
+                renderCharacterGroup(groupName, chars, 'kanji')
+              )}
             </div>
           )}
         </TabsContent>
