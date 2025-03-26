@@ -6,6 +6,8 @@ import lessonsService from "./api/lessonsService";
 import vocabularyService from "./api/vocabularyService";
 import * as grammarPatternsService from "./api/grammarPatternsService";
 import hiraganaService from "./api/hiraganaService";
+import katakanaService from "./api/katakanaService";
+import kanjiService from "./api/kanjiService";
 
 // Re-export all the types from the specialized services
 export type { Exercise } from "./api/exercisesService";
@@ -13,6 +15,8 @@ export type { Vocabulary } from "./api/vocabularyService";
 export type { Lesson } from "./api/lessonsService";
 export type { Unit } from "./api/unitsService";
 export type { Hiragana } from "./api/hiraganaService";
+export type { Katakana } from "./api/katakanaService";
+export type { Kanji } from "./api/kanjiService";
 
 // Simple facade that delegates to the specialized services
 const contentService = {
@@ -36,8 +40,10 @@ const contentService = {
     return grammarPatternsService.getPatternsByLevel("N5");
   },
 
-  // Hiragana
+  // Japanese Characters
   getHiragana: hiraganaService.getHiragana,
+  getKatakana: katakanaService.getKatakana,
+  getKanji: kanjiService.getKanji,
 
   // Exercises - already a separate service
   getExercisesByLesson: async (lessonId: string) => {

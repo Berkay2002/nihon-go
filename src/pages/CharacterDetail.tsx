@@ -1,17 +1,25 @@
 
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from "lucide-react";
 import contentService from "@/services/contentService";
 import type { Hiragana } from "@/services/api/hiraganaService";
+import type { Katakana } from "@/services/api/katakanaService";
+import type { Kanji } from "@/services/api/kanjiService";
 import { LoadingSpinner } from "@/components/shared/LoadingSpinner";
+
+type CharacterType = Hiragana | Katakana | Kanji;
 
 const CharacterDetail = () => {
   const { characterId } = useParams<{ characterId: string }>();
   const navigate = useNavigate();
-  const [character, setCharacter] = useState<Hiragana | null>(null);
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const characterType = searchParams.get('type') || 'hiragana';
+  
+  const [character, setCharacter] = useState<CharacterType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -25,8 +33,25 @@ const CharacterDetail = () => {
 
       try {
         setLoading(true);
-        console.log("Fetching character with ID:", characterId);
-        const allCharacters = await contentService.getHiragana();
+        console.log(`Fetching ${characterType} character with ID:`, characterId);
+        
+        let allCharacters: CharacterType[] = [];
+        
+        // Get characters based on type
+        switch(characterType) {
+          case 'hiragana':
+            allCharacters = await contentService.getHiragana();
+            break;
+          case 'katakana':
+            allCharacters = await contentService.getKatakana();
+            break;
+          case 'kanji':
+            allCharacters = await contentService.getKanji();
+            break;
+          default:
+            allCharacters = await contentService.getHiragana();
+        }
+        
         console.log("All characters:", allCharacters);
         
         const foundCharacter = allCharacters.find(char => char.id === characterId);
@@ -35,11 +60,11 @@ const CharacterDetail = () => {
           console.log("Found character:", foundCharacter);
           setCharacter(foundCharacter);
         } else {
-          console.log("No character found with ID:", characterId);
+          console.log(`No ${characterType} character found with ID:`, characterId);
           setError("Character not found");
         }
       } catch (err) {
-        console.error("Error fetching hiragana character:", err);
+        console.error(`Error fetching ${characterType} character:`, err);
         setError("Failed to load character details. Please try again later.");
       } finally {
         setLoading(false);
@@ -47,7 +72,16 @@ const CharacterDetail = () => {
     };
 
     fetchCharacter();
-  }, [characterId]);
+  }, [characterId, characterType]);
+
+  const getCharacterTypeLabel = () => {
+    switch(characterType) {
+      case 'hiragana': return 'Hiragana';
+      case 'katakana': return 'Katakana';
+      case 'kanji': return 'Kanji';
+      default: return 'Character';
+    }
+  };
 
   const goBack = () => {
     navigate(-1);
@@ -92,7 +126,7 @@ const CharacterDetail = () => {
           <span className="text-8xl font-japanese text-high-contrast">{character.character}</span>
         </div>
         <h1 className="text-2xl font-bold mb-1 text-high-contrast">{character.romaji}</h1>
-        <p className="text-medium-contrast">Hiragana</p>
+        <p className="text-medium-contrast">{getCharacterTypeLabel()}</p>
       </div>
       
       <div className="space-y-6">
