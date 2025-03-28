@@ -2,6 +2,7 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { AlertTriangle } from "lucide-react";
 
 export interface NoExercisesFoundProps {
   lessonId?: string;
@@ -23,12 +24,12 @@ export const NoExercisesFound: React.FC<NoExercisesFoundProps> = ({
   };
   
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-      <div className="mb-8 w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-        <span className="text-2xl">📝</span>
+    <div className="min-h-screen bg-white dark:bg-slate-900 flex flex-col items-center justify-center py-12 px-4 text-center">
+      <div className="mb-8 w-16 h-16 rounded-full bg-yellow-50 dark:bg-yellow-900/20 flex items-center justify-center">
+        <AlertTriangle className="h-8 w-8 text-yellow-500" />
       </div>
       
-      <h2 className="text-xl font-bold mb-2 text-high-contrast">No Exercises Available</h2>
+      <h2 className="text-2xl font-bold mb-2 text-high-contrast">Exercise Not Available</h2>
       <p className="text-medium-contrast mb-8 max-w-sm">{error}</p>
       
       <div className="space-y-4 w-full max-w-sm">
@@ -44,7 +45,7 @@ export const NoExercisesFound: React.FC<NoExercisesFoundProps> = ({
           onClick={() => navigate("/app/units")}
           className="w-full"
         >
-          Go to Units
+          Go to All Units
         </Button>
       </div>
     </div>

@@ -92,6 +92,7 @@ const App = () => {
                   
                   {/* Learning Content */}
                   <Route path="lesson/:lessonId" element={<LessonPage />} />
+                  <Route path="exercise/:lessonId" element={<Exercise />} />
                   <Route path="exercise/:exerciseId" element={<Exercise />} />
                   <Route path="lesson-complete/:lessonId" element={<LessonComplete />} />
                   

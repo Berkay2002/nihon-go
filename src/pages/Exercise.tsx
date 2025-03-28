@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useExerciseSession } from "@/hooks/useExerciseSession";
@@ -10,10 +10,21 @@ import { NoExercisesFound } from "@/components/exercises/NoExercisesFound";
 import { useUserProgress } from "@/services/userProgressService";
 
 const Exercise = () => {
-  const { lessonId } = useParams<{ lessonId: string }>();
+  // Get lessonId from URL params or exerciseId (support both patterns)
+  const { lessonId, exerciseId } = useParams<{ lessonId: string, exerciseId: string }>();
+  const effectiveLessonId = lessonId || exerciseId; // Use either parameter
+  const navigate = useNavigate();
+  
   const { user } = useAuth();
   const { getUserProgressData } = useUserProgress();
   const [isLessonCompleted, setIsLessonCompleted] = useState(false);
+  
+  useEffect(() => {
+    if (!effectiveLessonId) {
+      toast.error("No lesson ID provided");
+      navigate("/app/units");
+    }
+  }, [effectiveLessonId, navigate]);
   
   const {
     exercises,
@@ -38,15 +49,15 @@ const Exercise = () => {
     handleMatchingResult,
     handleCheckAnswer,
     handleNextExercise
-  } = useExerciseSession(lessonId);
+  } = useExerciseSession(effectiveLessonId);
 
   // Check if the lesson is already completed
   useEffect(() => {
     const checkLessonCompletion = async () => {
-      if (user && lessonId) {
+      if (user && effectiveLessonId) {
         try {
           const progressData = await getUserProgressData();
-          const lessonProgress = progressData.find(p => p.lesson_id === lessonId);
+          const lessonProgress = progressData.find(p => p.lesson_id === effectiveLessonId);
           setIsLessonCompleted(lessonProgress?.is_completed || false);
         } catch (error) {
           console.error("Error checking lesson completion:", error);
@@ -55,7 +66,7 @@ const Exercise = () => {
     };
 
     checkLessonCompletion();
-  }, [user, lessonId, getUserProgressData]);
+  }, [user, effectiveLessonId, getUserProgressData]);
 
   // Calculate if the exercise is valid for submission
   const isInputValid = (): boolean => {
@@ -86,14 +97,14 @@ const Exercise = () => {
   }
 
   if (error || !exercises || exercises.length === 0) {
-    return <NoExercisesFound error={error} />;
+    return <NoExercisesFound error={error} lessonId={effectiveLessonId} />;
   }
 
   if (!currentExercise) {
     toast.error("Could not find exercise", {
       description: "Please try again or return to lessons",
     });
-    return <NoExercisesFound />;
+    return <NoExercisesFound lessonId={effectiveLessonId} />;
   }
 
   return (

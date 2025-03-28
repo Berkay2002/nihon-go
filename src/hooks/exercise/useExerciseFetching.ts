@@ -1,6 +1,7 @@
 
 import { useEffect } from "react";
 import contentService from "@/services/contentService";
+import { toast } from "sonner";
 
 /**
  * Hook for fetching exercises
@@ -12,7 +13,12 @@ export const useExerciseFetching = (
   setError: (error: string | null) => void
 ) => {
   useEffect(() => {
-    if (!lessonId) return;
+    if (!lessonId) {
+      console.log("No lessonId provided to useExerciseFetching");
+      setError("No lesson ID provided.");
+      setIsLoading(false);
+      return;
+    }
 
     const fetchExercises = async () => {
       try {
@@ -23,6 +29,7 @@ export const useExerciseFetching = (
         console.log(`Fetched ${exercisesData.length} exercises`, exercisesData);
         
         if (exercisesData.length === 0) {
+          console.log("No exercises found for this lesson");
           setError("No exercises found for this lesson.");
           setIsLoading(false);
           return;
@@ -34,7 +41,8 @@ export const useExerciseFetching = (
             return {
               ...exercise,
               words: Array.isArray(exercise.options) ? exercise.options : 
-                     (exercise.options.words || exercise.words || [])
+                     typeof exercise.options === 'object' && exercise.options.words ? exercise.options.words : 
+                     exercise.words || []
             };
           }
           return exercise;
@@ -44,6 +52,7 @@ export const useExerciseFetching = (
         setIsLoading(false);
       } catch (error) {
         console.error("Error fetching exercises:", error);
+        toast.error("Failed to load exercises");
         setError("Failed to load exercises. Please try again later.");
         setIsLoading(false);
       }
